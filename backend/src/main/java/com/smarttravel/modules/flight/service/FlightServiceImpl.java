@@ -5,12 +5,16 @@ import com.smarttravel.common.exception.DuplicateResourceException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.common.response.PageResponse;
 import com.smarttravel.common.security.SecurityUtils;
+import com.smarttravel.modules.flight.dto.CabinInventoryDto;
 import com.smarttravel.modules.flight.dto.FlightCreateRequest;
+import com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest;
 import com.smarttravel.modules.flight.dto.FlightResponse;
 import com.smarttravel.modules.flight.dto.FlightSearchCriteria;
 import com.smarttravel.modules.flight.dto.FlightStatusUpdateRequest;
 import com.smarttravel.modules.flight.dto.FlightUpdateRequest;
 import com.smarttravel.modules.flight.mapper.FlightMapper;
+import com.smarttravel.modules.flight.model.CabinClass;
+import com.smarttravel.modules.flight.model.CabinInventory;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.model.FlightStatusHistory;
@@ -24,7 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class FlightServiceImpl implements FlightService {
@@ -34,13 +41,16 @@ public class FlightServiceImpl implements FlightService {
     private final FlightRepository flightRepository;
     private final FlightStatusHistoryRepository flightStatusHistoryRepository;
     private final FlightStateMachine flightStateMachine;
+    private final FareCalculationService fareCalculationService;
 
     public FlightServiceImpl(FlightRepository flightRepository,
                              FlightStatusHistoryRepository flightStatusHistoryRepository,
-                             FlightStateMachine flightStateMachine) {
+                             FlightStateMachine flightStateMachine,
+                             FareCalculationService fareCalculationService) {
         this.flightRepository = flightRepository;
         this.flightStatusHistoryRepository = flightStatusHistoryRepository;
         this.flightStateMachine = flightStateMachine;
+        this.fareCalculationService = fareCalculationService;
     }
 
     @Override
@@ -165,6 +175,48 @@ public class FlightServiceImpl implements FlightService {
     }
 
     @Override
+    @Transactional
+    public FlightResponse updateFlightInventory(String id, FlightInventoryUpdateRequest request) {
+        log.info("Admin updating cabin inventories for flight ID: {}", id);
+
+        if (request == null || request.getCabinInventories() == null || request.getCabinInventories().isEmpty()) {
+            throw new BadRequestException("Cabin inventories payload must not be empty");
+        }
+
+        Flight flight = flightRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", id));
+
+        List<CabinInventory> inventories = new ArrayList<>();
+        Set<CabinClass> cabinClasses = new HashSet<>();
+        int totalSeatsAggregate = 0;
+        int availableSeatsAggregate = 0;
+
+        for (CabinInventoryDto dto : request.getCabinInventories()) {
+            if (dto.getAvailableSeats() > dto.getTotalSeats()) {
+                throw new BadRequestException("Available seats (" + dto.getAvailableSeats() +
+                        ") cannot exceed total seats (" + dto.getTotalSeats() + ") for cabin " + dto.getCabinClass());
+            }
+
+            CabinInventory inventory = FlightMapper.toCabinInventory(dto);
+            inventories.add(inventory);
+            cabinClasses.add(dto.getCabinClass());
+            totalSeatsAggregate += dto.getTotalSeats();
+            availableSeatsAggregate += dto.getAvailableSeats();
+        }
+
+        flight.setCabinInventories(inventories);
+        flight.setCabinClasses(cabinClasses);
+        flight.setTotalSeats(totalSeatsAggregate);
+        flight.setAvailableSeats(availableSeatsAggregate);
+
+        Flight updatedFlight = flightRepository.save(flight);
+        log.info("Flight ID: {} inventories updated successfully. Total capacity: {}, Available: {}",
+                id, totalSeatsAggregate, availableSeatsAggregate);
+
+        return FlightMapper.toResponse(updatedFlight);
+    }
+
+    @Override
     public FlightResponse getFlightById(String id) {
         log.debug("Fetching flight by ID: {}", id);
 
@@ -187,12 +239,12 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     public PageResponse<FlightResponse> searchFlights(FlightSearchCriteria criteria) {
-        log.debug("Searching flights with criteria: origin='{}', dest='{}', date='{}'",
-                criteria.getOrigin(), criteria.getDestination(), criteria.getDepartureDate());
+        log.debug("Searching flights with criteria: origin='{}', dest='{}', date='{}', passengers={}",
+                criteria.getOrigin(), criteria.getDestination(), criteria.getDepartureDate(), criteria.getPassengers());
 
         Page<Flight> flightPage = flightRepository.searchFlights(criteria);
         List<FlightResponse> flightResponses = flightPage.getContent().stream()
-                .map(FlightMapper::toResponse)
+                .map(flight -> FlightMapper.toResponse(flight, criteria.getCabinClass(), criteria.getPassengers(), fareCalculationService))
                 .toList();
 
         return PageResponse.of(flightResponses, flightPage);

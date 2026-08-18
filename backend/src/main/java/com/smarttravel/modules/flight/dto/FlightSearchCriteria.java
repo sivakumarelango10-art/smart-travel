@@ -21,17 +21,23 @@ public class FlightSearchCriteria {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate departureDate;
 
+    @Schema(description = "Number of passengers (1 to 9)", example = "2", defaultValue = "1")
+    private int passengers = 1;
+
     @Schema(description = "Filter by airline name", example = "Air India")
     private String airline;
 
     @Schema(description = "Filter by cabin class", example = "ECONOMY")
     private CabinClass cabinClass;
 
-    @Schema(description = "Minimum base price", example = "3000.00")
+    @Schema(description = "Minimum price", example = "3000.00")
     private BigDecimal minPrice;
 
-    @Schema(description = "Maximum base price", example = "10000.00")
+    @Schema(description = "Maximum price", example = "10000.00")
     private BigDecimal maxPrice;
+
+    @Schema(description = "Departure time window filter", example = "MORNING")
+    private DepartureTimeWindow departureTimeWindow;
 
     @Schema(description = "Filter by flight status", example = "SCHEDULED")
     private FlightStatus status;
@@ -42,7 +48,7 @@ public class FlightSearchCriteria {
     @Schema(description = "Page size", example = "20", defaultValue = "20")
     private int size = 20;
 
-    @Schema(description = "Sort field (e.g. 'departureTime', 'basePrice', 'durationMinutes')", example = "departureTime", defaultValue = "departureTime")
+    @Schema(description = "Sort field or alias ('CHEAPEST', 'FASTEST', 'EARLIEST_DEPARTURE', 'LATEST_DEPARTURE', 'BEST', 'price', 'departureTime')", example = "CHEAPEST", defaultValue = "departureTime")
     private String sortBy = "departureTime";
 
     @Schema(description = "Sort direction ('asc' or 'desc')", example = "asc", defaultValue = "asc")
@@ -51,19 +57,21 @@ public class FlightSearchCriteria {
     public FlightSearchCriteria() {
     }
 
-    public FlightSearchCriteria(String origin, String destination, LocalDate departureDate,
+    public FlightSearchCriteria(String origin, String destination, LocalDate departureDate, int passengers,
                                 String airline, CabinClass cabinClass, BigDecimal minPrice,
-                                BigDecimal maxPrice, FlightStatus status,
+                                BigDecimal maxPrice, DepartureTimeWindow departureTimeWindow, FlightStatus status,
                                 int page, int size, String sortBy, String sortDirection) {
         this.origin = origin;
         this.destination = destination;
         this.departureDate = departureDate;
+        this.passengers = passengers > 0 ? passengers : 1;
         this.airline = airline;
         this.cabinClass = cabinClass;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
+        this.departureTimeWindow = departureTimeWindow;
         this.status = status;
-        this.page = page;
+        this.page = Math.max(0, page);
         this.size = size > 0 ? size : 20;
         this.sortBy = sortBy != null && !sortBy.isBlank() ? sortBy : "departureTime";
         this.sortDirection = sortDirection != null && !sortDirection.isBlank() ? sortDirection : "asc";
@@ -77,10 +85,12 @@ public class FlightSearchCriteria {
         private String origin;
         private String destination;
         private LocalDate departureDate;
+        private int passengers = 1;
         private String airline;
         private CabinClass cabinClass;
         private BigDecimal minPrice;
         private BigDecimal maxPrice;
+        private DepartureTimeWindow departureTimeWindow;
         private FlightStatus status;
         private int page = 0;
         private int size = 20;
@@ -102,6 +112,11 @@ public class FlightSearchCriteria {
             return this;
         }
 
+        public Builder passengers(int passengers) {
+            this.passengers = passengers;
+            return this;
+        }
+
         public Builder airline(String airline) {
             this.airline = airline;
             return this;
@@ -119,6 +134,11 @@ public class FlightSearchCriteria {
 
         public Builder maxPrice(BigDecimal maxPrice) {
             this.maxPrice = maxPrice;
+            return this;
+        }
+
+        public Builder departureTimeWindow(DepartureTimeWindow departureTimeWindow) {
+            this.departureTimeWindow = departureTimeWindow;
             return this;
         }
 
@@ -148,8 +168,8 @@ public class FlightSearchCriteria {
         }
 
         public FlightSearchCriteria build() {
-            return new FlightSearchCriteria(origin, destination, departureDate, airline,
-                    cabinClass, minPrice, maxPrice, status, page, size, sortBy, sortDirection);
+            return new FlightSearchCriteria(origin, destination, departureDate, passengers, airline,
+                    cabinClass, minPrice, maxPrice, departureTimeWindow, status, page, size, sortBy, sortDirection);
         }
     }
 
@@ -175,6 +195,14 @@ public class FlightSearchCriteria {
 
     public void setDepartureDate(LocalDate departureDate) {
         this.departureDate = departureDate;
+    }
+
+    public int getPassengers() {
+        return passengers;
+    }
+
+    public void setPassengers(int passengers) {
+        this.passengers = passengers > 0 ? passengers : 1;
     }
 
     public String getAirline() {
@@ -207,6 +235,14 @@ public class FlightSearchCriteria {
 
     public void setMaxPrice(BigDecimal maxPrice) {
         this.maxPrice = maxPrice;
+    }
+
+    public DepartureTimeWindow getDepartureTimeWindow() {
+        return departureTimeWindow;
+    }
+
+    public void setDepartureTimeWindow(DepartureTimeWindow departureTimeWindow) {
+        this.departureTimeWindow = departureTimeWindow;
     }
 
     public FlightStatus getStatus() {

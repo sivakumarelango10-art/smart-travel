@@ -101,4 +101,21 @@ public class AdminFlightController {
         FlightResponse response = flightService.updateFlightStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("Flight status updated successfully", response));
     }
+
+    @PutMapping("/{id}/inventory")
+    @Operation(summary = "Update Flight Cabin Inventories", description = "Updates seat allocations, availability, and pricing tiers per cabin class (Admin only).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Cabin inventories updated successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid inventory payload"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - Admin role required"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found")
+    })
+    public ResponseEntity<ApiResponse<FlightResponse>> updateFlightInventory(
+            @Parameter(description = "Flight MongoDB ObjectId", example = "66c1e101f1a2b3c4d5e6f702")
+            @PathVariable String id,
+            @Valid @RequestBody com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest request) {
+        FlightResponse response = flightService.updateFlightInventory(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Flight cabin inventories updated successfully", response));
+    }
 }

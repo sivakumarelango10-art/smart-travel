@@ -17,6 +17,8 @@ public interface FlightService {
 
     FlightResponse updateFlightStatus(String id, FlightStatusUpdateRequest request);
 
+    FlightResponse updateFlightInventory(String id, com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest request);
+
     FlightResponse getFlightById(String id);
 
     FlightResponse getFlightByFlightNumber(String flightNumber);

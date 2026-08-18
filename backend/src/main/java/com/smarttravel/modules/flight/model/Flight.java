@@ -21,7 +21,8 @@ import java.util.Set;
 @CompoundIndexes({
         @CompoundIndex(name = "flight_route_time_idx", def = "{'departureAirport.code': 1, 'arrivalAirport.code': 1, 'departureTime': 1, 'active': 1}"),
         @CompoundIndex(name = "flight_city_route_time_idx", def = "{'departureAirport.city': 1, 'arrivalAirport.city': 1, 'departureTime': 1, 'active': 1}"),
-        @CompoundIndex(name = "flight_airline_active_idx", def = "{'airline': 1, 'active': 1}")
+        @CompoundIndex(name = "flight_airline_active_idx", def = "{'airline': 1, 'active': 1}"),
+        @CompoundIndex(name = "flight_cabin_avail_idx", def = "{'cabinInventories.cabinClass': 1, 'cabinInventories.availableSeats': 1, 'active': 1}")
 })
 public class Flight {
 
@@ -56,6 +57,8 @@ public class Flight {
 
     private Set<CabinClass> cabinClasses = new HashSet<>();
 
+    private java.util.List<CabinInventory> cabinInventories = new java.util.ArrayList<>();
+
     private FlightStatus status = FlightStatus.SCHEDULED;
 
     private Integer delayMinutes;
@@ -83,10 +86,10 @@ public class Flight {
                   AirportInfo departureAirport, AirportInfo arrivalAirport,
                   Instant departureTime, Instant arrivalTime, Integer durationMinutes,
                   String aircraftModel, BigDecimal basePrice, int totalSeats, int availableSeats,
-                  Set<CabinClass> cabinClasses, FlightStatus status,
-                  Integer delayMinutes, String delayReason, Instant revisedDepartureTime,
-                  Instant estimatedArrival, Instant lastStatusUpdated, boolean active,
-                  Instant createdAt, Instant updatedAt) {
+                  Set<CabinClass> cabinClasses, java.util.List<CabinInventory> cabinInventories,
+                  FlightStatus status, Integer delayMinutes, String delayReason,
+                  Instant revisedDepartureTime, Instant estimatedArrival, Instant lastStatusUpdated,
+                  boolean active, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.flightNumber = flightNumber;
         this.airline = airline;
@@ -101,6 +104,7 @@ public class Flight {
         this.totalSeats = totalSeats;
         this.availableSeats = availableSeats;
         this.cabinClasses = cabinClasses != null ? cabinClasses : new HashSet<>();
+        this.cabinInventories = cabinInventories != null ? cabinInventories : new java.util.ArrayList<>();
         this.status = status != null ? status : FlightStatus.SCHEDULED;
         this.delayMinutes = delayMinutes;
         this.delayReason = delayReason;
@@ -131,6 +135,7 @@ public class Flight {
         private int totalSeats;
         private int availableSeats;
         private Set<CabinClass> cabinClasses = new HashSet<>();
+        private java.util.List<CabinInventory> cabinInventories = new java.util.ArrayList<>();
         private FlightStatus status = FlightStatus.SCHEDULED;
         private Integer delayMinutes;
         private String delayReason;
@@ -256,10 +261,15 @@ public class Flight {
             return this;
         }
 
+        public Builder cabinInventories(java.util.List<CabinInventory> cabinInventories) {
+            this.cabinInventories = cabinInventories;
+            return this;
+        }
+
         public Flight build() {
             return new Flight(id, flightNumber, airline, airlineCode, departureAirport, arrivalAirport,
                     departureTime, arrivalTime, durationMinutes, aircraftModel, basePrice,
-                    totalSeats, availableSeats, cabinClasses, status, delayMinutes, delayReason,
+                    totalSeats, availableSeats, cabinClasses, cabinInventories, status, delayMinutes, delayReason,
                     revisedDepartureTime, estimatedArrival, lastStatusUpdated, active, createdAt, updatedAt);
         }
     }
@@ -374,6 +384,14 @@ public class Flight {
 
     public void setCabinClasses(Set<CabinClass> cabinClasses) {
         this.cabinClasses = cabinClasses;
+    }
+
+    public java.util.List<CabinInventory> getCabinInventories() {
+        return cabinInventories;
+    }
+
+    public void setCabinInventories(java.util.List<CabinInventory> cabinInventories) {
+        this.cabinInventories = cabinInventories != null ? cabinInventories : new java.util.ArrayList<>();
     }
 
     public FlightStatus getStatus() {

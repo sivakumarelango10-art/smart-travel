@@ -53,6 +53,12 @@ public class FlightResponse {
     @Schema(description = "Supported cabin classes")
     private Set<CabinClass> cabinClasses;
 
+    @Schema(description = "Per-cabin inventory and fare pricing tiers")
+    private java.util.List<CabinInventoryDto> cabinInventories;
+
+    @Schema(description = "Selected cabin tier details and calculated multi-passenger fare (if filtered by cabin)")
+    private CabinSelectionResponse selectedCabin;
+
     @Schema(description = "Current flight status", example = "SCHEDULED")
     private FlightStatus status;
 
@@ -87,7 +93,9 @@ public class FlightResponse {
                           AirportDto departureAirport, AirportDto arrivalAirport,
                           Instant departureTime, Instant arrivalTime, Integer durationMinutes,
                           String aircraftModel, BigDecimal basePrice, int totalSeats,
-                          int availableSeats, Set<CabinClass> cabinClasses, FlightStatus status,
+                          int availableSeats, Set<CabinClass> cabinClasses,
+                          java.util.List<CabinInventoryDto> cabinInventories,
+                          CabinSelectionResponse selectedCabin, FlightStatus status,
                           Integer delayMinutes, String delayReason, Instant revisedDepartureTime,
                           Instant estimatedArrival, Instant lastStatusUpdated,
                           boolean active, Instant createdAt, Instant updatedAt) {
@@ -105,6 +113,8 @@ public class FlightResponse {
         this.totalSeats = totalSeats;
         this.availableSeats = availableSeats;
         this.cabinClasses = cabinClasses;
+        this.cabinInventories = cabinInventories;
+        this.selectedCabin = selectedCabin;
         this.status = status;
         this.delayMinutes = delayMinutes;
         this.delayReason = delayReason;
@@ -135,6 +145,8 @@ public class FlightResponse {
         private int totalSeats;
         private int availableSeats;
         private Set<CabinClass> cabinClasses;
+        private java.util.List<CabinInventoryDto> cabinInventories;
+        private CabinSelectionResponse selectedCabin;
         private FlightStatus status;
         private Integer delayMinutes;
         private String delayReason;
@@ -260,10 +272,20 @@ public class FlightResponse {
             return this;
         }
 
+        public Builder cabinInventories(java.util.List<CabinInventoryDto> cabinInventories) {
+            this.cabinInventories = cabinInventories;
+            return this;
+        }
+
+        public Builder selectedCabin(CabinSelectionResponse selectedCabin) {
+            this.selectedCabin = selectedCabin;
+            return this;
+        }
+
         public FlightResponse build() {
             return new FlightResponse(id, flightNumber, airline, airlineCode, departureAirport,
                     arrivalAirport, departureTime, arrivalTime, durationMinutes, aircraftModel,
-                    basePrice, totalSeats, availableSeats, cabinClasses, status,
+                    basePrice, totalSeats, availableSeats, cabinClasses, cabinInventories, selectedCabin, status,
                     delayMinutes, delayReason, revisedDepartureTime, estimatedArrival, lastStatusUpdated,
                     active, createdAt, updatedAt);
         }
@@ -379,6 +401,22 @@ public class FlightResponse {
 
     public void setCabinClasses(Set<CabinClass> cabinClasses) {
         this.cabinClasses = cabinClasses;
+    }
+
+    public java.util.List<CabinInventoryDto> getCabinInventories() {
+        return cabinInventories;
+    }
+
+    public void setCabinInventories(java.util.List<CabinInventoryDto> cabinInventories) {
+        this.cabinInventories = cabinInventories;
+    }
+
+    public CabinSelectionResponse getSelectedCabin() {
+        return selectedCabin;
+    }
+
+    public void setSelectedCabin(CabinSelectionResponse selectedCabin) {
+        this.selectedCabin = selectedCabin;
     }
 
     public FlightStatus getStatus() {

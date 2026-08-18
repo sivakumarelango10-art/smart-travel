@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -206,5 +207,34 @@ class AdminFlightControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/admin/flights/{id}/inventory updates cabin inventories and returns 200 OK")
+    void testUpdateFlightInventorySuccess() throws Exception {
+        com.smarttravel.modules.flight.dto.CabinInventoryDto economy = com.smarttravel.modules.flight.dto.CabinInventoryDto.builder()
+                .cabinClass(CabinClass.ECONOMY)
+                .totalSeats(180)
+                .availableSeats(150)
+                .basePrice(new BigDecimal("5200.00"))
+                .taxAmount(new BigDecimal("624.00"))
+                .feeAmount(new BigDecimal("150.00"))
+                .totalPrice(new BigDecimal("5974.00"))
+                .build();
+
+        com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest req =
+                new com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest(List.of(economy));
+
+        sampleResponse.setCabinInventories(List.of(economy));
+        when(flightService.updateFlightInventory(eq("66c1e101f1a2b3c4d5e6f702"), any(com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest.class)))
+                .thenReturn(sampleResponse);
+
+        mockMvc.perform(put("/api/v1/admin/flights/66c1e101f1a2b3c4d5e6f702/inventory")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.cabinInventories[0].cabinClass").value("ECONOMY"))
+                .andExpect(jsonPath("$.data.cabinInventories[0].totalSeats").value(180));
     }
 }

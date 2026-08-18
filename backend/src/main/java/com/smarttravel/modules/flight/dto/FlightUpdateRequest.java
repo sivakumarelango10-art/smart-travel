@@ -52,6 +52,10 @@ public class FlightUpdateRequest {
     @Schema(description = "Available cabin classes")
     private Set<CabinClass> cabinClasses;
 
+    @Schema(description = "Per-cabin inventory and fare pricing tiers")
+    @jakarta.validation.Valid
+    private java.util.List<CabinInventoryDto> cabinInventories;
+
     @Schema(description = "Flight status", example = "SCHEDULED")
     private FlightStatus status;
 
@@ -65,6 +69,7 @@ public class FlightUpdateRequest {
                                AirportDto arrivalAirport, Instant departureTime, Instant arrivalTime,
                                String aircraftModel, BigDecimal basePrice, Integer totalSeats,
                                Integer availableSeats, Set<CabinClass> cabinClasses,
+                               java.util.List<CabinInventoryDto> cabinInventories,
                                FlightStatus status, Boolean active) {
         this.airline = airline;
         this.airlineCode = airlineCode;
@@ -77,6 +82,7 @@ public class FlightUpdateRequest {
         this.totalSeats = totalSeats;
         this.availableSeats = availableSeats;
         this.cabinClasses = cabinClasses;
+        this.cabinInventories = cabinInventories;
         this.status = status;
         this.active = active;
     }
@@ -97,6 +103,7 @@ public class FlightUpdateRequest {
         private Integer totalSeats;
         private Integer availableSeats;
         private Set<CabinClass> cabinClasses;
+        private java.util.List<CabinInventoryDto> cabinInventories;
         private FlightStatus status;
         private Boolean active;
 
@@ -155,6 +162,11 @@ public class FlightUpdateRequest {
             return this;
         }
 
+        public Builder cabinInventories(java.util.List<CabinInventoryDto> cabinInventories) {
+            this.cabinInventories = cabinInventories;
+            return this;
+        }
+
         public Builder status(FlightStatus status) {
             this.status = status;
             return this;
@@ -168,7 +180,7 @@ public class FlightUpdateRequest {
         public FlightUpdateRequest build() {
             return new FlightUpdateRequest(airline, airlineCode, departureAirport, arrivalAirport,
                     departureTime, arrivalTime, aircraftModel, basePrice, totalSeats,
-                    availableSeats, cabinClasses, status, active);
+                    availableSeats, cabinClasses, cabinInventories, status, active);
         }
     }
 
@@ -258,6 +270,14 @@ public class FlightUpdateRequest {
 
     public void setCabinClasses(Set<CabinClass> cabinClasses) {
         this.cabinClasses = cabinClasses;
+    }
+
+    public java.util.List<CabinInventoryDto> getCabinInventories() {
+        return cabinInventories;
+    }
+
+    public void setCabinInventories(java.util.List<CabinInventoryDto> cabinInventories) {
+        this.cabinInventories = cabinInventories;
     }
 
     public FlightStatus getStatus() {

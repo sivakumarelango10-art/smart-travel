@@ -60,6 +60,9 @@ class FlightServiceTest {
     @Spy
     private FlightStateMachine flightStateMachine = new FlightStateMachine();
 
+    @Spy
+    private FareCalculationService fareCalculationService = new FareCalculationServiceImpl();
+
     @InjectMocks
     private FlightServiceImpl flightService;
 
@@ -311,5 +314,60 @@ class FlightServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals("AI-101", result.getContent().get(0).getFlightNumber());
+    }
+
+    @Test
+    @DisplayName("Admin updates flight cabin inventories successfully")
+    void testUpdateFlightInventory() {
+        when(flightRepository.findById("flight-123")).thenReturn(Optional.of(sampleFlight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.smarttravel.modules.flight.dto.CabinInventoryDto economy = com.smarttravel.modules.flight.dto.CabinInventoryDto.builder()
+                .cabinClass(CabinClass.ECONOMY)
+                .totalSeats(150)
+                .availableSeats(120)
+                .basePrice(new BigDecimal("4500.00"))
+                .taxAmount(new BigDecimal("540.00"))
+                .feeAmount(new BigDecimal("150.00"))
+                .totalPrice(new BigDecimal("5190.00"))
+                .build();
+
+        com.smarttravel.modules.flight.dto.CabinInventoryDto business = com.smarttravel.modules.flight.dto.CabinInventoryDto.builder()
+                .cabinClass(CabinClass.BUSINESS)
+                .totalSeats(30)
+                .availableSeats(20)
+                .basePrice(new BigDecimal("14000.00"))
+                .taxAmount(new BigDecimal("1680.00"))
+                .feeAmount(new BigDecimal("300.00"))
+                .totalPrice(new BigDecimal("15980.00"))
+                .build();
+
+        com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest request =
+                new com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest(List.of(economy, business));
+
+        FlightResponse response = flightService.updateFlightInventory("flight-123", request);
+
+        assertNotNull(response);
+        assertEquals(180, response.getTotalSeats());
+        assertEquals(140, response.getAvailableSeats());
+        assertEquals(2, response.getCabinInventories().size());
+    }
+
+    @Test
+    @DisplayName("Admin inventory update rejects available seats exceeding total seats")
+    void testUpdateFlightInventory_InvalidSeats() {
+        when(flightRepository.findById("flight-123")).thenReturn(Optional.of(sampleFlight));
+
+        com.smarttravel.modules.flight.dto.CabinInventoryDto economy = com.smarttravel.modules.flight.dto.CabinInventoryDto.builder()
+                .cabinClass(CabinClass.ECONOMY)
+                .totalSeats(100)
+                .availableSeats(150)
+                .basePrice(new BigDecimal("4500.00"))
+                .build();
+
+        com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest request =
+                new com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest(List.of(economy));
+
+        assertThrows(BadRequestException.class, () -> flightService.updateFlightInventory("flight-123", request));
     }
 }

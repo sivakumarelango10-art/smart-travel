@@ -1,7 +1,10 @@
 package com.smarttravel.modules.flight.repository;
 
+import com.smarttravel.common.exception.BadRequestException;
+import com.smarttravel.modules.flight.dto.DepartureTimeWindow;
 import com.smarttravel.modules.flight.dto.FlightSearchCriteria;
 import com.smarttravel.modules.flight.model.Flight;
+import com.smarttravel.modules.flight.model.FlightStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +35,18 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
     public Page<Flight> searchFlights(FlightSearchCriteria criteria) {
         List<Criteria> andCriteriaList = new ArrayList<>();
 
+        // Validate origin != destination
+        if (criteria.getOrigin() != null && criteria.getDestination() != null
+                && !criteria.getOrigin().isBlank() && !criteria.getDestination().isBlank()
+                && criteria.getOrigin().trim().equalsIgnoreCase(criteria.getDestination().trim())) {
+            throw new BadRequestException("Origin and destination airport/city must not be identical");
+        }
+
+        int passengers = criteria.getPassengers() > 0 ? criteria.getPassengers() : 1;
+        if (passengers > 9) {
+            throw new BadRequestException("Passenger count cannot exceed 9 per booking search");
+        }
+
         // Always filter by active flights
         andCriteriaList.add(Criteria.where("active").is(true));
 
@@ -51,12 +66,18 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
             andCriteriaList.add(new Criteria().orOperator(codeMatch, cityMatch));
         }
 
-        // Departure Date filter (UTC day range)
+        // Departure Date and Time Window filter
         if (criteria.getDepartureDate() != null) {
             LocalDate date = criteria.getDepartureDate();
-            Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-            Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-            andCriteriaList.add(Criteria.where("departureTime").gte(startOfDay).lt(endOfDay));
+            if (criteria.getDepartureTimeWindow() != null && criteria.getDepartureTimeWindow() != DepartureTimeWindow.ALL) {
+                Instant windowStart = date.atTime(criteria.getDepartureTimeWindow().getStartTime()).atZone(ZoneOffset.UTC).toInstant();
+                Instant windowEnd = date.atTime(criteria.getDepartureTimeWindow().getEndTime()).atZone(ZoneOffset.UTC).toInstant();
+                andCriteriaList.add(Criteria.where("departureTime").gte(windowStart).lte(windowEnd));
+            } else {
+                Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+                Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+                andCriteriaList.add(Criteria.where("departureTime").gte(startOfDay).lt(endOfDay));
+            }
         }
 
         // Airline filter
@@ -64,9 +85,33 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
             andCriteriaList.add(Criteria.where("airline").regex(Pattern.quote(criteria.getAirline().trim()), "i"));
         }
 
-        // Cabin Class filter
+        // Cabin Class & Passenger Availability filter
         if (criteria.getCabinClass() != null) {
-            andCriteriaList.add(Criteria.where("cabinClasses").is(criteria.getCabinClass()));
+            Criteria cabinInventoryMatch = Criteria.where("cabinInventories").elemMatch(
+                    Criteria.where("cabinClass").is(criteria.getCabinClass())
+                            .and("availableSeats").gte(passengers)
+            );
+            Criteria legacyCabinMatch = new Criteria().andOperator(
+                    new Criteria().orOperator(
+                            Criteria.where("cabinInventories").exists(false),
+                            Criteria.where("cabinInventories").is(java.util.Collections.emptyList()),
+                            Criteria.where("cabinInventories").size(0)
+                    ),
+                    Criteria.where("cabinClasses").is(criteria.getCabinClass()),
+                    Criteria.where("availableSeats").gte(passengers)
+            );
+            andCriteriaList.add(new Criteria().orOperator(cabinInventoryMatch, legacyCabinMatch));
+        } else if (passengers > 1) {
+            Criteria anyCabinAvail = Criteria.where("cabinInventories.availableSeats").gte(passengers);
+            Criteria legacyAvail = new Criteria().andOperator(
+                    new Criteria().orOperator(
+                            Criteria.where("cabinInventories").exists(false),
+                            Criteria.where("cabinInventories").is(java.util.Collections.emptyList()),
+                            Criteria.where("cabinInventories").size(0)
+                    ),
+                    Criteria.where("availableSeats").gte(passengers)
+            );
+            andCriteriaList.add(new Criteria().orOperator(anyCabinAvail, legacyAvail));
         }
 
         // Price range filter
@@ -78,9 +123,11 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
             andCriteriaList.add(Criteria.where("basePrice").lte(criteria.getMaxPrice()));
         }
 
-        // Status filter
+        // Status filter (exclude cancelled/arrived/diverted by default if not explicitly specified)
         if (criteria.getStatus() != null) {
             andCriteriaList.add(Criteria.where("status").is(criteria.getStatus()));
+        } else {
+            andCriteriaList.add(Criteria.where("status").nin(FlightStatus.CANCELLED, FlightStatus.ARRIVED, FlightStatus.DIVERTED));
         }
 
         Query query = new Query();
@@ -92,12 +139,10 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
         long total = mongoTemplate.count(query, Flight.class);
 
         // Sorting
-        String sortBy = mapSortField(criteria.getSortBy());
-        Sort.Direction direction = "desc".equalsIgnoreCase(criteria.getSortDirection()) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Sort sort = Sort.by(direction, sortBy);
+        Sort sort = buildSort(criteria.getSortBy(), criteria.getSortDirection());
 
         int pageNum = Math.max(0, criteria.getPage());
-        int pageSize = criteria.getSize() > 0 ? criteria.getSize() : 20;
+        int pageSize = criteria.getSize() > 0 ? Math.min(criteria.getSize(), 100) : 20;
         Pageable pageable = PageRequest.of(pageNum, pageSize, sort);
 
         query.with(pageable);
@@ -106,17 +151,23 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
         return new PageImpl<>(flights, pageable, total);
     }
 
-    private String mapSortField(String sortBy) {
+    private Sort buildSort(String sortBy, String sortDirection) {
         if (sortBy == null || sortBy.isBlank()) {
-            return "departureTime";
+            return Sort.by(Sort.Direction.ASC, "departureTime");
         }
-        return switch (sortBy.trim().toLowerCase()) {
-            case "price", "baseprice" -> "basePrice";
-            case "duration", "durationminutes" -> "durationMinutes";
-            case "arrival", "arrivaltime" -> "arrivalTime";
-            case "airline" -> "airline";
-            case "createdat" -> "createdAt";
-            default -> "departureTime";
+
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        return switch (sortBy.trim().toUpperCase()) {
+            case "CHEAPEST", "PRICE", "BASEPRICE" -> Sort.by(Sort.Direction.ASC, "basePrice");
+            case "FASTEST", "DURATION", "DURATIONMINUTES" -> Sort.by(Sort.Direction.ASC, "durationMinutes");
+            case "EARLIEST_DEPARTURE" -> Sort.by(Sort.Direction.ASC, "departureTime");
+            case "LATEST_DEPARTURE" -> Sort.by(Sort.Direction.DESC, "departureTime");
+            case "BEST" -> Sort.by(Sort.Order.asc("durationMinutes"), Sort.Order.asc("basePrice"));
+            case "ARRIVAL", "ARRIVALTIME" -> Sort.by(direction, "arrivalTime");
+            case "AIRLINE" -> Sort.by(direction, "airline");
+            case "CREATEDAT" -> Sort.by(direction, "createdAt");
+            default -> Sort.by(direction, "departureTime");
         };
     }
 }
