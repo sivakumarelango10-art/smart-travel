@@ -4,12 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smarttravel.modules.auth.controller.AuthController;
 import com.smarttravel.modules.auth.dto.UserResponse;
 import com.smarttravel.modules.auth.service.AuthService;
+import com.smarttravel.modules.flight.controller.AdminFlightController;
+import com.smarttravel.modules.flight.controller.FlightController;
+import com.smarttravel.modules.flight.dto.FlightCreateRequest;
+import com.smarttravel.modules.flight.dto.FlightResponse;
+import com.smarttravel.modules.flight.service.FlightService;
 import com.smarttravel.modules.health.controller.HealthController;
 import com.smarttravel.modules.user.model.AccountStatus;
 import org.bson.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -26,16 +32,19 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
+@WebMvcTest(excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class })
 @Import({
         SecurityConfig.class,
         JwtAuthenticationFilter.class,
         SecurityAccessTest.ProtectedSampleController.class,
         HealthController.class,
-        AuthController.class
+        AuthController.class,
+        FlightController.class,
+        AdminFlightController.class
 })
 class SecurityAccessTest {
 
@@ -53,6 +62,9 @@ class SecurityAccessTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private FlightService flightService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -85,6 +97,14 @@ class SecurityAccessTest {
     }
 
     @Test
+    @DisplayName("Public endpoint /api/v1/flights should be accessible without authentication")
+    void testPublicFlightSearch() throws Exception {
+        mockMvc.perform(get("/api/v1/flights")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Protected endpoint without credentials should return 401 Unauthorized")
     void testProtectedEndpointUnauthenticated() throws Exception {
         mockMvc.perform(get("/api/v1/protected/user-data")
@@ -92,6 +112,28 @@ class SecurityAccessTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"));
+    }
+
+    @Test
+    @DisplayName("Admin mutation endpoint without credentials should return 401 Unauthorized")
+    void testAdminFlightMutationUnauthenticated() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/flights")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
+    @WithMockUser(username = "traveler@smarttravel.com", roles = {"USER"})
+    @DisplayName("USER role accessing ADMIN flight mutation should return 403 Forbidden")
+    void testUserRoleForbiddenForAdminFlightMutation() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/flights")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value("Forbidden"));
     }
 
     @Test

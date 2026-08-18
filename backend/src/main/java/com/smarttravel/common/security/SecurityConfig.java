@@ -100,6 +100,10 @@ public class SecurityConfig {
                                 "/api/auth/login", "/api/v1/auth/login",
                                 "/api/auth/refresh-token", "/api/v1/auth/refresh-token"
                         ).permitAll()
+                        // Public Flight Catalog & Search (GET only)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/flights/**").permitAll()
+                        // Admin Endpoints
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // WebSocket Handshake Endpoint
                         .requestMatchers("/ws/**").permitAll()
                         // Error Dispatch

@@ -43,6 +43,22 @@ public class PageResponse<T> {
         );
     }
 
+    public static <T> PageResponse<T> of(List<T> content, Page<?> page) {
+        return new PageResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast(),
+                page.isFirst()
+        );
+    }
+
+    public static <T> PageResponse<T> of(List<T> content, int pageNumber, int pageSize, long totalElements, int totalPages, boolean last, boolean first) {
+        return new PageResponse<>(content, pageNumber, pageSize, totalElements, totalPages, last, first);
+    }
+
     public List<T> getContent() {
         return content;
     }
