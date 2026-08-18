@@ -175,4 +175,36 @@ class AdminFlightControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.status").value("DELAYED"));
     }
+
+    @Test
+    @DisplayName("PATCH /api/v1/admin/flights/{id}/status returns 409 Conflict on invalid state transition")
+    void testUpdateFlightStatusConflict() throws Exception {
+        FlightStatusUpdateRequest req = new FlightStatusUpdateRequest(FlightStatus.SCHEDULED);
+
+        when(flightService.updateFlightStatus(eq("66c1e101f1a2b3c4d5e6f702"), any(FlightStatusUpdateRequest.class)))
+                .thenThrow(new com.smarttravel.common.exception.InvalidStateTransitionException("Invalid flight status transition from ARRIVED to SCHEDULED"));
+
+        mockMvc.perform(patch("/api/v1/admin/flights/66c1e101f1a2b3c4d5e6f702/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value("Invalid flight status transition from ARRIVED to SCHEDULED"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/v1/admin/flights/{id}/status returns 400 Bad Request on invalid delay payload")
+    void testUpdateFlightStatusBadRequest() throws Exception {
+        FlightStatusUpdateRequest req = FlightStatusUpdateRequest.builder()
+                .status(FlightStatus.DELAYED)
+                .delayMinutes(-5)
+                .build();
+
+        mockMvc.perform(patch("/api/v1/admin/flights/66c1e101f1a2b3c4d5e6f702/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
 }

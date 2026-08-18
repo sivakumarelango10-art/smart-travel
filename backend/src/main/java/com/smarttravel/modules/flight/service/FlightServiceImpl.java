@@ -1,8 +1,10 @@
 package com.smarttravel.modules.flight.service;
 
+import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.DuplicateResourceException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.common.response.PageResponse;
+import com.smarttravel.common.security.SecurityUtils;
 import com.smarttravel.modules.flight.dto.FlightCreateRequest;
 import com.smarttravel.modules.flight.dto.FlightResponse;
 import com.smarttravel.modules.flight.dto.FlightSearchCriteria;
@@ -10,13 +12,18 @@ import com.smarttravel.modules.flight.dto.FlightStatusUpdateRequest;
 import com.smarttravel.modules.flight.dto.FlightUpdateRequest;
 import com.smarttravel.modules.flight.mapper.FlightMapper;
 import com.smarttravel.modules.flight.model.Flight;
+import com.smarttravel.modules.flight.model.FlightStatus;
+import com.smarttravel.modules.flight.model.FlightStatusHistory;
 import com.smarttravel.modules.flight.repository.FlightRepository;
+import com.smarttravel.modules.flight.repository.FlightStatusHistoryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -25,9 +32,15 @@ public class FlightServiceImpl implements FlightService {
     private static final Logger log = LoggerFactory.getLogger(FlightServiceImpl.class);
 
     private final FlightRepository flightRepository;
+    private final FlightStatusHistoryRepository flightStatusHistoryRepository;
+    private final FlightStateMachine flightStateMachine;
 
-    public FlightServiceImpl(FlightRepository flightRepository) {
+    public FlightServiceImpl(FlightRepository flightRepository,
+                             FlightStatusHistoryRepository flightStatusHistoryRepository,
+                             FlightStateMachine flightStateMachine) {
         this.flightRepository = flightRepository;
+        this.flightStatusHistoryRepository = flightStatusHistoryRepository;
+        this.flightStateMachine = flightStateMachine;
     }
 
     @Override
@@ -42,6 +55,7 @@ public class FlightServiceImpl implements FlightService {
         }
 
         Flight flight = FlightMapper.toEntity(request);
+        flight.setLastStatusUpdated(Instant.now());
         Flight savedFlight = flightRepository.save(flight);
         log.info("Flight created successfully with ID: {} and number: {}", savedFlight.getId(), savedFlight.getFlightNumber());
 
@@ -84,10 +98,69 @@ public class FlightServiceImpl implements FlightService {
         Flight flight = flightRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", id));
 
-        flight.setStatus(request.getStatus());
-        Flight savedFlight = flightRepository.save(flight);
-        log.info("Flight status for ID: {} updated to {}", id, savedFlight.getStatus());
+        FlightStatus previousStatus = flight.getStatus();
+        FlightStatus newStatus = request.getStatus();
 
+        // 1. Validate State Machine Transition
+        flightStateMachine.validateTransition(previousStatus, newStatus);
+
+        // 2. Handle Delay Parameters & Timestamps
+        if (newStatus == FlightStatus.DELAYED) {
+            if (request.getDelayMinutes() == null || request.getDelayMinutes() < 0) {
+                throw new BadRequestException("Delay minutes must be non-negative when status is DELAYED");
+            }
+            if (request.getDelayReason() == null || request.getDelayReason().isBlank()) {
+                throw new BadRequestException("Delay reason is required when status is DELAYED");
+            }
+
+            Instant revisedDep = request.getRevisedDepartureTime();
+            if (revisedDep == null) {
+                revisedDep = flight.getDepartureTime().plus(request.getDelayMinutes(), ChronoUnit.MINUTES);
+            } else if (revisedDep.isBefore(flight.getDepartureTime())) {
+                throw new BadRequestException("Revised departure time cannot be earlier than scheduled departure time");
+            }
+
+            Instant estArr = request.getEstimatedArrival();
+            if (estArr == null) {
+                estArr = flight.getArrivalTime().plus(request.getDelayMinutes(), ChronoUnit.MINUTES);
+            } else if (!estArr.isAfter(revisedDep)) {
+                throw new BadRequestException("Estimated arrival time must be after revised departure time");
+            }
+
+            flight.setDelayMinutes(request.getDelayMinutes());
+            flight.setDelayReason(request.getDelayReason().trim());
+            flight.setRevisedDepartureTime(revisedDep);
+            flight.setEstimatedArrival(estArr);
+        } else if (newStatus == FlightStatus.ON_TIME) {
+            flight.setDelayMinutes(0);
+            flight.setDelayReason(null);
+            flight.setRevisedDepartureTime(flight.getDepartureTime());
+            flight.setEstimatedArrival(flight.getArrivalTime());
+        }
+
+        Instant now = Instant.now();
+        flight.setStatus(newStatus);
+        flight.setLastStatusUpdated(now);
+
+        Flight savedFlight = flightRepository.save(flight);
+
+        // 3. Create Audit History Record
+        String adminUser = SecurityUtils.getCurrentUsernameOrAnonymous();
+        FlightStatusHistory history = FlightStatusHistory.builder()
+                .flightId(savedFlight.getId())
+                .flightNumber(savedFlight.getFlightNumber())
+                .previousStatus(previousStatus)
+                .newStatus(newStatus)
+                .delayMinutes(savedFlight.getDelayMinutes())
+                .delayReason(savedFlight.getDelayReason())
+                .revisedDepartureTime(savedFlight.getRevisedDepartureTime())
+                .estimatedArrival(savedFlight.getEstimatedArrival())
+                .changedAt(now)
+                .changedBy(adminUser)
+                .build();
+        flightStatusHistoryRepository.save(history);
+
+        log.info("Flight status for ID: {} updated from {} to {} by {}", id, previousStatus, newStatus, adminUser);
         return FlightMapper.toResponse(savedFlight);
     }
 

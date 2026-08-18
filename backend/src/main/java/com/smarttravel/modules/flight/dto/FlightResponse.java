@@ -29,10 +29,10 @@ public class FlightResponse {
     @Schema(description = "Arrival airport details")
     private AirportDto arrivalAirport;
 
-    @Schema(description = "Scheduled UTC departure time", example = "2026-08-20T18:30:00Z")
+    @Schema(description = "Scheduled UTC departure time (original schedule intact)", example = "2026-08-20T18:30:00Z")
     private Instant departureTime;
 
-    @Schema(description = "Scheduled UTC arrival time", example = "2026-08-20T20:45:00Z")
+    @Schema(description = "Scheduled UTC arrival time (original schedule intact)", example = "2026-08-20T20:45:00Z")
     private Instant arrivalTime;
 
     @Schema(description = "Flight duration in minutes (calculated server-side)", example = "135")
@@ -56,6 +56,21 @@ public class FlightResponse {
     @Schema(description = "Current flight status", example = "SCHEDULED")
     private FlightStatus status;
 
+    @Schema(description = "Delay duration in minutes (if delayed)", example = "45")
+    private Integer delayMinutes;
+
+    @Schema(description = "Reason for delay", example = "Weather conditions at destination")
+    private String delayReason;
+
+    @Schema(description = "Revised departure timestamp", example = "2026-08-20T19:15:00Z")
+    private Instant revisedDepartureTime;
+
+    @Schema(description = "Estimated arrival timestamp", example = "2026-08-20T21:30:00Z")
+    private Instant estimatedArrival;
+
+    @Schema(description = "Timestamp of last status modification", example = "2026-08-18T10:00:00Z")
+    private Instant lastStatusUpdated;
+
     @Schema(description = "Active / published status", example = "true")
     private boolean active;
 
@@ -73,6 +88,8 @@ public class FlightResponse {
                           Instant departureTime, Instant arrivalTime, Integer durationMinutes,
                           String aircraftModel, BigDecimal basePrice, int totalSeats,
                           int availableSeats, Set<CabinClass> cabinClasses, FlightStatus status,
+                          Integer delayMinutes, String delayReason, Instant revisedDepartureTime,
+                          Instant estimatedArrival, Instant lastStatusUpdated,
                           boolean active, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.flightNumber = flightNumber;
@@ -89,6 +106,11 @@ public class FlightResponse {
         this.availableSeats = availableSeats;
         this.cabinClasses = cabinClasses;
         this.status = status;
+        this.delayMinutes = delayMinutes;
+        this.delayReason = delayReason;
+        this.revisedDepartureTime = revisedDepartureTime;
+        this.estimatedArrival = estimatedArrival;
+        this.lastStatusUpdated = lastStatusUpdated;
         this.active = active;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -114,6 +136,11 @@ public class FlightResponse {
         private int availableSeats;
         private Set<CabinClass> cabinClasses;
         private FlightStatus status;
+        private Integer delayMinutes;
+        private String delayReason;
+        private Instant revisedDepartureTime;
+        private Instant estimatedArrival;
+        private Instant lastStatusUpdated;
         private boolean active;
         private Instant createdAt;
         private Instant updatedAt;
@@ -193,6 +220,31 @@ public class FlightResponse {
             return this;
         }
 
+        public Builder delayMinutes(Integer delayMinutes) {
+            this.delayMinutes = delayMinutes;
+            return this;
+        }
+
+        public Builder delayReason(String delayReason) {
+            this.delayReason = delayReason;
+            return this;
+        }
+
+        public Builder revisedDepartureTime(Instant revisedDepartureTime) {
+            this.revisedDepartureTime = revisedDepartureTime;
+            return this;
+        }
+
+        public Builder estimatedArrival(Instant estimatedArrival) {
+            this.estimatedArrival = estimatedArrival;
+            return this;
+        }
+
+        public Builder lastStatusUpdated(Instant lastStatusUpdated) {
+            this.lastStatusUpdated = lastStatusUpdated;
+            return this;
+        }
+
         public Builder active(boolean active) {
             this.active = active;
             return this;
@@ -211,7 +263,9 @@ public class FlightResponse {
         public FlightResponse build() {
             return new FlightResponse(id, flightNumber, airline, airlineCode, departureAirport,
                     arrivalAirport, departureTime, arrivalTime, durationMinutes, aircraftModel,
-                    basePrice, totalSeats, availableSeats, cabinClasses, status, active, createdAt, updatedAt);
+                    basePrice, totalSeats, availableSeats, cabinClasses, status,
+                    delayMinutes, delayReason, revisedDepartureTime, estimatedArrival, lastStatusUpdated,
+                    active, createdAt, updatedAt);
         }
     }
 
@@ -333,6 +387,46 @@ public class FlightResponse {
 
     public void setStatus(FlightStatus status) {
         this.status = status;
+    }
+
+    public Integer getDelayMinutes() {
+        return delayMinutes;
+    }
+
+    public void setDelayMinutes(Integer delayMinutes) {
+        this.delayMinutes = delayMinutes;
+    }
+
+    public String getDelayReason() {
+        return delayReason;
+    }
+
+    public void setDelayReason(String delayReason) {
+        this.delayReason = delayReason;
+    }
+
+    public Instant getRevisedDepartureTime() {
+        return revisedDepartureTime;
+    }
+
+    public void setRevisedDepartureTime(Instant revisedDepartureTime) {
+        this.revisedDepartureTime = revisedDepartureTime;
+    }
+
+    public Instant getEstimatedArrival() {
+        return estimatedArrival;
+    }
+
+    public void setEstimatedArrival(Instant estimatedArrival) {
+        this.estimatedArrival = estimatedArrival;
+    }
+
+    public Instant getLastStatusUpdated() {
+        return lastStatusUpdated;
+    }
+
+    public void setLastStatusUpdated(Instant lastStatusUpdated) {
+        this.lastStatusUpdated = lastStatusUpdated;
     }
 
     public boolean isActive() {

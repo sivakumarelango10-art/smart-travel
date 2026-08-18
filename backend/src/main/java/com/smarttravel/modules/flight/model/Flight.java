@@ -58,6 +58,16 @@ public class Flight {
 
     private FlightStatus status = FlightStatus.SCHEDULED;
 
+    private Integer delayMinutes;
+
+    private String delayReason;
+
+    private Instant revisedDepartureTime;
+
+    private Instant estimatedArrival;
+
+    private Instant lastStatusUpdated;
+
     private boolean active = true;
 
     @CreatedDate
@@ -73,7 +83,9 @@ public class Flight {
                   AirportInfo departureAirport, AirportInfo arrivalAirport,
                   Instant departureTime, Instant arrivalTime, Integer durationMinutes,
                   String aircraftModel, BigDecimal basePrice, int totalSeats, int availableSeats,
-                  Set<CabinClass> cabinClasses, FlightStatus status, boolean active,
+                  Set<CabinClass> cabinClasses, FlightStatus status,
+                  Integer delayMinutes, String delayReason, Instant revisedDepartureTime,
+                  Instant estimatedArrival, Instant lastStatusUpdated, boolean active,
                   Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.flightNumber = flightNumber;
@@ -90,6 +102,11 @@ public class Flight {
         this.availableSeats = availableSeats;
         this.cabinClasses = cabinClasses != null ? cabinClasses : new HashSet<>();
         this.status = status != null ? status : FlightStatus.SCHEDULED;
+        this.delayMinutes = delayMinutes;
+        this.delayReason = delayReason;
+        this.revisedDepartureTime = revisedDepartureTime;
+        this.estimatedArrival = estimatedArrival;
+        this.lastStatusUpdated = lastStatusUpdated;
         this.active = active;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -115,6 +132,11 @@ public class Flight {
         private int availableSeats;
         private Set<CabinClass> cabinClasses = new HashSet<>();
         private FlightStatus status = FlightStatus.SCHEDULED;
+        private Integer delayMinutes;
+        private String delayReason;
+        private Instant revisedDepartureTime;
+        private Instant estimatedArrival;
+        private Instant lastStatusUpdated;
         private boolean active = true;
         private Instant createdAt;
         private Instant updatedAt;
@@ -194,6 +216,31 @@ public class Flight {
             return this;
         }
 
+        public Builder delayMinutes(Integer delayMinutes) {
+            this.delayMinutes = delayMinutes;
+            return this;
+        }
+
+        public Builder delayReason(String delayReason) {
+            this.delayReason = delayReason;
+            return this;
+        }
+
+        public Builder revisedDepartureTime(Instant revisedDepartureTime) {
+            this.revisedDepartureTime = revisedDepartureTime;
+            return this;
+        }
+
+        public Builder estimatedArrival(Instant estimatedArrival) {
+            this.estimatedArrival = estimatedArrival;
+            return this;
+        }
+
+        public Builder lastStatusUpdated(Instant lastStatusUpdated) {
+            this.lastStatusUpdated = lastStatusUpdated;
+            return this;
+        }
+
         public Builder active(boolean active) {
             this.active = active;
             return this;
@@ -212,7 +259,8 @@ public class Flight {
         public Flight build() {
             return new Flight(id, flightNumber, airline, airlineCode, departureAirport, arrivalAirport,
                     departureTime, arrivalTime, durationMinutes, aircraftModel, basePrice,
-                    totalSeats, availableSeats, cabinClasses, status, active, createdAt, updatedAt);
+                    totalSeats, availableSeats, cabinClasses, status, delayMinutes, delayReason,
+                    revisedDepartureTime, estimatedArrival, lastStatusUpdated, active, createdAt, updatedAt);
         }
     }
 
@@ -336,6 +384,46 @@ public class Flight {
         this.status = status;
     }
 
+    public Integer getDelayMinutes() {
+        return delayMinutes;
+    }
+
+    public void setDelayMinutes(Integer delayMinutes) {
+        this.delayMinutes = delayMinutes;
+    }
+
+    public String getDelayReason() {
+        return delayReason;
+    }
+
+    public void setDelayReason(String delayReason) {
+        this.delayReason = delayReason;
+    }
+
+    public Instant getRevisedDepartureTime() {
+        return revisedDepartureTime;
+    }
+
+    public void setRevisedDepartureTime(Instant revisedDepartureTime) {
+        this.revisedDepartureTime = revisedDepartureTime;
+    }
+
+    public Instant getEstimatedArrival() {
+        return estimatedArrival;
+    }
+
+    public void setEstimatedArrival(Instant estimatedArrival) {
+        this.estimatedArrival = estimatedArrival;
+    }
+
+    public Instant getLastStatusUpdated() {
+        return lastStatusUpdated;
+    }
+
+    public void setLastStatusUpdated(Instant lastStatusUpdated) {
+        this.lastStatusUpdated = lastStatusUpdated;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -380,6 +468,7 @@ public class Flight {
                 ", flightNumber='" + flightNumber + '\'' +
                 ", airline='" + airline + '\'' +
                 ", status=" + status +
+                ", delayMinutes=" + delayMinutes +
                 ", departureTime=" + departureTime +
                 ", arrivalTime=" + arrivalTime +
                 ", active=" + active +

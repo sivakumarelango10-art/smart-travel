@@ -34,4 +34,16 @@ public final class SecurityUtils {
         return authentication != null && authentication.isAuthenticated() &&
                 !(authentication.getPrincipal() instanceof String && "anonymousUser".equals(authentication.getPrincipal()));
     }
+
+    public static String getCurrentUsernameOrAnonymous() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "system";
+        }
+        if (authentication.getPrincipal() instanceof UserPrincipal principal) {
+            return principal.getEmail();
+        }
+        String name = authentication.getName();
+        return (name != null && !name.isBlank() && !"anonymousUser".equals(name)) ? name : "system";
+    }
 }

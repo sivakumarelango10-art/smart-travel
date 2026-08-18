@@ -1,6 +1,7 @@
 package com.smarttravel.modules.flight;
 
 import com.smarttravel.SmartTravelApplication;
+import com.smarttravel.common.exception.InvalidStateTransitionException;
 import com.smarttravel.common.response.PageResponse;
 import com.smarttravel.modules.flight.dto.AirportDto;
 import com.smarttravel.modules.flight.dto.FlightCreateRequest;
@@ -10,7 +11,9 @@ import com.smarttravel.modules.flight.dto.FlightStatusUpdateRequest;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
+import com.smarttravel.modules.flight.model.FlightStatusHistory;
 import com.smarttravel.modules.flight.repository.FlightRepository;
+import com.smarttravel.modules.flight.repository.FlightStatusHistoryRepository;
 import com.smarttravel.modules.flight.service.FlightService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +27,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -45,16 +50,22 @@ class FlightIntegrationTest {
     @Autowired
     private FlightRepository flightRepository;
 
+    @Autowired
+    private FlightStatusHistoryRepository flightStatusHistoryRepository;
+
     private static final String TEST_FLIGHT_NUM = "IT-999";
 
     @BeforeEach
     @AfterEach
     void cleanup() {
-        flightRepository.findByFlightNumber(TEST_FLIGHT_NUM).ifPresent(flightRepository::delete);
+        flightRepository.findByFlightNumber(TEST_FLIGHT_NUM).ifPresent(f -> {
+            flightStatusHistoryRepository.deleteAll(flightStatusHistoryRepository.findByFlightIdOrderByChangedAtDesc(f.getId()));
+            flightRepository.delete(f);
+        });
     }
 
     @Test
-    @DisplayName("End-to-End Flight Flow: Create, MongoDB persistence verification, multi-criteria search, status update, and soft delete")
+    @DisplayName("End-to-End Flight Flow: Create, persistence, multi-criteria search, state machine transitions, audit history, and soft delete")
     void testEndToEndFlightFlow() {
         Instant departure = LocalDate.now(ZoneOffset.UTC).plusDays(3).atTime(10, 0).toInstant(ZoneOffset.UTC);
         Instant arrival = departure.plus(2, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES);
@@ -106,6 +117,8 @@ class FlightIntegrationTest {
         assertEquals("Integration Airways", persisted.getAirline());
         assertEquals("DEL", persisted.getDepartureAirport().getCode());
         assertEquals("BOM", persisted.getArrivalAirport().getCode());
+        assertEquals(departure, persisted.getDepartureTime()); // Original schedule intact
+        assertEquals(arrival, persisted.getArrivalTime());     // Original schedule intact
         assertEquals(135, persisted.getDurationMinutes());
         assertTrue(persisted.isActive());
 
@@ -121,12 +134,45 @@ class FlightIntegrationTest {
         assertNotNull(searchResults);
         assertTrue(searchResults.getContent().stream().anyMatch(f -> f.getFlightNumber().equals(TEST_FLIGHT_NUM)));
 
-        // 4. Update Status to DELAYED
-        FlightStatusUpdateRequest statusReq = new FlightStatusUpdateRequest(FlightStatus.DELAYED);
-        FlightResponse statusUpdated = flightService.updateFlightStatus(created.getId(), statusReq);
-        assertEquals(FlightStatus.DELAYED, statusUpdated.getStatus());
+        // 4. Update Status to DELAYED with delay details
+        FlightStatusUpdateRequest delayReq = FlightStatusUpdateRequest.builder()
+                .status(FlightStatus.DELAYED)
+                .delayMinutes(40)
+                .delayReason("Technical inspection at gate")
+                .build();
 
-        // 5. Delete (soft delete)
+        FlightResponse statusUpdated = flightService.updateFlightStatus(created.getId(), delayReq);
+        assertEquals(FlightStatus.DELAYED, statusUpdated.getStatus());
+        assertEquals(40, statusUpdated.getDelayMinutes());
+        assertEquals("Technical inspection at gate", statusUpdated.getDelayReason());
+        assertEquals(departure.plus(40, ChronoUnit.MINUTES), statusUpdated.getRevisedDepartureTime());
+        assertEquals(arrival.plus(40, ChronoUnit.MINUTES), statusUpdated.getEstimatedArrival());
+
+        // Verify original schedule remains intact on persisted flight document
+        Flight flightAfterDelay = flightRepository.findById(created.getId()).orElseThrow();
+        assertEquals(departure, flightAfterDelay.getDepartureTime());
+        assertEquals(arrival, flightAfterDelay.getArrivalTime());
+
+        // 5. Verify Status History persistence in MongoDB
+        List<FlightStatusHistory> histories = flightStatusHistoryRepository.findByFlightIdOrderByChangedAtDesc(created.getId());
+        assertFalse(histories.isEmpty());
+        FlightStatusHistory latestHistory = histories.get(0);
+        assertEquals(FlightStatus.SCHEDULED, latestHistory.getPreviousStatus());
+        assertEquals(FlightStatus.DELAYED, latestHistory.getNewStatus());
+        assertEquals(40, latestHistory.getDelayMinutes());
+        assertEquals("Technical inspection at gate", latestHistory.getDelayReason());
+        assertNotNull(latestHistory.getChangedBy());
+
+        // 6. Transition to BOARDING (from DELAYED) -> valid
+        FlightStatusUpdateRequest boardingReq = new FlightStatusUpdateRequest(FlightStatus.BOARDING);
+        FlightResponse boardingResp = flightService.updateFlightStatus(created.getId(), boardingReq);
+        assertEquals(FlightStatus.BOARDING, boardingResp.getStatus());
+
+        // 7. Transition to ARRIVED directly from BOARDING -> Invalid transition!
+        FlightStatusUpdateRequest illegalReq = new FlightStatusUpdateRequest(FlightStatus.ARRIVED);
+        assertThrows(InvalidStateTransitionException.class, () -> flightService.updateFlightStatus(created.getId(), illegalReq));
+
+        // 8. Delete (soft delete)
         flightService.deleteFlight(created.getId());
         Optional<Flight> afterDeleteOpt = flightRepository.findById(created.getId());
         assertTrue(afterDeleteOpt.isPresent());
