@@ -35,6 +35,18 @@ smarttravel:
       delay-probability: ${FLIGHT_SIMULATION_DELAY_PROBABILITY:0.25}
       min-delay-minutes: ${FLIGHT_SIMULATION_MIN_DELAY:15}
       max-delay-minutes: ${FLIGHT_SIMULATION_MAX_DELAY:120}
+  booking:
+    payment-timeout-minutes: ${BOOKING_PAYMENT_TIMEOUT_MINUTES:15}
+    expiration:
+      enabled: ${BOOKING_EXPIRATION_ENABLED:false}
+      fixed-delay-ms: ${BOOKING_EXPIRATION_FIXED_DELAY_MS:60000}
+  payment:
+    razorpay:
+      enabled: ${RAZORPAY_ENABLED:false}
+      key-id: ${RAZORPAY_KEY_ID:}
+      key-secret: ${RAZORPAY_KEY_SECRET:}
+      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+      currency: ${RAZORPAY_CURRENCY:INR}
 
 # OpenAPI / Swagger Configuration
 springdoc:

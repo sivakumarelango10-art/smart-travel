@@ -23,7 +23,8 @@ import java.util.Objects;
 @Document(collection = "bookings")
 @CompoundIndexes({
         @CompoundIndex(name = "booking_user_created_idx", def = "{'userId': 1, 'createdAt': -1}"),
-        @CompoundIndex(name = "booking_flight_status_idx", def = "{'flightId': 1, 'status': 1}")
+        @CompoundIndex(name = "booking_flight_status_idx", def = "{'flightId': 1, 'status': 1}"),
+        @CompoundIndex(name = "booking_status_expires_idx", def = "{'status': 1, 'expiresAt': 1}")
 })
 public class Booking {
 

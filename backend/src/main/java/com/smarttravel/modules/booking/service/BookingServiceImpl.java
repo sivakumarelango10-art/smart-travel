@@ -4,6 +4,7 @@ import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.common.response.PageResponse;
+import com.smarttravel.modules.booking.config.BookingProperties;
 import com.smarttravel.modules.booking.dto.BookingCancelRequest;
 import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;
@@ -53,6 +54,26 @@ public class BookingServiceImpl implements BookingService {
     private final BookingStateMachine stateMachine;
     private final PnrGenerator pnrGenerator;
     private final BookingMapper bookingMapper;
+    private final BookingProperties bookingProperties;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                              FlightRepository flightRepository,
+                              FlightInventoryReservationService reservationService,
+                              FareCalculationService fareCalculationService,
+                              BookingStateMachine stateMachine,
+                              PnrGenerator pnrGenerator,
+                              BookingMapper bookingMapper,
+                              BookingProperties bookingProperties) {
+        this.bookingRepository = bookingRepository;
+        this.flightRepository = flightRepository;
+        this.reservationService = reservationService;
+        this.fareCalculationService = fareCalculationService;
+        this.stateMachine = stateMachine;
+        this.pnrGenerator = pnrGenerator;
+        this.bookingMapper = bookingMapper;
+        this.bookingProperties = bookingProperties;
+    }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               FlightRepository flightRepository,
@@ -61,13 +82,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this.bookingRepository = bookingRepository;
-        this.flightRepository = flightRepository;
-        this.reservationService = reservationService;
-        this.fareCalculationService = fareCalculationService;
-        this.stateMachine = stateMachine;
-        this.pnrGenerator = pnrGenerator;
-        this.bookingMapper = bookingMapper;
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties());
     }
 
     @Override
@@ -118,6 +133,10 @@ public class BookingServiceImpl implements BookingService {
         // 6. Map passenger entities
         List<Passenger> passengerEntities = bookingMapper.toEntityList(request.getPassengers());
 
+        int timeoutMinutes = bookingProperties != null ? bookingProperties.getPaymentTimeoutMinutes() : 15;
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(java.time.Duration.ofMinutes(timeoutMinutes));
+
         // 7. Construct Booking entity
         Booking booking = Booking.builder()
                 .bookingReference(pnr)
@@ -139,8 +158,9 @@ public class BookingServiceImpl implements BookingService {
                 .totalAmount(fareSnapshot.getTotalAmount())
                 .currency(fareSnapshot.getCurrency())
                 .status(BookingStatus.CONFIRMED)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
+                .expiresAt(expiresAt)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
 
         // 8. Persist booking with compensating rollback on unexpected failure

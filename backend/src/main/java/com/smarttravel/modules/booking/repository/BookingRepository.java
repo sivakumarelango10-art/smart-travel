@@ -29,4 +29,6 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
     List<Booking> findByFlightId(String flightId);
 
     List<Booking> findByStatus(BookingStatus status);
+
+    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, java.time.Instant now);
 }

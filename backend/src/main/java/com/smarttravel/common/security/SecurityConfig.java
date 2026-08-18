@@ -102,6 +102,8 @@ public class SecurityConfig {
                         ).permitAll()
                         // Public Flight Catalog & Search (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/flights/**").permitAll()
+                        // Razorpay Webhook Callback (Server-to-Server authenticated by HMAC-SHA256 signature)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                         // Admin Endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // WebSocket Handshake Endpoint
