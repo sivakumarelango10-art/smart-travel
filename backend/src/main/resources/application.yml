@@ -1,0 +1,36 @@
+# SmartTravel Platform Configuration
+spring:
+  application:
+    name: smarttravel-backend
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# App-specific Configurations
+app:
+  jwt:
+    secret: ${JWT_SECRET:dGhpcy1pcy1hLXNhbXBsZS01MTItYml0LXNlY3JldC1rZXktZm9yLXVzZS13aXRoLWpqd3Qtc21hcnR0cmF2ZWwtYXBwbGljYXRpb24tZGV2ZWxvcG1lbnQtdGVzdGluZw==}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 hours
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
+  pricing:
+    default-freeze-duration-minutes: ${PRICE_FREEZE_DURATION_MINUTES:30}
+    max-demand-multiplier: 2.0
+    holiday-surge-percentage: 20.0
+  scheduler:
+    mock-flight-update-interval-ms: 15000 # 15 seconds
+    price-freeze-cleanup-interval-ms: 60000 # 1 minute
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+# OpenAPI / Swagger Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

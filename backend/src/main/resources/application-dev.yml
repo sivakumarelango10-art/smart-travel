@@ -1,0 +1,15 @@
+# Development Profile
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/smarttravel_dev?serverSelectionTimeoutMS=2000}
+      database: ${MONGODB_DATABASE:smarttravel}
+      auto-index-creation: false
+
+logging:
+  level:
+    root: INFO
+    com.smarttravel: DEBUG
+    org.springframework.data.mongodb.core.MongoTemplate: INFO
+    org.springframework.security: INFO
+    org.springframework.web.socket: INFO
