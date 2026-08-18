@@ -299,6 +299,36 @@ class FlightServiceTest {
     }
 
     @Test
+    @DisplayName("Get flight by ID throws ResourceNotFoundException when not found or inactive")
+    void testGetFlightById_NotFound() {
+        when(flightRepository.findByIdAndActiveTrue("unknown-id")).thenReturn(Optional.empty());
+
+        assertThrows(com.smarttravel.common.exception.ResourceNotFoundException.class,
+                () -> flightService.getFlightById("unknown-id"));
+    }
+
+    @Test
+    @DisplayName("Get flight by flight number normalizes whitespace and case")
+    void testGetFlightByFlightNumber_Normalization() {
+        when(flightRepository.findByFlightNumberAndActiveTrue("AI-101")).thenReturn(Optional.of(sampleFlight));
+
+        FlightResponse response = flightService.getFlightByFlightNumber("  ai-101  ");
+
+        assertNotNull(response);
+        assertEquals("AI-101", response.getFlightNumber());
+        verify(flightRepository).findByFlightNumberAndActiveTrue("AI-101");
+    }
+
+    @Test
+    @DisplayName("Get flight by flight number throws ResourceNotFoundException when not found")
+    void testGetFlightByFlightNumber_NotFound() {
+        when(flightRepository.findByFlightNumberAndActiveTrue("AI-999")).thenReturn(Optional.empty());
+
+        assertThrows(com.smarttravel.common.exception.ResourceNotFoundException.class,
+                () -> flightService.getFlightByFlightNumber("AI-999"));
+    }
+
+    @Test
     @DisplayName("Search flights delegates to repository and maps to PageResponse")
     void testSearchFlights() {
         FlightSearchCriteria criteria = FlightSearchCriteria.builder()

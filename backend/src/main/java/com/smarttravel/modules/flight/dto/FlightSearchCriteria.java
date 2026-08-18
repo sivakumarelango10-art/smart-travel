@@ -22,7 +22,7 @@ public class FlightSearchCriteria {
     private LocalDate departureDate;
 
     @Schema(description = "Number of passengers (1 to 9)", example = "2", defaultValue = "1")
-    private int passengers = 1;
+    private Integer passengers = 1;
 
     @Schema(description = "Filter by airline name", example = "Air India")
     private String airline;
@@ -57,14 +57,14 @@ public class FlightSearchCriteria {
     public FlightSearchCriteria() {
     }
 
-    public FlightSearchCriteria(String origin, String destination, LocalDate departureDate, int passengers,
+    public FlightSearchCriteria(String origin, String destination, LocalDate departureDate, Integer passengers,
                                 String airline, CabinClass cabinClass, BigDecimal minPrice,
                                 BigDecimal maxPrice, DepartureTimeWindow departureTimeWindow, FlightStatus status,
                                 int page, int size, String sortBy, String sortDirection) {
         this.origin = origin;
         this.destination = destination;
         this.departureDate = departureDate;
-        this.passengers = passengers > 0 ? passengers : 1;
+        this.passengers = passengers;
         this.airline = airline;
         this.cabinClass = cabinClass;
         this.minPrice = minPrice;
@@ -85,7 +85,7 @@ public class FlightSearchCriteria {
         private String origin;
         private String destination;
         private LocalDate departureDate;
-        private int passengers = 1;
+        private Integer passengers = 1;
         private String airline;
         private CabinClass cabinClass;
         private BigDecimal minPrice;
@@ -112,7 +112,7 @@ public class FlightSearchCriteria {
             return this;
         }
 
-        public Builder passengers(int passengers) {
+        public Builder passengers(Integer passengers) {
             this.passengers = passengers;
             return this;
         }
@@ -197,12 +197,12 @@ public class FlightSearchCriteria {
         this.departureDate = departureDate;
     }
 
-    public int getPassengers() {
+    public Integer getPassengers() {
         return passengers;
     }
 
-    public void setPassengers(int passengers) {
-        this.passengers = passengers > 0 ? passengers : 1;
+    public void setPassengers(Integer passengers) {
+        this.passengers = passengers;
     }
 
     public String getAirline() {

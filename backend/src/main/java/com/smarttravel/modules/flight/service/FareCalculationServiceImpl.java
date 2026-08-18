@@ -115,9 +115,6 @@ public class FareCalculationServiceImpl implements FareCalculationService {
         }
 
         // Multi-tier distribution
-        int remainingTotal = total;
-        int remainingAvailable = available;
-
         for (CabinClass cabinClass : classes) {
             double capacityRatio;
             double priceMultiplier;

@@ -28,9 +28,10 @@ public class FlightController {
     }
 
     @GetMapping
-    @Operation(summary = "Search Flights", description = "Multi-criteria flight search supporting origin, destination, departure date, airline, cabin class, price range, sorting, and pagination.")
+    @Operation(summary = "Search Flights", description = "Multi-criteria flight search supporting origin, destination, departure date, airline, cabin class, passenger count (1-9), price range, time windows, sorting, and pagination.")
     @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Flights retrieved successfully")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Flights retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid search parameters (e.g. identical route, invalid passenger count, past date, or negative price)")
     })
     public ResponseEntity<ApiResponse<PageResponse<FlightResponse>>> searchFlights(
             @ParameterObject FlightSearchCriteria criteria) {
@@ -39,10 +40,10 @@ public class FlightController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get Flight by ID", description = "Retrieves full details for a specific flight by its database ID.")
+    @Operation(summary = "Get Flight by ID", description = "Retrieves full customer-facing details and cabin availability for a specific active flight by its database ID.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Flight found"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found or inactive")
     })
     public ResponseEntity<ApiResponse<FlightResponse>> getFlightById(
             @Parameter(description = "Flight MongoDB ObjectId", example = "66c1e101f1a2b3c4d5e6f702")
@@ -52,13 +53,13 @@ public class FlightController {
     }
 
     @GetMapping("/number/{flightNumber}")
-    @Operation(summary = "Get Flight by Flight Number", description = "Retrieves flight schedule and details using its unique IATA flight number (e.g. AI-101).")
+    @Operation(summary = "Get Flight by Flight Number", description = "Retrieves flight schedule and details using its unique IATA flight number (e.g. AI-101) with automatic whitespace trimming and case normalization.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Flight found"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found or inactive")
     })
     public ResponseEntity<ApiResponse<FlightResponse>> getFlightByFlightNumber(
-            @Parameter(description = "Flight number", example = "AI-101")
+            @Parameter(description = "IATA Flight number", example = "AI-101")
             @PathVariable String flightNumber) {
         FlightResponse response = flightService.getFlightByFlightNumber(flightNumber);
         return ResponseEntity.ok(ApiResponse.success("Flight retrieved successfully", response));

@@ -129,4 +129,30 @@ class FlightControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.flightNumber").value("AI-101"));
     }
+
+    @Test
+    @DisplayName("GET /api/v1/flights/number/{flightNumber} returns 404 when flight not found")
+    void testGetFlightByFlightNumberNotFound() throws Exception {
+        when(flightService.getFlightByFlightNumber("UNKNOWN")).thenThrow(new ResourceNotFoundException("Flight", "flightNumber", "UNKNOWN"));
+
+        mockMvc.perform(get("/api/v1/flights/number/UNKNOWN")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Not Found"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/flights returns 400 Bad Request on invalid search parameters")
+    void testSearchFlightsValidationFailure() throws Exception {
+        when(flightService.searchFlights(any(FlightSearchCriteria.class)))
+                .thenThrow(new com.smarttravel.common.exception.BadRequestException("Origin and destination airport/city must not be identical"));
+
+        mockMvc.perform(get("/api/v1/flights")
+                        .param("origin", "DEL")
+                        .param("destination", "DEL")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Origin and destination airport/city must not be identical"));
+    }
 }

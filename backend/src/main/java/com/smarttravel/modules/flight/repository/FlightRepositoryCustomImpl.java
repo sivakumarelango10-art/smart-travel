@@ -42,9 +42,24 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
             throw new BadRequestException("Origin and destination airport/city must not be identical");
         }
 
-        int passengers = criteria.getPassengers() > 0 ? criteria.getPassengers() : 1;
-        if (passengers > 9) {
-            throw new BadRequestException("Passenger count cannot exceed 9 per booking search");
+        // Validate passenger count
+        if (criteria.getPassengers() != null) {
+            if (criteria.getPassengers() < 1 || criteria.getPassengers() > 9) {
+                throw new BadRequestException("Passenger count must be between 1 and 9");
+            }
+        }
+        int passengers = (criteria.getPassengers() != null && criteria.getPassengers() >= 1) ? criteria.getPassengers() : 1;
+
+        // Validate price range
+        if (criteria.getMinPrice() != null && criteria.getMinPrice().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Minimum price cannot be negative");
+        }
+        if (criteria.getMaxPrice() != null && criteria.getMaxPrice().compareTo(java.math.BigDecimal.ZERO) < 0) {
+            throw new BadRequestException("Maximum price cannot be negative");
+        }
+        if (criteria.getMinPrice() != null && criteria.getMaxPrice() != null
+                && criteria.getMinPrice().compareTo(criteria.getMaxPrice()) > 0) {
+            throw new BadRequestException("Minimum price cannot exceed maximum price");
         }
 
         // Always filter by active flights
@@ -69,6 +84,11 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
         // Departure Date and Time Window filter
         if (criteria.getDepartureDate() != null) {
             LocalDate date = criteria.getDepartureDate();
+            LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
+            if (date.isBefore(todayUtc)) {
+                throw new BadRequestException("Departure date cannot be in the past");
+            }
+
             if (criteria.getDepartureTimeWindow() != null && criteria.getDepartureTimeWindow() != DepartureTimeWindow.ALL) {
                 Instant windowStart = date.atTime(criteria.getDepartureTimeWindow().getStartTime()).atZone(ZoneOffset.UTC).toInstant();
                 Instant windowEnd = date.atTime(criteria.getDepartureTimeWindow().getEndTime()).atZone(ZoneOffset.UTC).toInstant();

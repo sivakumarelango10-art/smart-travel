@@ -1,5 +1,7 @@
 package com.smarttravel.modules.flight;
 
+import com.smarttravel.common.exception.BadRequestException;
+import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.common.response.PageResponse;
 import com.smarttravel.modules.flight.dto.AirportDto;
 import com.smarttravel.modules.flight.dto.CabinInventoryDto;
@@ -8,6 +10,7 @@ import com.smarttravel.modules.flight.dto.FlightCreateRequest;
 import com.smarttravel.modules.flight.dto.FlightInventoryUpdateRequest;
 import com.smarttravel.modules.flight.dto.FlightResponse;
 import com.smarttravel.modules.flight.dto.FlightSearchCriteria;
+import com.smarttravel.modules.flight.model.AirportInfo;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 class FlightSearchIntegrationTest {
@@ -41,6 +45,7 @@ class FlightSearchIntegrationTest {
     private String flightId1;
     private String flightId2;
     private String flightIdCancelled;
+    private String flightIdLegacy;
     private LocalDate searchDate;
 
     @BeforeEach
@@ -145,6 +150,28 @@ class FlightSearchIntegrationTest {
 
         FlightResponse res3 = flightService.createFlight(req3);
         flightIdCancelled = res3.getId();
+
+        // 4. Legacy Flight without cabinInventories in MongoDB
+        Flight legacyFlight = Flight.builder()
+                .flightNumber("TEST-LEGACY-001")
+                .airline("Legacy Airways")
+                .airlineCode("LA")
+                .departureAirport(AirportInfo.builder().code("DEL").name("Delhi").city("Delhi").build())
+                .arrivalAirport(AirportInfo.builder().code("BOM").name("Mumbai").city("Mumbai").build())
+                .departureTime(depTimeMorning.plus(1, ChronoUnit.HOURS))
+                .arrivalTime(arrTimeMorning.plus(1, ChronoUnit.HOURS))
+                .durationMinutes(120)
+                .aircraftModel("A320")
+                .basePrice(new BigDecimal("4800.00"))
+                .totalSeats(150)
+                .availableSeats(150)
+                .cabinClasses(Set.of(CabinClass.ECONOMY))
+                .cabinInventories(null)
+                .status(FlightStatus.SCHEDULED)
+                .active(true)
+                .build();
+        Flight savedLegacy = flightRepository.save(legacyFlight);
+        flightIdLegacy = savedLegacy.getId();
     }
 
     @AfterEach
@@ -152,6 +179,7 @@ class FlightSearchIntegrationTest {
         if (flightId1 != null) flightRepository.deleteById(flightId1);
         if (flightId2 != null) flightRepository.deleteById(flightId2);
         if (flightIdCancelled != null) flightRepository.deleteById(flightIdCancelled);
+        if (flightIdLegacy != null) flightRepository.deleteById(flightIdLegacy);
     }
 
     @Test
@@ -167,7 +195,7 @@ class FlightSearchIntegrationTest {
 
         assertThat(results.getContent()).isNotEmpty();
         List<String> flightNumbers = results.getContent().stream().map(FlightResponse::getFlightNumber).toList();
-        assertThat(flightNumbers).contains("TEST-SEARCH-101", "TEST-SEARCH-102");
+        assertThat(flightNumbers).contains("TEST-SEARCH-101", "TEST-SEARCH-102", "TEST-LEGACY-001");
         assertThat(flightNumbers).doesNotContain("TEST-SEARCH-999");
     }
 
@@ -237,6 +265,95 @@ class FlightSearchIntegrationTest {
         List<String> eveningNumbers = eveningResults.getContent().stream().map(FlightResponse::getFlightNumber).toList();
         assertThat(eveningNumbers).contains("TEST-SEARCH-102");
         assertThat(eveningNumbers).doesNotContain("TEST-SEARCH-101");
+    }
+
+    @Test
+    @DisplayName("Get flight by ID returns complete details, status, and cabin inventories")
+    void testGetFlightById() {
+        FlightResponse response = flightService.getFlightById(flightId1);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getId()).isEqualTo(flightId1);
+        assertThat(response.getFlightNumber()).isEqualTo("TEST-SEARCH-101");
+        assertThat(response.getCabinInventories()).hasSize(2);
+        assertThat(response.getStatus()).isEqualTo(FlightStatus.SCHEDULED);
+    }
+
+    @Test
+    @DisplayName("Get flight by flight number normalizes case and whitespace")
+    void testGetFlightByFlightNumber_Normalized() {
+        FlightResponse response = flightService.getFlightByFlightNumber("  test-search-101  ");
+
+        assertThat(response).isNotNull();
+        assertThat(response.getFlightNumber()).isEqualTo("TEST-SEARCH-101");
+    }
+
+    @Test
+    @DisplayName("Get flight by flight number throws ResourceNotFoundException for unknown number")
+    void testGetFlightByFlightNumber_NotFound() {
+        assertThrows(ResourceNotFoundException.class, () -> flightService.getFlightByFlightNumber("UNKNOWN-999"));
+    }
+
+    @Test
+    @DisplayName("Search validation rejects identical origin and destination with BadRequestException")
+    void testSearchValidation_IdenticalRoute() {
+        FlightSearchCriteria criteria = FlightSearchCriteria.builder()
+                .origin("DEL")
+                .destination("DEL")
+                .build();
+
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteria));
+    }
+
+    @Test
+    @DisplayName("Search validation rejects invalid passenger count with BadRequestException")
+    void testSearchValidation_InvalidPassengers() {
+        FlightSearchCriteria criteriaZero = FlightSearchCriteria.builder()
+                .passengers(0)
+                .build();
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteriaZero));
+
+        FlightSearchCriteria criteriaExcess = FlightSearchCriteria.builder()
+                .passengers(12)
+                .build();
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteriaExcess));
+    }
+
+    @Test
+    @DisplayName("Search validation rejects past departure date with BadRequestException")
+    void testSearchValidation_PastDepartureDate() {
+        FlightSearchCriteria criteriaPast = FlightSearchCriteria.builder()
+                .departureDate(LocalDate.now().minusDays(2))
+                .build();
+
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteriaPast));
+    }
+
+    @Test
+    @DisplayName("Search validation rejects negative or inverted price range with BadRequestException")
+    void testSearchValidation_InvalidPrices() {
+        FlightSearchCriteria criteriaNegative = FlightSearchCriteria.builder()
+                .minPrice(new BigDecimal("-100.00"))
+                .build();
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteriaNegative));
+
+        FlightSearchCriteria criteriaInverted = FlightSearchCriteria.builder()
+                .minPrice(new BigDecimal("10000.00"))
+                .maxPrice(new BigDecimal("5000.00"))
+                .build();
+        assertThrows(BadRequestException.class, () -> flightService.searchFlights(criteriaInverted));
+    }
+
+    @Test
+    @DisplayName("Legacy flight without cabinInventories returns valid default ECONOMY inventory")
+    void testLegacyFlightCompatibility() {
+        FlightResponse response = flightService.getFlightById(flightIdLegacy);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getFlightNumber()).isEqualTo("TEST-LEGACY-001");
+        assertThat(response.getCabinInventories()).isNotEmpty();
+        assertThat(response.getCabinInventories().get(0).getCabinClass()).isEqualTo(CabinClass.ECONOMY);
+        assertThat(response.getCabinInventories().get(0).getBasePrice()).isEqualByComparingTo("4800.00");
     }
 
     @Test
