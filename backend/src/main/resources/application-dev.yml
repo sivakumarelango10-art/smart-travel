@@ -13,3 +13,8 @@ logging:
     org.springframework.data.mongodb.core.MongoTemplate: INFO
     org.springframework.security: INFO
     org.springframework.web.socket: INFO
+
+smarttravel:
+  flight:
+    simulation:
+      enabled: ${FLIGHT_SIMULATION_ENABLED:false}

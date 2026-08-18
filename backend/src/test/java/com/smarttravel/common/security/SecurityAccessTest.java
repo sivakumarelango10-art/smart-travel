@@ -66,6 +66,9 @@ class SecurityAccessTest {
     @MockBean
     private FlightService flightService;
 
+    @MockBean
+    private com.smarttravel.modules.flight.simulation.service.FlightSimulationService flightSimulationService;
+
     @Autowired
     private ObjectMapper objectMapper;
 

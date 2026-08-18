@@ -26,6 +26,16 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
+smarttravel:
+  flight:
+    simulation:
+      enabled: ${FLIGHT_SIMULATION_ENABLED:false}
+      interval-ms: ${FLIGHT_SIMULATION_INTERVAL_MS:5000}
+      default-speed: ${FLIGHT_SIMULATION_SPEED:60}
+      delay-probability: ${FLIGHT_SIMULATION_DELAY_PROBABILITY:0.25}
+      min-delay-minutes: ${FLIGHT_SIMULATION_MIN_DELAY:15}
+      max-delay-minutes: ${FLIGHT_SIMULATION_MAX_DELAY:120}
+
 # OpenAPI / Swagger Configuration
 springdoc:
   api-docs:
