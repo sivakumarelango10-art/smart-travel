@@ -1,0 +1,276 @@
+package com.smarttravel.modules.booking.service;
+
+import com.smarttravel.common.exception.BadRequestException;
+import com.smarttravel.common.exception.ConflictException;
+import com.smarttravel.common.exception.ResourceNotFoundException;
+import com.smarttravel.common.response.PageResponse;
+import com.smarttravel.modules.booking.dto.BookingCancelRequest;
+import com.smarttravel.modules.booking.dto.BookingCreateRequest;
+import com.smarttravel.modules.booking.dto.BookingResponse;
+import com.smarttravel.modules.booking.mapper.BookingMapper;
+import com.smarttravel.modules.booking.model.Booking;
+import com.smarttravel.modules.booking.model.BookingStatus;
+import com.smarttravel.modules.booking.model.Passenger;
+import com.smarttravel.modules.booking.repository.BookingRepository;
+import com.smarttravel.modules.flight.dto.FareBreakdownDto;
+import com.smarttravel.modules.flight.model.CabinClass;
+import com.smarttravel.modules.flight.model.CabinInventory;
+import com.smarttravel.modules.flight.model.Flight;
+import com.smarttravel.modules.flight.model.FlightStatus;
+import com.smarttravel.modules.flight.repository.FlightRepository;
+import com.smarttravel.modules.flight.service.FareCalculationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * Core implementation of flight booking management with atomic seat reservation.
+ */
+@Service
+public class BookingServiceImpl implements BookingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookingServiceImpl.class);
+
+    private static final Set<FlightStatus> BOOKABLE_STATUSES = Set.of(
+            FlightStatus.SCHEDULED,
+            FlightStatus.BOARDING,
+            FlightStatus.ON_TIME,
+            FlightStatus.DELAYED
+    );
+
+    private final BookingRepository bookingRepository;
+    private final FlightRepository flightRepository;
+    private final FlightInventoryReservationService reservationService;
+    private final FareCalculationService fareCalculationService;
+    private final BookingStateMachine stateMachine;
+    private final PnrGenerator pnrGenerator;
+    private final BookingMapper bookingMapper;
+
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                              FlightRepository flightRepository,
+                              FlightInventoryReservationService reservationService,
+                              FareCalculationService fareCalculationService,
+                              BookingStateMachine stateMachine,
+                              PnrGenerator pnrGenerator,
+                              BookingMapper bookingMapper) {
+        this.bookingRepository = bookingRepository;
+        this.flightRepository = flightRepository;
+        this.reservationService = reservationService;
+        this.fareCalculationService = fareCalculationService;
+        this.stateMachine = stateMachine;
+        this.pnrGenerator = pnrGenerator;
+        this.bookingMapper = bookingMapper;
+    }
+
+    @Override
+    public BookingResponse createBooking(BookingCreateRequest request, String userId, String userEmail) {
+        log.info("Initiating booking creation for user: {} on flight ID: {}", userId, request.getFlightId());
+
+        if (request.getPassengers() == null || request.getPassengers().isEmpty()) {
+            throw new BadRequestException("Passenger list must not be empty");
+        }
+        int passengerCount = request.getPassengers().size();
+        if (passengerCount > 9) {
+            throw new BadRequestException("A maximum of 9 passengers can be booked in a single reservation");
+        }
+
+        CabinClass cabinClass = request.getCabinClass();
+        if (cabinClass == null) {
+            throw new BadRequestException("Cabin class is required");
+        }
+
+        // 1. Fetch flight and validate bookability
+        Flight flight = flightRepository.findByIdAndActiveTrue(request.getFlightId())
+                .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", request.getFlightId()));
+
+        if (!BOOKABLE_STATUSES.contains(flight.getStatus())) {
+            throw new BadRequestException("Flight " + flight.getFlightNumber() + " is not available for booking in status: " + flight.getStatus());
+        }
+
+        if (flight.getDepartureTime() != null && flight.getDepartureTime().isBefore(Instant.now())) {
+            throw new BadRequestException("Cannot book a flight whose departure time has already passed");
+        }
+
+        // 2. Determine base price for the selected cabin
+        BigDecimal basePrice = resolveBasePrice(flight, cabinClass);
+
+        // 3. Atomically reserve cabin inventory
+        boolean reserved = reservationService.reserveSeats(flight.getId(), cabinClass, passengerCount);
+        if (!reserved) {
+            log.warn("Atomic seat reservation failed for flight: {}, cabin: {}, seats: {}", flight.getId(), cabinClass, passengerCount);
+            throw new ConflictException("Insufficient seat availability for the selected cabin: " + cabinClass);
+        }
+
+        // 4. Calculate itemized price snapshot
+        FareBreakdownDto fareSnapshot = fareCalculationService.calculateFare(basePrice, cabinClass, passengerCount);
+
+        // 5. Generate unique PNR reference
+        String pnr = generateUniquePnr();
+
+        // 6. Map passenger entities
+        List<Passenger> passengerEntities = bookingMapper.toEntityList(request.getPassengers());
+
+        // 7. Construct Booking entity
+        Booking booking = Booking.builder()
+                .bookingReference(pnr)
+                .userId(userId)
+                .userEmail(userEmail)
+                .flightId(flight.getId())
+                .flightNumber(flight.getFlightNumber())
+                .airline(flight.getAirline())
+                .airlineCode(flight.getAirlineCode())
+                .departureAirport(flight.getDepartureAirport())
+                .arrivalAirport(flight.getArrivalAirport())
+                .departureTime(flight.getDepartureTime())
+                .arrivalTime(flight.getArrivalTime())
+                .durationMinutes(flight.getDurationMinutes())
+                .cabinClass(cabinClass)
+                .passengerCount(passengerCount)
+                .passengers(passengerEntities)
+                .fareBreakdown(fareSnapshot)
+                .totalAmount(fareSnapshot.getTotalAmount())
+                .currency(fareSnapshot.getCurrency())
+                .status(BookingStatus.CONFIRMED)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+
+        // 8. Persist booking with compensating rollback on unexpected failure
+        Booking savedBooking;
+        try {
+            savedBooking = bookingRepository.save(booking);
+            log.info("Booking created successfully with PNR: {} and ID: {}", pnr, savedBooking.getId());
+        } catch (Exception ex) {
+            log.error("Failed to persist booking for flight ID: {}. Executing compensating seat release.", flight.getId(), ex);
+            reservationService.releaseSeats(flight.getId(), cabinClass, passengerCount);
+            throw ex;
+        }
+
+        return bookingMapper.toResponse(savedBooking);
+    }
+
+    @Override
+    public BookingResponse getBookingById(String id, String userId, boolean isAdmin) {
+        log.debug("Fetching booking by ID: {} (user: {}, isAdmin: {})", id, userId, isAdmin);
+        Booking booking;
+        if (isAdmin) {
+            booking = bookingRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+        } else {
+            booking = bookingRepository.findByIdAndUserId(id, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+        }
+        return bookingMapper.toResponse(booking);
+    }
+
+    @Override
+    public BookingResponse getBookingByReference(String reference, String userId, boolean isAdmin) {
+        if (reference == null || reference.trim().isEmpty()) {
+            throw new BadRequestException("Booking reference cannot be empty");
+        }
+        String normalizedRef = reference.trim().toUpperCase();
+        log.debug("Fetching booking by PNR: {} (user: {}, isAdmin: {})", normalizedRef, userId, isAdmin);
+
+        Booking booking;
+        if (isAdmin) {
+            booking = bookingRepository.findByBookingReference(normalizedRef)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingReference", normalizedRef));
+        } else {
+            booking = bookingRepository.findByBookingReferenceAndUserId(normalizedRef, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingReference", normalizedRef));
+        }
+        return bookingMapper.toResponse(booking);
+    }
+
+    @Override
+    public PageResponse<BookingResponse> getUserBookings(String userId, Pageable pageable) {
+        log.debug("Fetching bookings for user ID: {}", userId);
+        Page<Booking> page = bookingRepository.findByUserId(userId, pageable);
+        return PageResponse.from(page.map(bookingMapper::toResponse));
+    }
+
+    @Override
+    public PageResponse<BookingResponse> getAllBookings(Pageable pageable) {
+        log.debug("Admin fetching all bookings with pagination");
+        Page<Booking> page = bookingRepository.findAll(pageable);
+        return PageResponse.from(page.map(bookingMapper::toResponse));
+    }
+
+    @Override
+    public BookingResponse cancelBooking(String id, BookingCancelRequest request, String userId, boolean isAdmin) {
+        log.info("Processing booking cancellation for ID: {} (user: {}, isAdmin: {})", id, userId, isAdmin);
+
+        Booking booking;
+        if (isAdmin) {
+            booking = bookingRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+        } else {
+            booking = bookingRepository.findByIdAndUserId(id, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+        }
+
+        // 1. Validate status transition
+        stateMachine.validateTransition(booking.getStatus(), BookingStatus.CANCELLED);
+
+        // 2. Mark booking as cancelled
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(Instant.now());
+        String reason = (request != null && request.getReason() != null && !request.getReason().trim().isEmpty())
+                ? request.getReason().trim()
+                : (isAdmin ? "Cancelled by Administrator" : "Cancelled by Passenger");
+        booking.setCancellationReason(reason);
+        booking.setUpdatedAt(Instant.now());
+
+        Booking updatedBooking = bookingRepository.save(booking);
+
+        // 3. Atomically release reserved cabin seats
+        boolean released = reservationService.releaseSeats(
+                booking.getFlightId(),
+                booking.getCabinClass(),
+                booking.getPassengerCount()
+        );
+
+        if (!released) {
+            log.error("Critical: Failed to release {} seat(s) in cabin {} for cancelled booking ID: {}",
+                    booking.getPassengerCount(), booking.getCabinClass(), booking.getId());
+        } else {
+            log.info("Successfully released {} seat(s) in cabin {} for booking PNR: {}",
+                    booking.getPassengerCount(), booking.getCabinClass(), booking.getBookingReference());
+        }
+
+        return bookingMapper.toResponse(updatedBooking);
+    }
+
+    private BigDecimal resolveBasePrice(Flight flight, CabinClass cabinClass) {
+        if (flight.getCabinInventories() != null && !flight.getCabinInventories().isEmpty()) {
+            Optional<CabinInventory> inventoryOpt = flight.getCabinInventories().stream()
+                    .filter(inv -> inv.getCabinClass() == cabinClass)
+                    .findFirst();
+            if (inventoryOpt.isPresent() && inventoryOpt.get().getBasePrice() != null) {
+                return inventoryOpt.get().getBasePrice();
+            }
+        }
+        if (flight.getBasePrice() != null) {
+            return flight.getBasePrice();
+        }
+        throw new BadRequestException("Flight has no base price configured for cabin: " + cabinClass);
+    }
+
+    private String generateUniquePnr() {
+        for (int i = 0; i < 5; i++) {
+            String candidate = pnrGenerator.generatePnr();
+            if (!bookingRepository.existsByBookingReference(candidate)) {
+                return candidate;
+            }
+        }
+        return pnrGenerator.generatePnr();
+    }
+}

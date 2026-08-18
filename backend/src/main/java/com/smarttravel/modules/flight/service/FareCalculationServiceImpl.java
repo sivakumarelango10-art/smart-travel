@@ -89,6 +89,25 @@ public class FareCalculationServiceImpl implements FareCalculationService {
     }
 
     @Override
+    public FareBreakdownDto calculateFare(BigDecimal basePrice, CabinClass cabinClass, int passengerCount) {
+        BigDecimal base = basePrice != null && basePrice.compareTo(BigDecimal.ZERO) > 0 ? basePrice : BigDecimal.ZERO;
+        CabinClass cabin = cabinClass != null ? cabinClass : CabinClass.ECONOMY;
+        BigDecimal tax = base.multiply(DEFAULT_TAX_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal fee = getDefaultFeeForCabin(cabin);
+        BigDecimal total = base.add(tax).add(fee).setScale(2, RoundingMode.HALF_UP);
+
+        CabinInventory tempInventory = CabinInventory.builder()
+                .cabinClass(cabin)
+                .basePrice(base)
+                .taxAmount(tax)
+                .feeAmount(fee)
+                .totalPrice(total)
+                .build();
+
+        return calculateTotalFare(tempInventory, passengerCount);
+    }
+
+    @Override
     public List<CabinInventory> generateDefaultCabinInventories(BigDecimal basePrice, int totalSeats, int availableSeats, Set<CabinClass> cabinClasses) {
         List<CabinInventory> inventories = new ArrayList<>();
         BigDecimal base = basePrice != null && basePrice.compareTo(BigDecimal.ZERO) > 0 ? basePrice : new BigDecimal("5000.00");

