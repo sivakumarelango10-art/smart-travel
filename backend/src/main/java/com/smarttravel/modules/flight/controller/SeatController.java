@@ -24,7 +24,7 @@ import java.util.List;
  * REST Controller for flight seat maps and availability.
  */
 @RestController
-@RequestMapping("/api/v1/flights")
+@RequestMapping({"/api/v1/flights", "/v1/flights", "/api/flights"})
 @Tag(name = "Seats", description = "Aircraft Seat Maps, Seat Availability, and Cabin Layout APIs")
 public class SeatController {
 

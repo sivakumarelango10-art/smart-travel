@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Public User REST controller for electronic flight tickets and PDF downloads.
  */
 @RestController
-@RequestMapping({"/api/tickets", "/api/v1/tickets"})
+@RequestMapping({"/api/tickets", "/api/v1/tickets", "/v1/tickets"})
 @Tag(name = "Tickets", description = "User E-Ticket Retrieval, History, and PDF Download Endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
 public class TicketController {

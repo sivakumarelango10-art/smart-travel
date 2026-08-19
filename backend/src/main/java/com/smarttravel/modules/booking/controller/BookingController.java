@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST Controller for Customer Flight Bookings and Reservations.
  */
 @RestController
-@RequestMapping("/api/v1/bookings")
+@RequestMapping({"/api/v1/bookings", "/v1/bookings", "/api/bookings"})
 @Tag(name = "Booking", description = "Flight Booking Creation, User History, PNR Lookup, and Cancellation APIs")
 @SecurityRequirement(name = "BearerAuth")
 public class BookingController {

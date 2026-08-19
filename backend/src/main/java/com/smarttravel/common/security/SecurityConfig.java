@@ -102,7 +102,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Public Health & Actuator Probes
-                        .requestMatchers("/api/health", "/api/v1/health", "/health").permitAll()
+                        .requestMatchers("/api/health", "/api/v1/health", "/v1/health", "/health").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Public Swagger / OpenAPI documentation
                         .requestMatchers(
@@ -114,16 +114,20 @@ public class SecurityConfig {
                         ).permitAll()
                         // Public Authentication endpoints (register & login only)
                         .requestMatchers(
-                                "/api/auth/register", "/api/v1/auth/register",
-                                "/api/auth/login", "/api/v1/auth/login",
-                                "/api/auth/refresh-token", "/api/v1/auth/refresh-token"
+                                "/api/auth/register", "/api/v1/auth/register", "/v1/auth/register", "/auth/register",
+                                "/api/auth/login", "/api/v1/auth/login", "/v1/auth/login", "/auth/login",
+                                "/api/auth/refresh-token", "/api/v1/auth/refresh-token", "/v1/auth/refresh-token", "/auth/refresh-token"
                         ).permitAll()
                         // Public Flight Catalog & Search (GET only)
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/flights/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/v1/flights/**", "/v1/flights/**", "/api/flights/**"
+                        ).permitAll()
                         // Razorpay Webhook Callback (Server-to-Server authenticated by HMAC-SHA256 signature)
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook"
+                        ).permitAll()
                         // Admin Endpoints
-                        .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/v1/admin/**", "/v1/admin/**", "/admin/**").hasRole("ADMIN")
                         // WebSocket Handshake Endpoint
                         .requestMatchers("/ws/**").permitAll()
                         // Error Dispatch

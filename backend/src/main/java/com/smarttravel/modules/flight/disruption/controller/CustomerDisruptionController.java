@@ -25,7 +25,7 @@ import java.util.List;
  * Controller exposing customer-facing disruption queries and booking refund status.
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping({"/api/v1", "/v1", "/api"})
 @Tag(name = "Customer Flight Status & Disruptions", description = "Customer operational flight status queries and disruption history")
 public class CustomerDisruptionController {
 

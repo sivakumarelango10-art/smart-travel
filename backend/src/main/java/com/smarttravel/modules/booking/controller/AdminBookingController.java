@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST Controller for Administrator Booking Operations.
  */
 @RestController
-@RequestMapping("/api/v1/admin/bookings")
+@RequestMapping({"/api/v1/admin/bookings", "/v1/admin/bookings", "/api/admin/bookings", "/admin/bookings"})
 @Tag(name = "Admin Booking", description = "Administrator Booking Inspection and Forced Cancellation APIs")
 @SecurityRequirement(name = "BearerAuth")
 @PreAuthorize("hasRole('ADMIN')")

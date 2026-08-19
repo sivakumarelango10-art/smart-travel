@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/admin/flights")
+@RequestMapping({"/api/v1/admin/flights", "/v1/admin/flights", "/api/admin/flights", "/admin/flights"})
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Flight Operations", description = "Privileged flight catalog management and status operations (Admin only)")
 @SecurityRequirement(name = "BearerAuth")

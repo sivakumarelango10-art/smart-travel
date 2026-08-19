@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST Controller for User Authentication, Registration, and Current User Profile.
  */
 @RestController
-@RequestMapping({"/api/auth", "/api/v1/auth"})
+@RequestMapping({"/api/auth", "/api/v1/auth", "/v1/auth", "/auth"})
 @Tag(name = "Authentication", description = "User Registration, Login, Token Generation & Profile APIs")
 public class AuthController {
 

@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST API Controller for payment order creation, cryptographic verification, and transaction retrieval.
  */
 @RestController
-@RequestMapping("/api/v1/payments")
+@RequestMapping({"/api/v1/payments", "/v1/payments", "/api/payments"})
 @Tag(name = "Payment Management", description = "Endpoints for Razorpay order generation and signature verification")
 @SecurityRequirement(name = "bearerAuth")
 public class PaymentController {

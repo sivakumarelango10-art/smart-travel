@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/admin/flight-simulation")
+@RequestMapping({"/api/v1/admin/flight-simulation", "/v1/admin/flight-simulation", "/api/admin/flight-simulation", "/admin/flight-simulation"})
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Flight Simulation", description = "Mock real-time flight status simulation and testing engine")
 @SecurityRequirement(name = "Bearer Authentication")

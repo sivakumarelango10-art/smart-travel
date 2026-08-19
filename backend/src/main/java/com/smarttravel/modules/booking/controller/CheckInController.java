@@ -32,7 +32,7 @@ import java.util.List;
  * REST Controller for Online Check-In and Boarding Pass Generation/Download.
  */
 @RestController
-@RequestMapping("/api/v1/bookings/{bookingId}")
+@RequestMapping({"/api/v1/bookings/{bookingId}", "/v1/bookings/{bookingId}", "/api/bookings/{bookingId}"})
 @Tag(name = "Check-In & Boarding Pass", description = "Online Passenger Check-In, Boarding Pass Retrieval, and PDF Download APIs")
 @SecurityRequirement(name = "BearerAuth")
 public class CheckInController {

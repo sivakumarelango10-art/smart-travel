@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Controller exposing customer-facing notification feed and status endpoints.
  */
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping({"/api/v1/notifications", "/v1/notifications", "/api/notifications"})
 @PreAuthorize("isAuthenticated()")
 @Tag(name = "Customer Notifications", description = "Customer notification inbox, unread badges, and read receipts")
 @SecurityRequirement(name = "BearerAuth")

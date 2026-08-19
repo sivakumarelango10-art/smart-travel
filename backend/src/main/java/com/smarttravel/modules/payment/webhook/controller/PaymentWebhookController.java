@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Authenticated cryptographically via the X-Razorpay-Signature HTTP header.
  */
 @RestController
-@RequestMapping("/api/v1/payments/webhook")
+@RequestMapping({"/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook"})
 @Tag(name = "Payment Webhook", description = "Server-to-server endpoint for Razorpay asynchronous payment events")
 public class PaymentWebhookController {
 

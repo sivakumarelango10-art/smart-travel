@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Controller exposing administrative refund endpoints and refund eligibility assessments.
  */
 @RestController
-@RequestMapping("/api/v1/admin/refunds")
+@RequestMapping({"/api/v1/admin/refunds", "/v1/admin/refunds", "/api/admin/refunds", "/admin/refunds"})
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Refund Operations", description = "Privileged refund processing and inspection endpoints")
 @SecurityRequirement(name = "BearerAuth")

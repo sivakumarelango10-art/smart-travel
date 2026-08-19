@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 
 @RestController
-@RequestMapping({"/api/health", "/api/v1/health"})
+@RequestMapping({"/api/health", "/api/v1/health", "/v1/health", "/health"})
 @Tag(name = "Health", description = "System and Database Connectivity Health Checks")
 public class HealthController {
 

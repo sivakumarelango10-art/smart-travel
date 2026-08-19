@@ -21,7 +21,7 @@ import java.time.Instant;
  * No PII is returned by any endpoint.
  */
 @RestController
-@RequestMapping("/api/v1/admin/analytics")
+@RequestMapping({"/api/v1/admin/analytics", "/v1/admin/analytics", "/api/admin/analytics", "/admin/analytics"})
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Analytics", description = "Platform analytics and KPI metrics for admin dashboard")
 public class AnalyticsController {

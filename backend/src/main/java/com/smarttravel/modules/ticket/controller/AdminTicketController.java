@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Administrative REST controller for inspecting tickets, global pagination, and manual issuance retries.
  */
 @RestController
-@RequestMapping({"/api/admin/tickets", "/api/v1/admin/tickets"})
+@RequestMapping({"/api/admin/tickets", "/api/v1/admin/tickets", "/v1/admin/tickets", "/admin/tickets"})
 @Tag(name = "Admin Tickets", description = "Administrator Ticket Management and Retry APIs (Requires ROLE_ADMIN)")
 @SecurityRequirement(name = "Bearer Authentication")
 @PreAuthorize("hasRole('ADMIN')")

@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/flights")
-@Tag(name = "Flight Catalog & Search", description = "Public Flight Search and Flight Schedule Discovery APIs")
+@RequestMapping({"/api/v1/flights", "/v1/flights", "/api/flights"})
+@Tag(name = "Flights", description = "Public Flight Search, Details, and Catalog APIs")
 public class FlightController {
 
     private final FlightService flightService;

@@ -21,9 +21,14 @@ export const apiClient = axios.create({
 // Request Interceptor: Attach JWT Token & Correlation headers
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const isPublicAuthEndpoint =
+      config.url?.includes('/auth/register') ||
+      config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/refresh-token');
+
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!isPublicAuthEndpoint && token && token.trim() !== '' && token !== 'null' && token !== 'undefined' && config.headers) {
+      config.headers.Authorization = `Bearer ${token.trim()}`;
     }
     return config;
   },

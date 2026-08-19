@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Administrative controller for retrying and inspecting customer communications.
  */
 @RestController
-@RequestMapping("/api/v1/admin/notifications")
+@RequestMapping({"/api/v1/admin/notifications", "/v1/admin/notifications", "/api/admin/notifications", "/admin/notifications"})
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Notification Operations", description = "Privileged notification management and retry endpoints")
 @SecurityRequirement(name = "BearerAuth")
