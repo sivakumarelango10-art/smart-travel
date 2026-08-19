@@ -12,7 +12,7 @@ import com.smarttravel.modules.notification.provider.PushNotificationProvider;
 import com.smarttravel.modules.notification.provider.SmsNotificationProvider;
 import com.smarttravel.modules.notification.provider.WhatsAppNotificationProvider;
 import com.smarttravel.modules.notification.repository.NotificationRepository;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

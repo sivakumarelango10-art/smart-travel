@@ -1,7 +1,7 @@
 package com.smarttravel.modules.payment;
 
 import com.smarttravel.common.exception.BadRequestException;
-import com.smarttravel.common.exception.ConflictException;
+
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;

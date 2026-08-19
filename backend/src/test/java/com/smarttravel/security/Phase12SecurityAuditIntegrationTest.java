@@ -8,7 +8,7 @@ import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;
 import com.smarttravel.modules.booking.dto.PassengerDto;
 import com.smarttravel.modules.booking.model.Booking;
-import com.smarttravel.modules.booking.model.BookingStatus;
+
 import com.smarttravel.modules.booking.repository.BookingRepository;
 import com.smarttravel.modules.booking.service.BookingService;
 import com.smarttravel.modules.booking.service.CheckInService;
@@ -25,7 +25,7 @@ import com.smarttravel.modules.payment.model.Payment;
 import com.smarttravel.modules.payment.model.PaymentStatus;
 import com.smarttravel.modules.payment.repository.PaymentRepository;
 import com.smarttravel.modules.ticket.dto.TicketResponse;
-import com.smarttravel.modules.ticket.model.Ticket;
+
 import com.smarttravel.modules.ticket.repository.TicketRepository;
 import com.smarttravel.modules.ticket.service.TicketService;
 import org.junit.jupiter.api.AfterEach;

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
+
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +29,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsServiceImpl.class);
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
 
     private final MongoTemplate mongoTemplate;
 

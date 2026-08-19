@@ -3,7 +3,7 @@ package com.smarttravel.modules.notification.controller;
 import com.smarttravel.common.response.PageResponse;
 
 import com.smarttravel.common.security.CustomUserDetailsService;
-import com.smarttravel.common.security.JwtAuthenticationFilter;
+
 import com.smarttravel.common.security.JwtTokenProvider;
 import com.smarttravel.modules.notification.dto.NotificationResponse;
 import com.smarttravel.modules.notification.dto.UnreadCountResponse;

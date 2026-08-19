@@ -49,8 +49,6 @@ class AdminTicketControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private TicketService ticketService;

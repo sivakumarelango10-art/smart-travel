@@ -6,7 +6,7 @@ import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.common.response.PageResponse;
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
-import com.smarttravel.modules.booking.model.Passenger;
+
 import com.smarttravel.modules.booking.repository.BookingRepository;
 import com.smarttravel.modules.payment.model.Payment;
 import com.smarttravel.modules.payment.model.PaymentStatus;

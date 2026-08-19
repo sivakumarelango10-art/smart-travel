@@ -1,7 +1,7 @@
 package com.smarttravel.modules.booking;
 
 import com.smarttravel.common.exception.ResourceNotFoundException;
-import com.smarttravel.common.response.PageResponse;
+
 import com.smarttravel.modules.booking.dto.BookingCancelRequest;
 import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
+
 
 import java.math.BigDecimal;
 import java.time.Instant;

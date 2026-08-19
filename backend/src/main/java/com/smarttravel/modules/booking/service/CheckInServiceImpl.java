@@ -1,6 +1,6 @@
 package com.smarttravel.modules.booking.service;
 
-import com.smarttravel.common.exception.BadRequestException;
+
 import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.booking.config.CheckInProperties;
@@ -21,7 +21,7 @@ import com.smarttravel.modules.booking.repository.CheckInRepository;
 import com.smarttravel.modules.flight.dto.SeatDto;
 import com.smarttravel.modules.flight.model.SeatStatus;
 import com.smarttravel.modules.flight.service.SeatMapService;
-import com.smarttravel.modules.ticket.model.PassengerTicketInfo;
+
 import com.smarttravel.modules.ticket.model.Ticket;
 import com.smarttravel.modules.ticket.repository.TicketRepository;
 import com.smarttravel.modules.ticket.service.TicketNumberGenerator;
@@ -34,7 +34,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.stream.Collectors;
 
 /**

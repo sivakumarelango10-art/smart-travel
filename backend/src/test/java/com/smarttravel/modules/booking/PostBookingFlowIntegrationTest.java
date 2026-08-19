@@ -10,7 +10,7 @@ import com.smarttravel.modules.booking.model.BookingStatus;
 import com.smarttravel.modules.booking.model.CheckInStatus;
 import com.smarttravel.modules.booking.service.BookingService;
 import com.smarttravel.modules.booking.service.CheckInService;
-import com.smarttravel.modules.flight.dto.SeatDto;
+
 import com.smarttravel.modules.flight.dto.SeatMapResponse;
 import com.smarttravel.modules.flight.model.AirportInfo;
 import com.smarttravel.modules.flight.model.CabinClass;
@@ -27,7 +27,7 @@ import com.smarttravel.modules.payment.model.PaymentStatus;
 import com.smarttravel.modules.payment.repository.PaymentRepository;
 import com.smarttravel.modules.payment.service.PaymentReconciliationService;
 import com.smarttravel.modules.payment.service.PaymentService;
-import com.smarttravel.modules.ticket.dto.TicketResponse;
+
 import com.smarttravel.modules.ticket.model.Ticket;
 import com.smarttravel.modules.ticket.repository.TicketRepository;
 import com.smarttravel.modules.ticket.service.TicketService;
@@ -63,8 +63,6 @@ class PostBookingFlowIntegrationTest {
     @Autowired
     private BookingService bookingService;
 
-    @Autowired
-    private PaymentService paymentService;
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -72,8 +70,6 @@ class PostBookingFlowIntegrationTest {
     @Autowired
     private PaymentReconciliationService paymentReconciliationService;
 
-    @Autowired
-    private TicketService ticketService;
 
     @Autowired
     private TicketRepository ticketRepository;

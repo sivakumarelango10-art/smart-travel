@@ -1,6 +1,6 @@
 package com.smarttravel.modules.ticket.service;
 
-import com.lowagie.text.Chunk;
+
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
-import java.time.Instant;
+
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -39,7 +39,7 @@ public class TicketPdfServiceImpl implements TicketPdfService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm 'UTC'")
             .withZone(ZoneId.of("UTC"));
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
 
     // Corporate Color Palette
     private static final Color BRAND_NAVY = new Color(24, 43, 73);

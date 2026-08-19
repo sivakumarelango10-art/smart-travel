@@ -77,8 +77,6 @@ class PaymentWebhookIntegrationTest {
     @Autowired
     private RazorpayProperties razorpayProperties;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private String flightId;
     private String bookingId;

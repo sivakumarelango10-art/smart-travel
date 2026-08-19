@@ -1,7 +1,7 @@
 package com.smarttravel.modules.flight.simulation.service;
 
 import com.smarttravel.common.exception.BadRequestException;
-import com.smarttravel.common.exception.ResourceNotFoundException;
+
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.repository.FlightRepository;

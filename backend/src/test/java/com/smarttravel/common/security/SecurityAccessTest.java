@@ -6,8 +6,7 @@ import com.smarttravel.modules.auth.dto.UserResponse;
 import com.smarttravel.modules.auth.service.AuthService;
 import com.smarttravel.modules.flight.controller.AdminFlightController;
 import com.smarttravel.modules.flight.controller.FlightController;
-import com.smarttravel.modules.flight.dto.FlightCreateRequest;
-import com.smarttravel.modules.flight.dto.FlightResponse;
+
 import com.smarttravel.modules.flight.service.FlightService;
 import com.smarttravel.modules.health.controller.HealthController;
 import com.smarttravel.modules.user.model.AccountStatus;
@@ -106,8 +105,6 @@ class SecurityAccessTest {
     @MockBean
     private com.smarttravel.modules.analytics.service.AnalyticsService analyticsService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
 
     @RestController

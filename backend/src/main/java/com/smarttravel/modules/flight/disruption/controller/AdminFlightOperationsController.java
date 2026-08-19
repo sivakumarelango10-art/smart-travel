@@ -15,7 +15,7 @@ import com.smarttravel.modules.flight.disruption.service.FlightDisruptionService
 import com.smarttravel.modules.flight.impact.dto.FlightImpactSummaryDto;
 import com.smarttravel.modules.flight.impact.service.FlightImpactService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
+
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

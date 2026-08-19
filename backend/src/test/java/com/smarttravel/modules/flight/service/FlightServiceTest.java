@@ -3,14 +3,14 @@ package com.smarttravel.modules.flight.service;
 import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.DuplicateResourceException;
 import com.smarttravel.common.exception.InvalidStateTransitionException;
-import com.smarttravel.common.exception.ResourceNotFoundException;
+
 import com.smarttravel.common.response.PageResponse;
 import com.smarttravel.modules.flight.dto.AirportDto;
 import com.smarttravel.modules.flight.dto.FlightCreateRequest;
 import com.smarttravel.modules.flight.dto.FlightResponse;
 import com.smarttravel.modules.flight.dto.FlightSearchCriteria;
 import com.smarttravel.modules.flight.dto.FlightStatusUpdateRequest;
-import com.smarttravel.modules.flight.dto.FlightUpdateRequest;
+
 import com.smarttravel.modules.flight.model.AirportInfo;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.Flight;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;

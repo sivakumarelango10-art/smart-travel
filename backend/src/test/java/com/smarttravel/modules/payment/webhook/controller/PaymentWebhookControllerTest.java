@@ -44,8 +44,6 @@ class PaymentWebhookControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private PaymentWebhookService paymentWebhookService;

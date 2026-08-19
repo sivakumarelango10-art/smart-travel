@@ -15,7 +15,7 @@ import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.service.FlightService;
 import com.smarttravel.modules.payment.dto.PaymentOrderCreateRequest;
-import com.smarttravel.modules.payment.model.Payment;
+
 import com.smarttravel.modules.payment.service.PaymentReconciliationService;
 import com.smarttravel.modules.payment.service.PaymentService;
 import com.smarttravel.modules.ticket.dto.TicketResponse;

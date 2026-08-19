@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
-import java.util.Objects;
+
 
 /**
  * MongoDB Document entity representing an immutable operational flight disruption event.

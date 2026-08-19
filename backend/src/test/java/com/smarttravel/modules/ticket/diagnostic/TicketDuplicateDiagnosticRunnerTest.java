@@ -2,9 +2,7 @@ package com.smarttravel.modules.ticket.diagnostic;
 
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.repository.BookingRepository;
-import com.smarttravel.modules.ticket.model.Ticket;
-import com.smarttravel.modules.ticket.model.TicketStatus;
-import com.smarttravel.modules.ticket.repository.TicketRepository;
+
 import org.bson.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * Diagnostic and safe deduplication runner for MongoDB Tickets collection.
@@ -40,8 +38,6 @@ class TicketDuplicateDiagnosticRunnerTest {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    @Autowired
-    private TicketRepository ticketRepository;
 
     @Autowired
     private BookingRepository bookingRepository;

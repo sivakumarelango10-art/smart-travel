@@ -1,7 +1,7 @@
 package com.smarttravel.modules.flight.repository;
 
 import java.time.Instant;
-import java.util.List;
+
 
 /**
  * Custom repository interface for atomic MongoDB seat operations.

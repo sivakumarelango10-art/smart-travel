@@ -3,8 +3,7 @@ package com.smarttravel.modules.booking.service;
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
 import com.smarttravel.modules.booking.repository.BookingRepository;
-import com.smarttravel.modules.payment.model.Payment;
-import com.smarttravel.modules.payment.model.PaymentStatus;
+
 import com.smarttravel.modules.payment.repository.PaymentRepository;
 import com.smarttravel.modules.payment.service.PaymentStateMachine;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
+
 import org.springframework.data.mongodb.core.query.Update;
 
 import java.time.Instant;

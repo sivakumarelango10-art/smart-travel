@@ -3,9 +3,9 @@ package com.smarttravel.modules.booking.service;
 import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.booking.config.CheckInProperties;
-import com.smarttravel.modules.booking.dto.BoardingPassResponse;
+
 import com.smarttravel.modules.booking.dto.CheckInResponse;
-import com.smarttravel.modules.booking.model.BoardingPass;
+
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
 import com.smarttravel.modules.booking.model.CheckIn;
@@ -15,10 +15,10 @@ import com.smarttravel.modules.booking.model.PassengerCheckInInfo;
 import com.smarttravel.modules.booking.repository.BoardingPassRepository;
 import com.smarttravel.modules.booking.repository.BookingRepository;
 import com.smarttravel.modules.booking.repository.CheckInRepository;
-import com.smarttravel.modules.flight.dto.SeatDto;
+
 import com.smarttravel.modules.flight.model.AirportInfo;
 import com.smarttravel.modules.flight.model.CabinClass;
-import com.smarttravel.modules.flight.model.SeatStatus;
+
 import com.smarttravel.modules.flight.service.SeatMapService;
 import com.smarttravel.modules.ticket.model.PassengerTicketInfo;
 import com.smarttravel.modules.ticket.model.Ticket;
@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

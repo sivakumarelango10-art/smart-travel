@@ -1,12 +1,12 @@
 package com.smarttravel.modules.flight.disruption.service;
 
 import com.smarttravel.common.exception.BadRequestException;
-import com.smarttravel.common.exception.InvalidStateTransitionException;
+
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
 import com.smarttravel.modules.booking.repository.BookingRepository;
 import com.smarttravel.modules.booking.service.BookingStateMachine;
-import com.smarttravel.modules.flight.disruption.dto.FlightAircraftChangeRequest;
+
 import com.smarttravel.modules.flight.disruption.dto.FlightCancelRequest;
 import com.smarttravel.modules.flight.disruption.dto.FlightDisruptionDto;
 import com.smarttravel.modules.flight.disruption.dto.FlightGateChangeRequest;
@@ -14,7 +14,7 @@ import com.smarttravel.modules.flight.disruption.dto.FlightOperationalStatusResp
 import com.smarttravel.modules.flight.disruption.dto.FlightScheduleChangeRequest;
 import com.smarttravel.modules.flight.disruption.dto.FlightTerminalChangeRequest;
 import com.smarttravel.modules.flight.disruption.model.DisruptionStatus;
-import com.smarttravel.modules.flight.disruption.model.DisruptionType;
+
 import com.smarttravel.modules.flight.disruption.model.FlightDisruption;
 import com.smarttravel.modules.flight.disruption.repository.FlightDisruptionRepository;
 import com.smarttravel.modules.flight.impact.service.FlightImpactService;
@@ -32,21 +32,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
+
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

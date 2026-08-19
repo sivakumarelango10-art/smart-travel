@@ -2,7 +2,7 @@ package com.smarttravel.modules.analytics;
 
 import com.smarttravel.modules.analytics.dto.*;
 import com.smarttravel.modules.analytics.service.AnalyticsService;
-import com.smarttravel.modules.analytics.service.AnalyticsServiceImpl;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

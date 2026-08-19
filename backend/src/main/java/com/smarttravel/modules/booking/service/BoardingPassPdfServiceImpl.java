@@ -7,7 +7,7 @@ import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
+
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.time.Instant;
+
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -80,7 +80,7 @@ public class BoardingPassPdfServiceImpl implements BoardingPassPdfService {
             Font valueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, TEXT_DARK);
             Font largeValueFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BRAND_NAVY);
             Font seatFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, ACCENT_SEAT);
-            Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 8, TEXT_DARK);
+
             Font smallFont = FontFactory.getFont(FontFactory.HELVETICA, 7, TEXT_MUTED);
             Font barcodeFont = FontFactory.getFont(FontFactory.COURIER_BOLD, 12, BRAND_NAVY);
 

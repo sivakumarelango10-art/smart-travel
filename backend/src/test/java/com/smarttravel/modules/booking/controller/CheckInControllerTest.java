@@ -49,8 +49,6 @@ class CheckInControllerTest {
     @MockBean
     private CustomUserDetailsService userDetailsService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("POST /api/v1/bookings/{bookingId}/check-in returns 201 with CheckInResponse")

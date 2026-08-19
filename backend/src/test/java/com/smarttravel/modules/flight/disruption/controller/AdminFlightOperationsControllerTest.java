@@ -2,13 +2,13 @@ package com.smarttravel.modules.flight.disruption.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smarttravel.common.security.CustomUserDetailsService;
-import com.smarttravel.common.security.JwtAuthenticationFilter;
+
 import com.smarttravel.common.security.JwtTokenProvider;
 import com.smarttravel.modules.flight.disruption.dto.FlightCancelRequest;
 import com.smarttravel.modules.flight.disruption.dto.FlightGateChangeRequest;
 import com.smarttravel.modules.flight.disruption.dto.FlightOperationalStatusResponse;
 import com.smarttravel.modules.flight.disruption.dto.FlightScheduleChangeRequest;
-import com.smarttravel.modules.flight.disruption.dto.FlightTerminalChangeRequest;
+
 import com.smarttravel.modules.flight.disruption.service.FlightDisruptionService;
 import com.smarttravel.modules.flight.impact.dto.FlightImpactSummaryDto;
 import com.smarttravel.modules.flight.impact.service.FlightImpactService;
@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
