@@ -21,14 +21,31 @@ export const apiClient = axios.create({
 // Request Interceptor: Attach JWT Token & Correlation headers
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const url = config.url || '';
     const isPublicAuthEndpoint =
-      config.url?.includes('/auth/register') ||
-      config.url?.includes('/auth/login') ||
-      config.url?.includes('/auth/refresh-token');
+      url.includes('/auth/register') ||
+      url.includes('/auth/login') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/refresh-token') ||
+      (url.includes('/flights') && config.method?.toLowerCase() === 'get') ||
+      url.includes('/health');
+
+    if (isPublicAuthEndpoint) {
+      if (config.headers) {
+        delete config.headers.Authorization;
+        delete (config.headers as any)['Authorization'];
+        delete (config.headers as any)['authorization'];
+      }
+      return config;
+    }
 
     const token = localStorage.getItem(TOKEN_KEY);
-    if (!isPublicAuthEndpoint && token && token.trim() !== '' && token !== 'null' && token !== 'undefined' && config.headers) {
+    if (token && token.trim() !== '' && token !== 'null' && token !== 'undefined' && config.headers) {
       config.headers.Authorization = `Bearer ${token.trim()}`;
+    } else if (config.headers) {
+      delete config.headers.Authorization;
+      delete (config.headers as any)['Authorization'];
+      delete (config.headers as any)['authorization'];
     }
     return config;
   },

@@ -221,4 +221,62 @@ class ProductionSecurityEndpointsIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403));
     }
+
+    @Test
+    @DisplayName("POST /v1/auth/login and /api/v1/auth/login succeed without Authorization header")
+    void testLoginWithoutJwt() throws Exception {
+        var loginReq = new com.smarttravel.modules.auth.dto.LoginRequest(
+                "test.customer." + testSuffix + "@smarttravel.com",
+                "Password123!"
+        );
+
+        mockMvc.perform(post("/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isString());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isString());
+    }
+
+    @Test
+    @DisplayName("POST /v1/auth/register succeeds even if stale or expired JWT is sent in Authorization header")
+    void testRegisterWithStaleOrExpiredTokenDoesNotBreak() throws Exception {
+        String fakeExpiredJwt = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJmYWtlLWV4cGlyZWQiLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTYwMDAwMDAwMX0.invalid_signature";
+
+        RegisterRequest req = RegisterRequest.builder()
+                .email("new.reg.stale." + testSuffix + "@smarttravel.com")
+                .fullName("Stale Token User")
+                .password("Password123!")
+                .phoneNumber("+919876543210")
+                .build();
+
+        mockMvc.perform(post("/v1/auth/register")
+                        .header("Authorization", "Bearer " + fakeExpiredJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("new.reg.stale." + testSuffix + "@smarttravel.com"));
+
+        userRepository.findByEmail("new.reg.stale." + testSuffix + "@smarttravel.com").ifPresent(userRepository::delete);
+    }
+
+    @Test
+    @DisplayName("CORS allows requests and preflights from production Vercel frontend")
+    void testCorsAllowsProductionVercelOrigin() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options("/v1/auth/register")
+                        .header("Origin", "https://smart-travel-sage.vercel.app")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type,Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "https://smart-travel-sage.vercel.app"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Credentials", "true"));
+    }
 }

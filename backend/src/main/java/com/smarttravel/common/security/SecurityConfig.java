@@ -44,7 +44,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,https://smart-travel-sage.vercel.app}")
     private String allowedOrigins;
 
     public SecurityConfig(RequestIdFilter requestIdFilter,
@@ -73,13 +73,13 @@ public class SecurityConfig {
 
                             String requestId = MDC.get(RequestIdFilter.MDC_REQUEST_ID_KEY);
                             ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(Instant.now())
-                                    .status(HttpStatus.UNAUTHORIZED.value())
-                                    .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                                    .message("Full authentication is required to access this resource")
-                                    .path(request.getRequestURI())
-                                    .requestId(requestId)
-                                    .build();
+                                     .timestamp(Instant.now())
+                                     .status(HttpStatus.UNAUTHORIZED.value())
+                                     .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                                     .message("Full authentication is required to access this resource")
+                                     .path(request.getRequestURI())
+                                     .requestId(requestId)
+                                     .build();
 
                             response.getOutputStream().println(objectMapper.writeValueAsString(errorResponse));
                         })
@@ -89,20 +89,20 @@ public class SecurityConfig {
 
                             String requestId = MDC.get(RequestIdFilter.MDC_REQUEST_ID_KEY);
                             ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(Instant.now())
-                                    .status(HttpStatus.FORBIDDEN.value())
-                                    .error(HttpStatus.FORBIDDEN.getReasonPhrase())
-                                    .message("Access denied: You do not have permission to access this resource")
-                                    .path(request.getRequestURI())
-                                    .requestId(requestId)
-                                    .build();
+                                     .timestamp(Instant.now())
+                                     .status(HttpStatus.FORBIDDEN.value())
+                                     .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                                     .message("Access denied: You do not have permission to access this resource")
+                                     .path(request.getRequestURI())
+                                     .requestId(requestId)
+                                     .build();
 
                             response.getOutputStream().println(objectMapper.writeValueAsString(errorResponse));
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Public Health & Actuator Probes
-                        .requestMatchers("/api/health", "/api/v1/health", "/v1/health", "/health").permitAll()
+                        .requestMatchers("/api/health", "/api/v1/health", "/v1/health", "/health", "/api/health/**", "/api/v1/health/**", "/v1/health/**", "/health/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Public Swagger / OpenAPI documentation
                         .requestMatchers(
@@ -112,19 +112,24 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        // Public Authentication endpoints (register & login only)
+                        // Public Authentication endpoints (register, login, refresh, refresh-token)
                         .requestMatchers(
                                 "/api/auth/register", "/api/v1/auth/register", "/v1/auth/register", "/auth/register",
+                                "/api/auth/register/**", "/api/v1/auth/register/**", "/v1/auth/register/**", "/auth/register/**",
                                 "/api/auth/login", "/api/v1/auth/login", "/v1/auth/login", "/auth/login",
-                                "/api/auth/refresh-token", "/api/v1/auth/refresh-token", "/v1/auth/refresh-token", "/auth/refresh-token"
+                                "/api/auth/login/**", "/api/v1/auth/login/**", "/v1/auth/login/**", "/auth/login/**",
+                                "/api/auth/refresh", "/api/v1/auth/refresh", "/v1/auth/refresh", "/auth/refresh",
+                                "/api/auth/refresh/**", "/api/v1/auth/refresh/**", "/v1/auth/refresh/**", "/auth/refresh/**",
+                                "/api/auth/refresh-token", "/api/v1/auth/refresh-token", "/v1/auth/refresh-token", "/auth/refresh-token",
+                                "/api/auth/refresh-token/**", "/api/v1/auth/refresh-token/**", "/v1/auth/refresh-token/**", "/auth/refresh-token/**"
                         ).permitAll()
                         // Public Flight Catalog & Search (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/api/v1/flights/**", "/v1/flights/**", "/api/flights/**"
+                                "/api/v1/flights/**", "/v1/flights/**", "/api/flights/**", "/flights/**"
                         ).permitAll()
                         // Razorpay Webhook Callback (Server-to-Server authenticated by HMAC-SHA256 signature)
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                "/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook"
+                                "/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook", "/payments/webhook"
                         ).permitAll()
                         // Admin Endpoints
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**", "/v1/admin/**", "/admin/**").hasRole("ADMIN")
@@ -156,10 +161,16 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
+                .filter(s -> !s.isEmpty())
                 .toList();
 
         configuration.setAllowedOrigins(origins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.vercel.app",
+                "https://smart-travel-sage.vercel.app"
+        ));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of(
                 "Authorization", "Content-Type", "X-Requested-With", "Accept",
                 "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers",

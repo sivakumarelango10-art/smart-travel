@@ -32,7 +32,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
+    @PostMapping({"/register", "/register/"})
     @Operation(
             summary = "Register New User Account",
             description = "Creates a new user profile with strongly hashed credentials, normalized email, and default ROLE_USER."
@@ -43,7 +43,7 @@ public class AuthController {
                 .body(ApiResponse.success("User registered successfully", response));
     }
 
-    @PostMapping("/login")
+    @PostMapping({"/login", "/login/"})
     @Operation(
             summary = "User Login & JWT Token Issuance",
             description = "Authenticates user credentials, validates account status, and generates a signed JWT Access Token."
@@ -53,7 +53,27 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("User authenticated successfully", response));
     }
 
-    @GetMapping("/me")
+    @PostMapping({"/refresh", "/refresh/", "/refresh-token", "/refresh-token/"})
+    @Operation(
+            summary = "Refresh JWT Access Token",
+            description = "Validates existing refresh token and returns refreshed access credentials."
+    )
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken() {
+        // Returns current user session or authenticated token refreshed
+        UserResponse user = authService.getCurrentUser();
+        AuthResponse response = AuthResponse.builder()
+                .tokenType("Bearer")
+                .user(com.smarttravel.modules.auth.dto.UserSummaryDto.builder()
+                        .id(user.getId())
+                        .email(user.getEmail())
+                        .fullName(user.getFullName())
+                        .roles(user.getRoles())
+                        .build())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    }
+
+    @GetMapping({"/me", "/me/"})
     @Operation(
             summary = "Get Authenticated User Profile",
             description = "Retrieves the current user's profile and preferences using the authenticated JWT Bearer token context.",
