@@ -94,8 +94,10 @@ public class RazorpayWebhookVerifier {
             return razorpayProperties.getWebhookSecret();
         }
         if (razorpayProperties.getKeySecret() != null && !razorpayProperties.getKeySecret().isBlank()) {
+            log.warn("RAZORPAY_WEBHOOK_SECRET is not configured; falling back to RAZORPAY_KEY_SECRET for webhook verification.");
             return razorpayProperties.getKeySecret();
         }
-        return "smarttravel_dev_secret_key";
+        log.error("Neither RAZORPAY_WEBHOOK_SECRET nor RAZORPAY_KEY_SECRET is configured. Webhook verification will fail.");
+        return null;
     }
 }

@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
 
         <div className="flex items-center gap-4 text-slate-500">
           <a
-            href="http://localhost:8080/swagger-ui.html"
+            href={import.meta.env.VITE_SWAGGER_URL || '/swagger-ui.html'}
             target="_blank"
             rel="noreferrer"
             className="hover:text-sky-400 transition flex items-center gap-1 font-mono"

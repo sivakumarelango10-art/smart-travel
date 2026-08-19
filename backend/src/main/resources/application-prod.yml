@@ -1,0 +1,60 @@
+# ==============================================================================
+# SmartTravel Platform — Production Configuration Profile (prod)
+# ==============================================================================
+
+spring:
+  data:
+    mongodb:
+      # Mandatory in production; no localhost fallback to prevent accidental split-brain
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:smarttravel}
+      auto-index-creation: false
+
+# Production Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.smarttravel: INFO
+    org.springframework.security: WARN
+    org.springframework.data.mongodb.core.MongoTemplate: WARN
+    org.springframework.web.socket: WARN
+
+# Production Feature Toggles & Integrations
+smarttravel:
+  flight:
+    simulation:
+      # Disabled in production: real or operator-managed flights only
+      enabled: false
+  booking:
+    expiration:
+      enabled: true
+      fixed-delay-ms: 60000 # Run expiration sweep every 60s
+  payment:
+    razorpay:
+      enabled: ${RAZORPAY_ENABLED:true}
+      key-id: ${RAZORPAY_KEY_ID}
+      key-secret: ${RAZORPAY_KEY_SECRET}
+      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+      currency: ${RAZORPAY_CURRENCY:INR}
+
+# Production Actuator Exposure
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    mongo:
+      enabled: true
+
+# Swagger / OpenAPI documentation is disabled by default in production; toggleable via SWAGGER_UI_ENABLED
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:false}
