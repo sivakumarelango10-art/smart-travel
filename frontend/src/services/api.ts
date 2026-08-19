@@ -21,12 +21,22 @@ export const apiClient = axios.create({
 // Request Interceptor: Attach JWT Token & Correlation headers
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url) {
+      // Defensive path normalization: strip duplicate /api/v1/v1 or /v1/v1 prefixes
+      config.url = config.url
+        .replace(/^\/api\/v1\/v1\//, '/v1/')
+        .replace(/^\/v1\/v1\//, '/v1/')
+        .replace(/^\/api\/v1\/api\/v1\//, '/v1/');
+    }
+
     const url = config.url || '';
     const isPublicAuthEndpoint =
       url.includes('/auth/register') ||
       url.includes('/auth/login') ||
       url.includes('/auth/refresh') ||
       url.includes('/auth/refresh-token') ||
+      url.includes('/auth/forgot-password') ||
+      url.includes('/auth/reset-password') ||
       (url.includes('/flights') && config.method?.toLowerCase() === 'get') ||
       url.includes('/health');
 

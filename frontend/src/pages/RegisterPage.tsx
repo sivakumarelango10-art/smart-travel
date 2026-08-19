@@ -16,6 +16,7 @@ export const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     if (!fullName || !email || !password) {
       setError('Please fill in all required fields.');
       return;

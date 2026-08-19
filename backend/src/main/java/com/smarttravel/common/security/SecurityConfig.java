@@ -101,9 +101,10 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Global CORS Preflight Handling (OPTIONS requests must NEVER require authentication)
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         // Public Health & Actuator Probes
-                        .requestMatchers("/api/health", "/api/v1/health", "/v1/health", "/health", "/api/health/**", "/api/v1/health/**", "/v1/health/**", "/health/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/api/health", "/api/v1/health", "/v1/health", "/health", "/api/health/**", "/api/v1/health/**", "/v1/health/**", "/health/**", "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                         // Public Swagger / OpenAPI documentation
                         .requestMatchers(
                                 "/v3/api-docs/**",
@@ -112,16 +113,28 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        // Public Authentication endpoints (register, login, refresh, refresh-token)
+                        // Public Authentication endpoints (register, login, refresh, forgot/reset password)
                         .requestMatchers(
                                 "/api/auth/register", "/api/v1/auth/register", "/v1/auth/register", "/auth/register",
+                                "/api/v1/v1/auth/register", "/v1/v1/auth/register",
                                 "/api/auth/register/**", "/api/v1/auth/register/**", "/v1/auth/register/**", "/auth/register/**",
+                                "/api/v1/v1/auth/register/**", "/v1/v1/auth/register/**",
                                 "/api/auth/login", "/api/v1/auth/login", "/v1/auth/login", "/auth/login",
+                                "/api/v1/v1/auth/login", "/v1/v1/auth/login",
                                 "/api/auth/login/**", "/api/v1/auth/login/**", "/v1/auth/login/**", "/auth/login/**",
+                                "/api/v1/v1/auth/login/**", "/v1/v1/auth/login/**",
                                 "/api/auth/refresh", "/api/v1/auth/refresh", "/v1/auth/refresh", "/auth/refresh",
+                                "/api/v1/v1/auth/refresh", "/v1/v1/auth/refresh",
                                 "/api/auth/refresh/**", "/api/v1/auth/refresh/**", "/v1/auth/refresh/**", "/auth/refresh/**",
+                                "/api/v1/v1/auth/refresh/**", "/v1/v1/auth/refresh/**",
                                 "/api/auth/refresh-token", "/api/v1/auth/refresh-token", "/v1/auth/refresh-token", "/auth/refresh-token",
-                                "/api/auth/refresh-token/**", "/api/v1/auth/refresh-token/**", "/v1/auth/refresh-token/**", "/auth/refresh-token/**"
+                                "/api/v1/v1/auth/refresh-token", "/v1/v1/auth/refresh-token",
+                                "/api/auth/refresh-token/**", "/api/v1/auth/refresh-token/**", "/v1/auth/refresh-token/**", "/auth/refresh-token/**",
+                                "/api/v1/v1/auth/refresh-token/**", "/v1/v1/auth/refresh-token/**",
+                                "/api/auth/forgot-password", "/api/v1/auth/forgot-password", "/v1/auth/forgot-password", "/auth/forgot-password",
+                                "/api/auth/forgot-password/**", "/api/v1/auth/forgot-password/**", "/v1/auth/forgot-password/**", "/auth/forgot-password/**",
+                                "/api/auth/reset-password", "/api/v1/auth/reset-password", "/v1/auth/reset-password", "/auth/reset-password",
+                                "/api/auth/reset-password/**", "/api/v1/auth/reset-password/**", "/v1/auth/reset-password/**", "/auth/reset-password/**"
                         ).permitAll()
                         // Public Flight Catalog & Search (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,

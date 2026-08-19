@@ -278,5 +278,32 @@ class ProductionSecurityEndpointsIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "https://smart-travel-sage.vercel.app"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Credentials", "true"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options("/api/v1/auth/register")
+                        .header("Origin", "https://smart-travel-sage.vercel.app")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type,Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "https://smart-travel-sage.vercel.app"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/v1/auth/register succeeds defensively if misconfigured client sends duplicate prefix")
+    void testRegisterDuplicatePrefixDefensiveHandling() throws Exception {
+        RegisterRequest req = RegisterRequest.builder()
+                .email("new.reg.dup." + testSuffix + "@smarttravel.com")
+                .fullName("Duplicate Prefix User")
+                .password("Password123!")
+                .phoneNumber("+919876543210")
+                .build();
+
+        mockMvc.perform(post("/api/v1/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value("new.reg.dup." + testSuffix + "@smarttravel.com"));
+
+        userRepository.findByEmail("new.reg.dup." + testSuffix + "@smarttravel.com").ifPresent(userRepository::delete);
     }
 }
