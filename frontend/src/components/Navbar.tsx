@@ -12,7 +12,8 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Shield
 } from 'lucide-react';
 import { APP_NAME } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +22,7 @@ import { useNotifications } from '../context/NotificationContext';
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -96,6 +97,20 @@ export const Navbar: React.FC = () => {
             >
               <BookmarkCheck className="w-4 h-4 text-indigo-400" />
               My Bookings
+            </Link>
+          )}
+
+          {isAuthenticated && isAdmin && (
+            <Link
+              to="/admin"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition duration-150 flex items-center gap-1.5 ${
+                location.pathname.startsWith('/admin')
+                  ? 'text-sky-400 bg-sky-500/10 border border-sky-500/30 font-semibold'
+                  : 'text-sky-400 hover:text-sky-300 hover:bg-slate-800/60'
+              }`}
+            >
+              <Shield className="w-4 h-4 text-sky-400" />
+              Admin Portal
             </Link>
           )}
         </nav>
@@ -218,6 +233,17 @@ export const Navbar: React.FC = () => {
                       <BookmarkCheck className="w-4 h-4 text-indigo-400" />
                       My Bookings
                     </Link>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2 px-3.5 py-2 text-xs text-sky-400 hover:text-sky-300 hover:bg-slate-800 transition font-medium"
+                      >
+                        <Shield className="w-4 h-4 text-sky-400" />
+                        Admin Portal
+                      </Link>
+                    )}
 
                     <button
                       onClick={handleLogout}

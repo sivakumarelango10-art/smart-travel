@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { MainLayout } from './layouts/MainLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 import { HomePage } from './pages/HomePage';
@@ -16,12 +17,28 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
+// Admin Pages
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminFlightsPage } from './pages/admin/AdminFlightsPage';
+import { AdminFlightDetailPage } from './pages/admin/AdminFlightDetailPage';
+import { AdminFlightFormPage } from './pages/admin/AdminFlightFormPage';
+import { AdminSeatMapPage } from './pages/admin/AdminSeatMapPage';
+import { AdminBookingsPage } from './pages/admin/AdminBookingsPage';
+import { AdminBookingDetailPage } from './pages/admin/AdminBookingDetailPage';
+import { AdminRefundsPage } from './pages/admin/AdminRefundsPage';
+import { AdminTicketsPage } from './pages/admin/AdminTicketsPage';
+import { AdminCheckInsPage } from './pages/admin/AdminCheckInsPage';
+import { AdminDisruptionsPage } from './pages/admin/AdminDisruptionsPage';
+import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
+import { AdminSystemPage } from './pages/admin/AdminSystemPage';
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
           <Routes>
+            {/* Customer & Public Routes */}
             <Route path="/" element={<MainLayout />}>
               {/* Public Routes */}
               <Route index element={<HomePage />} />
@@ -72,7 +89,33 @@ export default function App() {
                 }
               />
 
-              {/* 404 Fallback */}
+              {/* 404 Fallback for Customer App */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+
+            {/* Admin & Operations Routes (ROLE_ADMIN Protected) */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="flights" element={<AdminFlightsPage />} />
+              <Route path="flights/new" element={<AdminFlightFormPage />} />
+              <Route path="flights/:flightId" element={<AdminFlightDetailPage />} />
+              <Route path="flights/:flightId/edit" element={<AdminFlightFormPage />} />
+              <Route path="flights/:flightId/seats" element={<AdminSeatMapPage />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="bookings/:bookingId" element={<AdminBookingDetailPage />} />
+              <Route path="refunds" element={<AdminRefundsPage />} />
+              <Route path="tickets" element={<AdminTicketsPage />} />
+              <Route path="checkins" element={<AdminCheckInsPage />} />
+              <Route path="disruptions" element={<AdminDisruptionsPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="system" element={<AdminSystemPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

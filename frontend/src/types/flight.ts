@@ -49,8 +49,10 @@ export interface Flight {
   cabinClasses: CabinClass[];
   cabinInventories: CabinInventory[];
   status: FlightStatus;
-  isBookable: boolean;
+  isBookable?: boolean;
+  active?: boolean;
   delayMinutes?: number;
+  delayReason?: string;
   revisedDepartureTime?: string;
   revisedArrivalTime?: string;
   cancellationReason?: string;
