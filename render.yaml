@@ -1,5 +1,6 @@
 # ==============================================================================
 # SmartTravel Platform — Render Blueprint Deployment Specification
+# Documentation: https://render.com/docs/blueprint-spec
 # ==============================================================================
 
 services:
@@ -7,6 +8,7 @@ services:
   - type: web
     name: smarttravel-backend
     runtime: docker
+    # Dockerfile is at backend/Dockerfile; context is the backend/ directory
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: starter
@@ -15,25 +17,52 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+
+      # Render injects PORT dynamically; we forward it to Spring Boot
       - key: SERVER_PORT
-        value: 8080
+        fromService:
+          type: web
+          name: smarttravel-backend
+          property: port
+
+      # MongoDB Atlas connection (set securely in Render dashboard)
       - key: MONGODB_URI
-        sync: false # Set securely in Render dashboard
+        sync: false
+
       - key: MONGODB_DATABASE
         value: smarttravel
+
+      # JWT Security (generate with: openssl rand -base64 64)
       - key: JWT_SECRET
-        sync: false # Generate base64 512-bit key and set in Render dashboard
+        sync: false
+
+      - key: JWT_EXPIRATION_MS
+        value: "86400000"
+
+      # CORS: Set to your Vercel frontend URL after deployment
+      # Example: https://smart-travel-xxxx.vercel.app
       - key: CORS_ALLOWED_ORIGINS
-        sync: false # Set to Vercel production frontend domain
+        sync: false
+
+      # Razorpay Payment Integration
       - key: RAZORPAY_ENABLED
         value: "true"
+
       - key: RAZORPAY_KEY_ID
         sync: false
+
       - key: RAZORPAY_KEY_SECRET
         sync: false
+
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
+
+      - key: RAZORPAY_CURRENCY
+        value: INR
+
+      # Swagger disabled by default in production
       - key: SWAGGER_UI_ENABLED
         value: "false"
+
       - key: SWAGGER_API_DOCS_ENABLED
         value: "false"
