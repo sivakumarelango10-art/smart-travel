@@ -15,6 +15,7 @@ export interface ErrorResponse {
   error: string;
   message: string;
   path: string;
+  requestId?: string;
   validationErrors?: Array<{
     field: string;
     rejectedValue?: any;
@@ -23,17 +24,17 @@ export interface ErrorResponse {
 }
 
 export interface HealthData {
-  status: 'UP' | 'DOWN';
+  status: 'UP' | 'DOWN' | 'DEGRADED';
   service: string;
   environment: string;
   database: 'CONNECTED' | 'DISCONNECTED' | 'UNKNOWN';
   timestamp: string;
 }
 
-export interface UserSummary {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-}
+export * from './auth';
+export * from './flight';
+export * from './seat';
+export * from './booking';
+export * from './payment';
+export * from './ticket';
+export * from './notification';

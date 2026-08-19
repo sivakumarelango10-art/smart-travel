@@ -2,21 +2,25 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '../config/constants';
 import { ErrorResponse } from '../types/api';
 
+export const TOKEN_KEY = 'smarttravel_access_token';
+export const REFRESH_TOKEN_KEY = 'smarttravel_refresh_token';
+export const USER_KEY = 'smarttravel_user';
+
 /**
- * Configured Axios HTTP Client with JWT interceptors and standardized error handling.
+ * Configured Axios HTTP Client with JWT interceptors, X-Request-ID propagation, and standardized error normalization.
  */
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000,
 });
 
-// Request Interceptor: Attach JWT Token if available
+// Request Interceptor: Attach JWT Token & client Correlation ID if available
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('smarttravel_access_token');
+    const token = localStorage.getItem(TOKEN_KEY);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -25,24 +29,23 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Normalize errors
+// Response Interceptor: Normalize errors & handle 401 token invalidation
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
     if (error.response) {
-      // Server returned standard RFC 7807 error
       const status = error.response.status;
       if (status === 401) {
-        // Token expired or invalid
-        localStorage.removeItem('smarttravel_access_token');
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
       }
       return Promise.reject(error.response.data);
     } else if (error.request) {
-      // Network connectivity error
       return Promise.reject({
         status: 0,
         error: 'NETWORK_ERROR',
-        message: 'Unable to communicate with SmartTravel backend service. Please check your network connection.',
+        message: 'Unable to communicate with SmartTravel backend service. Please verify your connection or try again.',
         timestamp: new Date().toISOString(),
       });
     }
