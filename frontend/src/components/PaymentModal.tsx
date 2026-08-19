@@ -120,19 +120,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
-        {/* Top Accent */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500"></div>
+        {/* Top Gradient Accent */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-accent-500"></div>
 
         {paymentSuccess ? (
-          <div className="py-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto animate-bounce">
+          <div className="py-8 text-center space-y-4 animate-scale-up">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
               <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Payment Verified!</h2>
-            <p className="text-sm text-slate-400">
-              Issuing your e-ticket and locking seat reservations...
+            <h2 className="text-2xl font-black text-white">Payment Verified!</h2>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto">
+              Issuing authoritative e-ticket and locking seat reservations in real-time...
             </p>
           </div>
         ) : (
@@ -140,47 +140,49 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/20">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-white text-lg">Razorpay Secure Checkout</h2>
-                  <p className="text-xs text-slate-400">256-Bit Encrypted Gateway</p>
+                  <h2 className="font-extrabold text-white text-lg leading-tight">Razorpay Gateway</h2>
+                  <p className="text-[10px] text-slate-400">256-Bit Encrypted Authoritative Checkout</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{formatTimer(timeLeft)}</span>
               </div>
             </div>
 
             {/* Booking Summary Box */}
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5 text-xs">
               <div className="flex justify-between text-slate-300">
-                <span>Booking PNR:</span>
-                <span className="font-mono font-bold text-sky-400">{booking.bookingReference}</span>
-              </div>
-              <div className="flex justify-between text-slate-300">
-                <span>Flight Route:</span>
-                <span className="font-semibold text-white">
-                  {booking.departureAirport.code} → {booking.arrivalAirport.code} ({booking.flightNumber})
+                <span className="text-slate-400">Booking PNR</span>
+                <span className="font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+                  {booking.bookingReference}
                 </span>
               </div>
               <div className="flex justify-between text-slate-300">
-                <span>Passengers:</span>
-                <span className="text-slate-200">{booking.passengerCount} traveler(s)</span>
+                <span className="text-slate-400">Flight Route</span>
+                <span className="font-bold text-white">
+                  {booking.departureAirport.code} ➔ {booking.arrivalAirport.code} ({booking.flightNumber})
+                </span>
               </div>
-              <div className="pt-2 border-t border-slate-800 flex justify-between items-baseline font-bold text-sm text-white">
-                <span>Amount to Pay:</span>
-                <span className="text-xl font-extrabold text-emerald-400">
+              <div className="flex justify-between text-slate-300">
+                <span className="text-slate-400">Passengers</span>
+                <span className="font-semibold text-slate-200">{booking.passengerCount} traveler(s)</span>
+              </div>
+              <div className="pt-2.5 border-t border-slate-800 flex justify-between items-baseline font-bold text-sm text-white">
+                <span className="text-slate-300">Total Due</span>
+                <span className="text-2xl font-black text-emerald-400">
                   ₹{booking.totalAmount.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+              <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -192,12 +194,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 type="button"
                 disabled={loading || timeLeft === 0}
                 onClick={handlePayNow}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/20 transition duration-150 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Authorizing Payment...
+                    Verifying Payment...
                   </span>
                 ) : (
                   <>
@@ -211,15 +213,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 type="button"
                 disabled={loading}
                 onClick={onClose}
-                className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-white text-xs font-medium transition"
+                className="w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition border border-slate-700/60"
               >
                 Cancel & Review Booking
               </button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>PCI-DSS Compliant • HMAC-SHA256 Reconciled</span>
+            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>PCI-DSS Compliant • 256-Bit Encrypted Gateway</span>
             </div>
           </>
         )}
@@ -227,3 +229,4 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     </div>
   );
 };
+

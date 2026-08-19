@@ -7,7 +7,9 @@ import {
   CheckCircle2,
   ChevronRight,
   ChevronLeft,
-  AlertCircle
+  AlertCircle,
+  Plane,
+  ShieldCheck
 } from 'lucide-react';
 import { Flight, CabinClass, Passenger, Seat, Booking } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -165,17 +167,47 @@ export const BookingPage: React.FC = () => {
 
   if (loading || !flight) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center gap-3">
-        <div className="w-10 h-10 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-400 font-medium">Loading flight cabin & physical seat map...</p>
+      <div className="py-24 flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
+        <p className="text-sm text-slate-400 font-bold">Loading aircraft cabin & real-time seat inventory...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-8 py-4 max-w-7xl mx-auto">
-      {/* Stepper Progress Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-xl">
+      {/* 1. FLIGHT SUMMARY BANNER */}
+      <section className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 font-black">
+            <Plane className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {flight.departureAirport.city} ({flight.departureAirport.code}) ➔ {flight.arrivalAirport.city} ({flight.arrivalAirport.code})
+              </h1>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+              <span className="font-bold text-slate-200">{flight.airline} • {flight.flightNumber}</span>
+              <span>•</span>
+              <span>{flight.aircraftModel}</span>
+              <span>•</span>
+              <span className="text-sky-400 font-bold">{cabinClass.replace('_', ' ')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Instant Lock Engine</span>
+          </span>
+        </div>
+      </section>
+
+      {/* 2. STEPPER PROGRESS BAR */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-2xl backdrop-blur-xl">
         {[
           { num: 1, label: 'Seat Selection', icon: Armchair },
           { num: 2, label: 'Passenger Details', icon: Users },
@@ -188,18 +220,18 @@ export const BookingPage: React.FC = () => {
           return (
             <div key={s.num} className="flex items-center gap-2 sm:gap-3">
               <div
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm transition ${
+                className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition ${
                   isDone
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     : isCurrent
-                    ? 'bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/25 border border-sky-400'
-                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+                    ? 'bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/30 border border-sky-400 scale-105'
+                    : 'bg-slate-800/80 text-slate-500 border border-slate-700'
                 }`}
               >
-                {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Icon className="w-4 h-4" />}
+                {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Icon className="w-5 h-5" />}
               </div>
               <div className="hidden sm:block">
-                <p className="text-[10px] text-slate-400 uppercase font-semibold">Step {s.num}</p>
+                <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Step {s.num}</p>
                 <p className={`text-xs font-bold ${isCurrent ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
               </div>
             </div>
@@ -208,22 +240,22 @@ export const BookingPage: React.FC = () => {
       </div>
 
       {bookingError && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2.5 animate-fade-in">
+          <AlertCircle className="w-5 h-5 shrink-0" />
           <span>{bookingError}</span>
         </div>
       )}
 
-      {/* Main Booking Content Grid */}
+      {/* 3. MAIN BOOKING CONTENT GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Interactive Content Area */}
         <div className="lg:col-span-8 space-y-6">
           {/* Step 1: Seat Map Selection */}
           {step === 1 && (
             <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-2xl backdrop-blur-xl">
                 <div>
-                  <h2 className="text-lg font-bold text-white">Select Your Aircraft Seats</h2>
+                  <h2 className="text-lg font-black text-white">Select Your Aircraft Seats</h2>
                   <p className="text-xs text-slate-400 mt-0.5">
                     Pick {passengerCount} seat(s) for your {cabinClass.replace('_', ' ')} reservation
                   </p>
@@ -245,10 +277,10 @@ export const BookingPage: React.FC = () => {
           {/* Step 2: Passenger Details Form */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
-                <h2 className="text-lg font-bold text-white">Passenger Information</h2>
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
+                <h2 className="text-lg font-black text-white">Passenger Information</h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Enter details as per government-issued photo identification / passport
+                  Enter details exactly as they appear on passenger government ID cards
                 </p>
               </div>
 
@@ -261,66 +293,107 @@ export const BookingPage: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Final Review Before Creation */}
+          {/* Step 3: Review & Final Confirmation */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
-                <h2 className="text-lg font-bold text-white">Review Flight & Travelers</h2>
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
+                <h2 className="text-lg font-black text-white">Review Itinerary & Travelers</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Please review all flight and passenger details before proceeding to payment
+                </p>
+              </div>
 
-                {/* Flight Card Mini */}
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
-                  <div className="flex justify-between items-center text-white font-bold text-sm">
-                    <span>
-                      {flight.airline} ({flight.flightNumber})
-                    </span>
-                    <span className="text-sky-400 font-mono">{flight.aircraftModel}</span>
+              {/* Review Itinerary Box */}
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2 text-white font-bold text-sm">
+                    <Plane className="w-4 h-4 text-sky-400" />
+                    <span>Flight Schedule</span>
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span>Route:</span>
-                    <span>
-                      {flight.departureAirport.city} ({flight.departureAirport.code}) ➔{' '}
-                      {flight.arrivalAirport.city} ({flight.arrivalAirport.code})
-                    </span>
+                  <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+                    {flight.flightNumber}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-400 block">Departure</span>
+                    <strong className="text-white text-sm">
+                      {new Date(flight.departureTime).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      at {new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </strong>
+                    <p className="text-slate-400 mt-0.5">
+                      {flight.departureAirport.name} ({flight.departureAirport.code})
+                    </p>
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span>Departure Time:</span>
-                    <span>{new Date(flight.departureTime).toLocaleString()}</span>
+
+                  <div>
+                    <span className="text-slate-400 block">Arrival</span>
+                    <strong className="text-white text-sm">
+                      {new Date(flight.arrivalTime).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}{' '}
+                      at {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </strong>
+                    <p className="text-slate-400 mt-0.5">
+                      {flight.arrivalAirport.name} ({flight.arrivalAirport.code})
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Passenger List Box */}
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2 text-white font-bold text-sm">
+                    <Users className="w-4 h-4 text-sky-400" />
+                    <span>Confirmed Passengers ({passengers.length})</span>
                   </div>
                 </div>
 
-                {/* Travelers List */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-slate-300">Travelers & Seat Assignments:</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {passengers.map((p, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-xs flex justify-between items-center"
-                      >
-                        <span className="font-semibold text-white">
-                          {p.title} {p.firstName} {p.lastName}
-                        </span>
-                        <span className="font-mono text-sky-400 font-bold bg-sky-950/40 px-2 py-0.5 rounded border border-sky-800/40">
-                          Seat: {selectedSeats[idx]}
+                <div className="space-y-3">
+                  {passengers.map((pax, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <strong className="text-white font-bold">
+                          {pax.title} {pax.firstName} {pax.lastName}
+                        </strong>
+                        <p className="text-[11px] text-slate-400">
+                          {pax.gender} • {pax.nationality || 'Indian'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2.5 py-1 rounded-xl border border-sky-800/40">
+                          Seat {selectedSeats[idx]}
                         </span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Stepper Navigation Buttons */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+          {/* Navigation Controls Bar */}
+          <div className="pt-4 flex items-center justify-between">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-2 border border-slate-700 transition"
+                className="px-6 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2 transition border border-slate-700 shadow-lg"
               >
                 <ChevronLeft className="w-4 h-4" />
-                Previous Step
+                <span>Back</span>
               </button>
             ) : (
               <div></div>
@@ -330,9 +403,9 @@ export const BookingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-sky-500/20 transition"
+                className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2"
               >
-                <span>Continue to {step === 1 ? 'Passenger Details' : 'Review & Pay'}</span>
+                <span>Continue to {step === 1 ? 'Passenger Details' : 'Review & Payment'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
@@ -340,17 +413,17 @@ export const BookingPage: React.FC = () => {
                 type="button"
                 disabled={bookingLoading}
                 onClick={handleCreateBookingAndPay}
-                className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-sm font-bold flex items-center gap-2 shadow-xl shadow-emerald-500/25 transition disabled:opacity-50"
+                className="px-10 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-sm shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {bookingLoading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Holding Reservation...
+                    Holding Seats & Creating Booking...
                   </span>
                 ) : (
                   <>
-                    <CreditCard className="w-4 h-4" />
-                    <span>Proceed to Payment</span>
+                    <CreditCard className="w-5 h-5" />
+                    <span>Proceed to Razorpay Secure Payment</span>
                   </>
                 )}
               </button>
@@ -358,26 +431,26 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Authoritative Fare Summary Column */}
-        <aside className="lg:col-span-4">
+        {/* Right Fare Summary Card */}
+        <div className="lg:col-span-4">
           <FareSummaryCard
             flight={flight}
             cabinClass={cabinClass}
             passengerCount={passengerCount}
             selectedSeats={selectedSeats}
           />
-        </aside>
+        </div>
       </div>
 
-      {/* Razorpay Payment Modal */}
+      {/* Payment Gateway Modal */}
       {showPaymentModal && createdBooking && (
         <PaymentModal
           booking={createdBooking}
-          onClose={() => setShowPaymentModal(false)}
           onPaymentSuccess={() => {
             setShowPaymentModal(false);
-            navigate(`/booking-confirmation/${createdBooking.id}`);
+            navigate(`/confirmation/${createdBooking.bookingReference}`);
           }}
+          onClose={() => setShowPaymentModal(false)}
         />
       )}
     </div>

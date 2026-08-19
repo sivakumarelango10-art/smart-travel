@@ -32,13 +32,18 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   const totalAmount = totalPerPax * passengerCount;
 
   return (
-    <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5 sticky top-20">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <Receipt className="w-4 h-4 text-sky-400" />
-          <h3 className="font-bold text-white text-base">Fare Summary</h3>
+    <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 shadow-2xl space-y-5 sticky top-24 backdrop-blur-xl">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center">
+            <Receipt className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-white text-base">Fare Summary</h3>
+            <p className="text-[10px] text-slate-400">Authoritative price breakdown</p>
+          </div>
         </div>
-        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+        <span className="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-slate-800 text-sky-300 border border-slate-700">
           {cabinClass.replace('_', ' ')}
         </span>
       </div>
@@ -47,25 +52,27 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
       <div className="space-y-3 text-xs">
         <div className="flex items-center justify-between text-slate-300">
           <span>
-            Base Fare ({passengerCount} {passengerCount === 1 ? 'Adult' : 'Adults'})
+            Base Fare ({passengerCount} {passengerCount === 1 ? 'Traveler' : 'Travelers'})
           </span>
-          <span className="font-semibold text-white">₹{totalBase.toLocaleString('en-IN')}</span>
+          <span className="font-bold text-white font-mono">₹{totalBase.toLocaleString('en-IN')}</span>
         </div>
 
         <div className="flex items-center justify-between text-slate-400">
           <span>Taxes & GST (18%)</span>
-          <span>₹{totalTax.toLocaleString('en-IN')}</span>
+          <span className="font-mono">₹{totalTax.toLocaleString('en-IN')}</span>
         </div>
 
         <div className="flex items-center justify-between text-slate-400">
-          <span>Airport & Regulatory Fees</span>
-          <span>₹{totalFee.toLocaleString('en-IN')}</span>
+          <span>Airport & User Development Fees</span>
+          <span className="font-mono">₹{totalFee.toLocaleString('en-IN')}</span>
         </div>
 
         {selectedSeats.length > 0 && (
-          <div className="flex items-center justify-between text-slate-400 pt-2 border-t border-slate-800/60">
-            <span>Seat Assignments</span>
-            <span className="text-emerald-400 font-medium">{selectedSeats.join(', ')}</span>
+          <div className="flex items-center justify-between text-slate-300 pt-2.5 border-t border-slate-800/80">
+            <span className="font-medium">Selected Seats</span>
+            <span className="text-sky-400 font-mono font-bold bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+              {selectedSeats.join(', ')}
+            </span>
           </div>
         )}
       </div>
@@ -73,11 +80,11 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
       {/* Total Due */}
       <div className="pt-4 border-t border-slate-800 flex items-baseline justify-between">
         <div>
-          <span className="text-xs text-slate-400 block">Total Authoritative Fare</span>
-          <span className="text-xs text-emerald-400 font-medium">Includes all taxes & fees</span>
+          <span className="text-xs text-slate-400 block font-semibold">Total Amount Due</span>
+          <span className="text-[11px] text-emerald-400 font-medium">All taxes & fees included</span>
         </div>
         <div className="text-right">
-          <span className="text-2xl font-black text-white">
+          <span className="text-3xl font-black text-white tracking-tight">
             ₹{totalAmount.toLocaleString('en-IN')}
           </span>
         </div>
@@ -85,16 +92,17 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
 
       {/* Expiration or Guarantee Notice */}
       {expiresAt ? (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-amber-400 text-xs font-semibold">
+        <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center gap-2.5 text-amber-300 text-xs font-bold shadow-md">
           <Clock className="w-4 h-4 shrink-0" />
-          <span>Payment Window: 15 min lock active</span>
+          <span>Payment Window: 15-minute concurrency lock active</span>
         </div>
       ) : (
-        <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center gap-2 text-sky-400 text-xs">
-          <ShieldCheck className="w-4 h-4 shrink-0" />
-          <span>Price guaranteed by backend atomic state machine.</span>
+        <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center gap-2.5 text-sky-300 text-xs font-medium">
+          <ShieldCheck className="w-4 h-4 shrink-0 text-sky-400" />
+          <span>Atomic seat inventory lock & real-time fare guarantee.</span>
         </div>
       )}
     </div>
   );
 };
+
