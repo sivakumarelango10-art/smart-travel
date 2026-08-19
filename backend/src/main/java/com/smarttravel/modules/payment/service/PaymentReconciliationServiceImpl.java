@@ -35,25 +35,22 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
     private final PaymentStateMachine paymentStateMachine;
     private final BookingStateMachine bookingStateMachine;
     private final MongoTemplate mongoTemplate;
+    private final com.smarttravel.modules.ticket.service.TicketService ticketService;
 
     @Autowired
     public PaymentReconciliationServiceImpl(PaymentRepository paymentRepository,
                                             BookingRepository bookingRepository,
                                             PaymentStateMachine paymentStateMachine,
                                             BookingStateMachine bookingStateMachine,
-                                            MongoTemplate mongoTemplate) {
+                                            @Autowired(required = false) MongoTemplate mongoTemplate,
+                                            @org.springframework.context.annotation.Lazy com.smarttravel.modules.ticket.service.TicketService ticketService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.paymentStateMachine = paymentStateMachine;
         this.bookingStateMachine = bookingStateMachine;
         this.mongoTemplate = mongoTemplate;
-    }
-
-    public PaymentReconciliationServiceImpl(PaymentRepository paymentRepository,
-                                            BookingRepository bookingRepository,
-                                            PaymentStateMachine paymentStateMachine,
-                                            BookingStateMachine bookingStateMachine) {
-        this(paymentRepository, bookingRepository, paymentStateMachine, bookingStateMachine, null);
+        this.ticketService = ticketService;
+        log.info("PaymentReconciliationServiceImpl initialized with ticketService: {}", ticketService != null ? "ACTIVE" : "NULL");
     }
 
     @Override
@@ -104,6 +101,13 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
         if (booking.getStatus() == BookingStatus.CONFIRMED) {
             if (payment.getPaymentStatus() == PaymentStatus.VERIFIED) {
                 log.info("Payment and Booking ID: {} already confirmed. Returning idempotent success.", booking.getId());
+                if (ticketService != null) {
+                    try {
+                        ticketService.issueTicket(booking.getId());
+                    } catch (Exception ex) {
+                        log.warn("Non-fatal: Ticket issuance error during idempotent confirmation for booking ID: {}", booking.getId(), ex);
+                    }
+                }
                 return payment;
             }
             // Update payment record to VERIFIED if not yet updated
@@ -112,7 +116,15 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
             if (payment.getVerifiedAt() == null) {
                 payment.setVerifiedAt(Instant.now());
             }
-            return paymentRepository.save(payment);
+            Payment saved = paymentRepository.save(payment);
+            if (ticketService != null) {
+                try {
+                    ticketService.issueTicket(booking.getId());
+                } catch (Exception ex) {
+                    log.warn("Non-fatal: Ticket issuance error for confirmed booking ID: {}", booking.getId(), ex);
+                }
+            }
+            return saved;
         }
 
         if (booking.getStatus() == BookingStatus.EXPIRED || booking.getStatus() == BookingStatus.CANCELLED) {
@@ -139,9 +151,12 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
 
             UpdateResult updateResult = mongoTemplate.updateFirst(bookingQuery, bookingUpdate, Booking.class);
             if (updateResult.getModifiedCount() == 0) {
-                // Race condition: booking was concurrently expired or cancelled
                 Booking currentBooking = bookingRepository.findById(booking.getId()).orElse(null);
-                if (currentBooking != null && (currentBooking.getStatus() == BookingStatus.EXPIRED || currentBooking.getStatus() == BookingStatus.CANCELLED)) {
+                if (currentBooking != null && currentBooking.getStatus() == BookingStatus.PENDING) {
+                    currentBooking.setStatus(BookingStatus.CONFIRMED);
+                    currentBooking.setUpdatedAt(Instant.now());
+                    booking = bookingRepository.save(currentBooking);
+                } else if (currentBooking != null && (currentBooking.getStatus() == BookingStatus.EXPIRED || currentBooking.getStatus() == BookingStatus.CANCELLED)) {
                     log.warn("LATE PAYMENT CONFLICT (Race condition caught): Received payment for {} booking: {}",
                             currentBooking.getStatus(), booking.getId());
                     payment.setRazorpayPaymentId(razorpayPaymentId);
@@ -149,12 +164,15 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
                     payment.setUpdatedAt(Instant.now());
                     return paymentRepository.save(payment);
                 }
+            } else {
+                booking.setStatus(BookingStatus.CONFIRMED);
+                booking.setUpdatedAt(Instant.now());
             }
         } else {
             bookingStateMachine.validateTransition(booking.getStatus(), BookingStatus.CONFIRMED);
             booking.setStatus(BookingStatus.CONFIRMED);
             booking.setUpdatedAt(Instant.now());
-            bookingRepository.save(booking);
+            booking = bookingRepository.save(booking);
         }
 
         // 6. Normal Path: Transition Payment to VERIFIED
@@ -167,6 +185,17 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
         Payment savedPayment = paymentRepository.save(payment);
 
         log.info("Payment reconciled and Booking ID: {} successfully CONFIRMED via webhook", booking.getId());
+
+        // 7. Automatic Ticket Issuance (idempotent & failure-isolated)
+        if (ticketService != null) {
+            try {
+                ticketService.issueTicket(booking.getId());
+                log.info("Ticket successfully issued upon payment reconciliation for booking ID: {}", booking.getId());
+            } catch (Exception ex) {
+                log.error("Non-fatal: Ticket issuance failed for confirmed booking ID: {}. Ticket remains retryable via admin/system.", booking.getId(), ex);
+            }
+        }
+
         return savedPayment;
     }
 

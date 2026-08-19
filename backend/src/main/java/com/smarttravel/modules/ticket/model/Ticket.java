@@ -1,4 +1,4 @@
-package com.smarttravel.modules.booking.model;
+package com.smarttravel.modules.ticket.model;
 
 import com.smarttravel.modules.flight.dto.FareBreakdownDto;
 import com.smarttravel.modules.flight.model.AirportInfo;
@@ -18,20 +18,26 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * MongoDB Document entity representing a flight booking and reservation.
+ * MongoDB Document entity representing an immutable issued flight ticket.
+ * Contains a complete historical snapshot of flight, passenger, and fare details.
  */
-@Document(collection = "bookings")
+@Document(collection = "tickets")
 @CompoundIndexes({
-        @CompoundIndex(name = "booking_user_created_idx", def = "{'userId': 1, 'createdAt': -1}"),
-        @CompoundIndex(name = "booking_flight_status_idx", def = "{'flightId': 1, 'status': 1}"),
-        @CompoundIndex(name = "booking_status_expires_idx", def = "{'status': 1, 'expiresAt': 1}")
+        @CompoundIndex(name = "ticket_user_issued_idx", def = "{'userId': 1, 'issuedAt': -1}"),
+        @CompoundIndex(name = "ticket_flight_status_idx", def = "{'flightId': 1, 'status': 1}")
 })
-public class Booking {
+public class Ticket {
 
     @Id
     private String id;
 
     @Indexed(unique = true)
+    private String ticketNumber;
+
+    @Indexed(unique = true)
+    private String bookingId;
+
+    @Indexed
     private String bookingReference;
 
     @Indexed
@@ -48,6 +54,8 @@ public class Booking {
 
     private String airlineCode;
 
+    private String aircraftModel;
+
     private AirportInfo departureAirport;
 
     private AirportInfo arrivalAirport;
@@ -62,7 +70,7 @@ public class Booking {
 
     private int passengerCount;
 
-    private List<Passenger> passengers = new ArrayList<>();
+    private List<PassengerTicketInfo> passengers = new ArrayList<>();
 
     private FareBreakdownDto fareBreakdown;
 
@@ -70,17 +78,23 @@ public class Booking {
 
     private String currency = "INR";
 
-    private BookingStatus status = BookingStatus.PENDING;
+    @Indexed
+    private TicketStatus status = TicketStatus.ISSUED;
+
+    private String paymentId;
+
+    private String razorpayPaymentId;
+
+    @Indexed
+    private Instant issuedAt;
 
     private Instant cancelledAt;
 
     private String cancellationReason;
 
-    private Instant expiresAt;
+    private boolean pdfGenerated;
 
-    private String ticketId;
-
-    private String ticketNumber;
+    private Instant pdfGeneratedAt;
 
     @CreatedDate
     private Instant createdAt;
@@ -88,18 +102,22 @@ public class Booking {
     @LastModifiedDate
     private Instant updatedAt;
 
-    public Booking() {
+    public Ticket() {
     }
 
-    public Booking(String id, String bookingReference, String userId, String userEmail,
-                   String flightId, String flightNumber, String airline, String airlineCode,
-                   AirportInfo departureAirport, AirportInfo arrivalAirport,
-                   Instant departureTime, Instant arrivalTime, Integer durationMinutes,
-                   CabinClass cabinClass, int passengerCount, List<Passenger> passengers,
-                   FareBreakdownDto fareBreakdown, BigDecimal totalAmount, String currency,
-                   BookingStatus status, Instant cancelledAt, String cancellationReason,
-                   Instant expiresAt, Instant createdAt, Instant updatedAt) {
+    public Ticket(String id, String ticketNumber, String bookingId, String bookingReference,
+                  String userId, String userEmail, String flightId, String flightNumber,
+                  String airline, String airlineCode, String aircraftModel,
+                  AirportInfo departureAirport, AirportInfo arrivalAirport,
+                  Instant departureTime, Instant arrivalTime, Integer durationMinutes,
+                  CabinClass cabinClass, int passengerCount, List<PassengerTicketInfo> passengers,
+                  FareBreakdownDto fareBreakdown, BigDecimal totalAmount, String currency,
+                  TicketStatus status, String paymentId, String razorpayPaymentId,
+                  Instant issuedAt, Instant cancelledAt, String cancellationReason,
+                  boolean pdfGenerated, Instant pdfGeneratedAt, Instant createdAt, Instant updatedAt) {
         this.id = id;
+        this.ticketNumber = ticketNumber;
+        this.bookingId = bookingId;
         this.bookingReference = bookingReference;
         this.userId = userId;
         this.userEmail = userEmail;
@@ -107,6 +125,7 @@ public class Booking {
         this.flightNumber = flightNumber;
         this.airline = airline;
         this.airlineCode = airlineCode;
+        this.aircraftModel = aircraftModel;
         this.departureAirport = departureAirport;
         this.arrivalAirport = arrivalAirport;
         this.departureTime = departureTime;
@@ -118,10 +137,14 @@ public class Booking {
         this.fareBreakdown = fareBreakdown;
         this.totalAmount = totalAmount;
         this.currency = currency != null ? currency : "INR";
-        this.status = status != null ? status : BookingStatus.PENDING;
+        this.status = status != null ? status : TicketStatus.ISSUED;
+        this.paymentId = paymentId;
+        this.razorpayPaymentId = razorpayPaymentId;
+        this.issuedAt = issuedAt;
         this.cancelledAt = cancelledAt;
         this.cancellationReason = cancellationReason;
-        this.expiresAt = expiresAt;
+        this.pdfGenerated = pdfGenerated;
+        this.pdfGeneratedAt = pdfGeneratedAt;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -132,6 +155,8 @@ public class Booking {
 
     public static class Builder {
         private String id;
+        private String ticketNumber;
+        private String bookingId;
         private String bookingReference;
         private String userId;
         private String userEmail;
@@ -139,6 +164,7 @@ public class Booking {
         private String flightNumber;
         private String airline;
         private String airlineCode;
+        private String aircraftModel;
         private AirportInfo departureAirport;
         private AirportInfo arrivalAirport;
         private Instant departureTime;
@@ -146,21 +172,33 @@ public class Booking {
         private Integer durationMinutes;
         private CabinClass cabinClass;
         private int passengerCount;
-        private List<Passenger> passengers = new ArrayList<>();
+        private List<PassengerTicketInfo> passengers = new ArrayList<>();
         private FareBreakdownDto fareBreakdown;
         private BigDecimal totalAmount;
         private String currency = "INR";
-        private BookingStatus status = BookingStatus.PENDING;
+        private TicketStatus status = TicketStatus.ISSUED;
+        private String paymentId;
+        private String razorpayPaymentId;
+        private Instant issuedAt;
         private Instant cancelledAt;
         private String cancellationReason;
-        private Instant expiresAt;
-        private String ticketId;
-        private String ticketNumber;
+        private boolean pdfGenerated;
+        private Instant pdfGeneratedAt;
         private Instant createdAt;
         private Instant updatedAt;
 
         public Builder id(String id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder ticketNumber(String ticketNumber) {
+            this.ticketNumber = ticketNumber;
+            return this;
+        }
+
+        public Builder bookingId(String bookingId) {
+            this.bookingId = bookingId;
             return this;
         }
 
@@ -199,6 +237,11 @@ public class Booking {
             return this;
         }
 
+        public Builder aircraftModel(String aircraftModel) {
+            this.aircraftModel = aircraftModel;
+            return this;
+        }
+
         public Builder departureAirport(AirportInfo departureAirport) {
             this.departureAirport = departureAirport;
             return this;
@@ -234,8 +277,8 @@ public class Booking {
             return this;
         }
 
-        public Builder passengers(List<Passenger> passengers) {
-            this.passengers = passengers;
+        public Builder passengers(List<PassengerTicketInfo> passengers) {
+            this.passengers = passengers != null ? passengers : new ArrayList<>();
             return this;
         }
 
@@ -254,8 +297,23 @@ public class Booking {
             return this;
         }
 
-        public Builder status(BookingStatus status) {
+        public Builder status(TicketStatus status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder paymentId(String paymentId) {
+            this.paymentId = paymentId;
+            return this;
+        }
+
+        public Builder razorpayPaymentId(String razorpayPaymentId) {
+            this.razorpayPaymentId = razorpayPaymentId;
+            return this;
+        }
+
+        public Builder issuedAt(Instant issuedAt) {
+            this.issuedAt = issuedAt;
             return this;
         }
 
@@ -269,18 +327,13 @@ public class Booking {
             return this;
         }
 
-        public Builder expiresAt(Instant expiresAt) {
-            this.expiresAt = expiresAt;
+        public Builder pdfGenerated(boolean pdfGenerated) {
+            this.pdfGenerated = pdfGenerated;
             return this;
         }
 
-        public Builder ticketId(String ticketId) {
-            this.ticketId = ticketId;
-            return this;
-        }
-
-        public Builder ticketNumber(String ticketNumber) {
-            this.ticketNumber = ticketNumber;
+        public Builder pdfGeneratedAt(Instant pdfGeneratedAt) {
+            this.pdfGeneratedAt = pdfGeneratedAt;
             return this;
         }
 
@@ -294,15 +347,14 @@ public class Booking {
             return this;
         }
 
-        public Booking build() {
-            Booking booking = new Booking(id, bookingReference, userId, userEmail, flightId, flightNumber,
-                    airline, airlineCode, departureAirport, arrivalAirport, departureTime,
-                    arrivalTime, durationMinutes, cabinClass, passengerCount, passengers,
-                    fareBreakdown, totalAmount, currency, status, cancelledAt, cancellationReason,
-                    expiresAt, createdAt, updatedAt);
-            booking.setTicketId(ticketId);
-            booking.setTicketNumber(ticketNumber);
-            return booking;
+        public Ticket build() {
+            return new Ticket(id, ticketNumber, bookingId, bookingReference, userId, userEmail,
+                    flightId, flightNumber, airline, airlineCode, aircraftModel,
+                    departureAirport, arrivalAirport, departureTime, arrivalTime,
+                    durationMinutes, cabinClass, passengerCount, passengers, fareBreakdown,
+                    totalAmount, currency, status, paymentId, razorpayPaymentId,
+                    issuedAt, cancelledAt, cancellationReason, pdfGenerated, pdfGeneratedAt,
+                    createdAt, updatedAt);
         }
     }
 
@@ -312,6 +364,22 @@ public class Booking {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
+    }
+
+    public String getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(String bookingId) {
+        this.bookingId = bookingId;
     }
 
     public String getBookingReference() {
@@ -370,6 +438,14 @@ public class Booking {
         this.airlineCode = airlineCode;
     }
 
+    public String getAircraftModel() {
+        return aircraftModel;
+    }
+
+    public void setAircraftModel(String aircraftModel) {
+        this.aircraftModel = aircraftModel;
+    }
+
     public AirportInfo getDepartureAirport() {
         return departureAirport;
     }
@@ -426,11 +502,11 @@ public class Booking {
         this.passengerCount = passengerCount;
     }
 
-    public List<Passenger> getPassengers() {
+    public List<PassengerTicketInfo> getPassengers() {
         return passengers;
     }
 
-    public void setPassengers(List<Passenger> passengers) {
+    public void setPassengers(List<PassengerTicketInfo> passengers) {
         this.passengers = passengers != null ? passengers : new ArrayList<>();
     }
 
@@ -458,12 +534,36 @@ public class Booking {
         this.currency = currency;
     }
 
-    public BookingStatus getStatus() {
+    public TicketStatus getStatus() {
         return status;
     }
 
-    public void setStatus(BookingStatus status) {
+    public void setStatus(TicketStatus status) {
         this.status = status;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public String getRazorpayPaymentId() {
+        return razorpayPaymentId;
+    }
+
+    public void setRazorpayPaymentId(String razorpayPaymentId) {
+        this.razorpayPaymentId = razorpayPaymentId;
+    }
+
+    public Instant getIssuedAt() {
+        return issuedAt;
+    }
+
+    public void setIssuedAt(Instant issuedAt) {
+        this.issuedAt = issuedAt;
     }
 
     public Instant getCancelledAt() {
@@ -482,28 +582,20 @@ public class Booking {
         this.cancellationReason = cancellationReason;
     }
 
-    public Instant getExpiresAt() {
-        return expiresAt;
+    public boolean isPdfGenerated() {
+        return pdfGenerated;
     }
 
-    public void setExpiresAt(Instant expiresAt) {
-        this.expiresAt = expiresAt;
+    public void setPdfGenerated(boolean pdfGenerated) {
+        this.pdfGenerated = pdfGenerated;
     }
 
-    public String getTicketId() {
-        return ticketId;
+    public Instant getPdfGeneratedAt() {
+        return pdfGeneratedAt;
     }
 
-    public void setTicketId(String ticketId) {
-        this.ticketId = ticketId;
-    }
-
-    public String getTicketNumber() {
-        return ticketNumber;
-    }
-
-    public void setTicketNumber(String ticketNumber) {
-        this.ticketNumber = ticketNumber;
+    public void setPdfGeneratedAt(Instant pdfGeneratedAt) {
+        this.pdfGeneratedAt = pdfGeneratedAt;
     }
 
     public Instant getCreatedAt() {
@@ -526,13 +618,14 @@ public class Booking {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Booking booking = (Booking) o;
-        return Objects.equals(id, booking.id) &&
-                Objects.equals(bookingReference, booking.bookingReference);
+        Ticket ticket = (Ticket) o;
+        return Objects.equals(id, ticket.id) &&
+                Objects.equals(ticketNumber, ticket.ticketNumber) &&
+                Objects.equals(bookingId, ticket.bookingId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, bookingReference);
+        return Objects.hash(id, ticketNumber, bookingId);
     }
 }

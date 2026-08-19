@@ -105,7 +105,7 @@ public class SecurityConfig {
                         // Razorpay Webhook Callback (Server-to-Server authenticated by HMAC-SHA256 signature)
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/payments/webhook").permitAll()
                         // Admin Endpoints
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/v1/admin/**").hasRole("ADMIN")
                         // WebSocket Handshake Endpoint
                         .requestMatchers("/ws/**").permitAll()
                         // Error Dispatch

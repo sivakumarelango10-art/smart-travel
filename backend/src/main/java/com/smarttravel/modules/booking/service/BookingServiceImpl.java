@@ -55,6 +55,7 @@ public class BookingServiceImpl implements BookingService {
     private final PnrGenerator pnrGenerator;
     private final BookingMapper bookingMapper;
     private final BookingProperties bookingProperties;
+    private final com.smarttravel.modules.ticket.service.TicketService ticketService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -64,7 +65,8 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper,
-                              BookingProperties bookingProperties) {
+                              BookingProperties bookingProperties,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService) {
         this.bookingRepository = bookingRepository;
         this.flightRepository = flightRepository;
         this.reservationService = reservationService;
@@ -73,6 +75,7 @@ public class BookingServiceImpl implements BookingService {
         this.pnrGenerator = pnrGenerator;
         this.bookingMapper = bookingMapper;
         this.bookingProperties = bookingProperties;
+        this.ticketService = ticketService;
     }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -82,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties());
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null);
     }
 
     @Override
@@ -264,6 +267,15 @@ public class BookingServiceImpl implements BookingService {
         } else {
             log.info("Successfully released {} seat(s) in cabin {} for booking PNR: {}",
                     booking.getPassengerCount(), booking.getCabinClass(), booking.getBookingReference());
+        }
+
+        // 4. Synchronously cancel any issued ticket
+        if (ticketService != null) {
+            try {
+                ticketService.cancelTicketForBooking(booking.getId(), reason);
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Failed to update ticket status to CANCELLED for booking ID: {}", booking.getId(), ex);
+            }
         }
 
         return bookingMapper.toResponse(updatedBooking);

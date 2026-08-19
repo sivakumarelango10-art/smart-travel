@@ -51,7 +51,9 @@ class PaymentReconciliationServiceTest {
                 paymentRepository,
                 bookingRepository,
                 paymentStateMachine,
-                bookingStateMachine
+                bookingStateMachine,
+                null,
+                null
         );
 
         testPayment = Payment.builder()

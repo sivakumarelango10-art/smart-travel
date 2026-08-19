@@ -78,6 +78,9 @@ class SecurityAccessTest {
     @MockBean
     private com.smarttravel.modules.payment.webhook.service.PaymentWebhookService paymentWebhookService;
 
+    @MockBean
+    private com.smarttravel.modules.ticket.service.TicketService ticketService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
