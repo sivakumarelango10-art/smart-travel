@@ -36,6 +36,7 @@ public class HealthController {
     @Operation(summary = "System Health Check", description = "Returns the operational status of the backend service and database connectivity.")
     public ResponseEntity<ApiResponse<HealthResponse>> getHealth() {
         String dbStatus = checkMongoHealth();
+        boolean isHealthy = "CONNECTED".equalsIgnoreCase(dbStatus);
 
         HealthResponse healthResponse = HealthResponse.builder()
                 .status("UP")
@@ -45,7 +46,11 @@ public class HealthController {
                 .timestamp(Instant.now())
                 .build();
 
-        return ResponseEntity.ok(ApiResponse.success("SmartTravel Backend is healthy and operational", healthResponse));
+        String message = isHealthy
+                ? "SmartTravel Backend is healthy and operational"
+                : "SmartTravel Backend is running in a degraded state (database disconnected)";
+
+        return ResponseEntity.ok(ApiResponse.success(message, healthResponse));
     }
 
     private String checkMongoHealth() {
@@ -56,7 +61,7 @@ public class HealthController {
             }
             return "UNKNOWN";
         } catch (Exception ex) {
-            log.debug("MongoDB health check could not reach database or authenticate.");
+            log.debug("MongoDB health check could not reach database or authenticate: {}", ex.getMessage());
             return "DISCONNECTED";
         }
     }

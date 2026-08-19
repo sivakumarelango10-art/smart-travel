@@ -48,6 +48,27 @@ smarttravel:
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 
+# Actuator Management & Health Probes
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    mongo:
+      enabled: true
+
+# Logging Configuration
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] [%X{requestId}] %-40.40logger{39} : %m%n"
+
 # OpenAPI / Swagger Configuration
 springdoc:
   api-docs:

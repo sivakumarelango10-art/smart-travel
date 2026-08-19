@@ -39,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class })
 @Import({
         SecurityConfig.class,
+        RequestIdFilter.class,
         JwtAuthenticationFilter.class,
         SecurityAccessTest.ProtectedSampleController.class,
         HealthController.class,

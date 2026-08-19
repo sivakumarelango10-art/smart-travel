@@ -1,14 +1,17 @@
 package com.smarttravel.common.exception;
 
+import com.smarttravel.common.security.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -24,12 +27,23 @@ import java.util.List;
 
 /**
  * Centralized Global Exception Handler for SmartTravel Platform.
- * Ensures consistent RFC 7807 compatible error responses and shields internal stack traces.
+ * Ensures consistent RFC 7807 compatible error responses, request tracing via requestId, and shields internal stack traces.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private String resolveRequestId(HttpServletRequest request) {
+        if (request != null) {
+            Object attr = request.getAttribute(RequestIdFilter.MDC_REQUEST_ID_KEY);
+            if (attr instanceof String s && !s.isBlank()) {
+                return s;
+            }
+        }
+        String mdcId = MDC.get(RequestIdFilter.MDC_REQUEST_ID_KEY);
+        return (mdcId != null && !mdcId.isBlank()) ? mdcId : null;
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(
@@ -50,10 +64,11 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Request payload validation failed")
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .validationErrors(validationErrors)
                 .build();
 
-        log.warn("Validation error on path {}: {} field errors", request.getRequestURI(), validationErrors.size());
+        log.warn("Validation error on path {}: {} field errors (requestId={})", request.getRequestURI(), validationErrors.size(), errorResponse.getRequestId());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
@@ -75,6 +90,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Constraint parameter validation failed")
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .validationErrors(validationErrors)
                 .build();
 
@@ -100,6 +116,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Request parameter binding failed")
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .validationErrors(validationErrors)
                 .build();
 
@@ -120,6 +137,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message(message)
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Type mismatch on parameter '{}' for path {}: {}", ex.getName(), request.getRequestURI(), ex.getMessage());
@@ -136,6 +154,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Malformed request payload or invalid format")
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Malformed HTTP message on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -152,6 +171,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.NOT_FOUND.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.info("Resource not found on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -168,6 +188,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Bad request on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -184,6 +205,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Duplicate resource conflict on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -200,6 +222,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Invalid state transition on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -216,6 +239,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Conflict on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -232,6 +256,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         log.warn("Business rule violation on path {}: {}", request.getRequestURI(), ex.getMessage());
@@ -248,6 +273,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -267,6 +293,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
                 .message(message)
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
@@ -282,6 +309,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.FORBIDDEN.getReasonPhrase())
                 .message("Access denied: You do not have permission to access this resource")
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
@@ -297,6 +325,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.FORBIDDEN.getReasonPhrase())
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
@@ -312,6 +341,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase())
                 .message(String.format("Request method '%s' is not supported for this endpoint", ex.getMethod()))
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
@@ -327,16 +357,37 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message(String.format("Required request parameter '%s' is missing", ex.getParameterName()))
                 .path(request.getRequestURI())
+                .requestId(resolveRequestId(request))
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDataAccessException(
+            DataAccessException ex, HttpServletRequest request) {
+        
+        String reqId = resolveRequestId(request);
+        log.error("Database access error on path: {} (requestId={})", request.getRequestURI(), reqId, ex);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+                .error(HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase())
+                .message("Database service temporarily unavailable. Please try again later.")
+                .path(request.getRequestURI())
+                .requestId(reqId)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
         
-        log.error("Unhandled internal server error on path: " + request.getRequestURI(), ex);
+        String reqId = resolveRequestId(request);
+        log.error("Unhandled internal server error on path: {} (requestId={})", request.getRequestURI(), reqId, ex);
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(Instant.now())
@@ -344,6 +395,7 @@ public class GlobalExceptionHandler {
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
                 .message("An unexpected internal error occurred. Please try again later.")
                 .path(request.getRequestURI())
+                .requestId(reqId)
                 .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);

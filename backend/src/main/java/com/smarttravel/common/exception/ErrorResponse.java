@@ -16,17 +16,19 @@ public class ErrorResponse {
     private String error;
     private String message;
     private String path;
+    private String requestId;
     private List<ValidationError> validationErrors;
 
     public ErrorResponse() {
     }
 
-    public ErrorResponse(Instant timestamp, int status, String error, String message, String path, List<ValidationError> validationErrors) {
+    public ErrorResponse(Instant timestamp, int status, String error, String message, String path, String requestId, List<ValidationError> validationErrors) {
         this.timestamp = timestamp != null ? timestamp : Instant.now();
         this.status = status;
         this.error = error;
         this.message = message;
         this.path = path;
+        this.requestId = requestId;
         this.validationErrors = validationErrors;
     }
 
@@ -40,6 +42,7 @@ public class ErrorResponse {
         private String error;
         private String message;
         private String path;
+        private String requestId;
         private List<ValidationError> validationErrors;
 
         public Builder timestamp(Instant timestamp) {
@@ -67,13 +70,18 @@ public class ErrorResponse {
             return this;
         }
 
+        public Builder requestId(String requestId) {
+            this.requestId = requestId;
+            return this;
+        }
+
         public Builder validationErrors(List<ValidationError> validationErrors) {
             this.validationErrors = validationErrors;
             return this;
         }
 
         public ErrorResponse build() {
-            return new ErrorResponse(timestamp, status, error, message, path, validationErrors);
+            return new ErrorResponse(timestamp, status, error, message, path, requestId, validationErrors);
         }
     }
 
@@ -115,6 +123,14 @@ public class ErrorResponse {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public List<ValidationError> getValidationErrors() {
