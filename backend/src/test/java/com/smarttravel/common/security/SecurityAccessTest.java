@@ -103,6 +103,9 @@ class SecurityAccessTest {
     @MockBean
     private com.smarttravel.modules.notification.service.NotificationService notificationService;
 
+    @MockBean
+    private com.smarttravel.modules.analytics.service.AnalyticsService analyticsService;
+
     @Autowired
     private ObjectMapper objectMapper;
 

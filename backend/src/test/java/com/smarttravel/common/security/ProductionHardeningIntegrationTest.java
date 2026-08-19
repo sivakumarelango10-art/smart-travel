@@ -104,6 +104,9 @@ class ProductionHardeningIntegrationTest {
     @MockBean
     private NotificationService notificationService;
 
+    @MockBean
+    private com.smarttravel.modules.analytics.service.AnalyticsService analyticsService;
+
     @Test
     @DisplayName("Should include X-Request-ID and security headers in response")
     void shouldIncludeRequestIdAndSecurityHeaders() throws Exception {
