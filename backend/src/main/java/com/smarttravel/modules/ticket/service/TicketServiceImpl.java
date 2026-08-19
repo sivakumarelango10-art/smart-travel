@@ -78,14 +78,109 @@ public class TicketServiceImpl implements TicketService {
     public void initIndexes() {
         if (mongoTemplate != null) {
             try {
-                mongoTemplate.indexOps(Ticket.class).ensureIndex(new org.springframework.data.mongodb.core.index.Index().on("bookingId", org.springframework.data.domain.Sort.Direction.ASC).unique());
-                mongoTemplate.indexOps(Ticket.class).ensureIndex(new org.springframework.data.mongodb.core.index.Index().on("ticketNumber", org.springframework.data.domain.Sort.Direction.ASC).unique());
-                mongoTemplate.indexOps(Ticket.class).ensureIndex(new org.springframework.data.mongodb.core.index.Index().on("userId", org.springframework.data.domain.Sort.Direction.ASC).on("issuedAt", org.springframework.data.domain.Sort.Direction.DESC));
-                mongoTemplate.indexOps(Ticket.class).ensureIndex(new org.springframework.data.mongodb.core.index.Index().on("flightId", org.springframework.data.domain.Sort.Direction.ASC).on("status", org.springframework.data.domain.Sort.Direction.ASC));
+                ensureUniqueIndexes();
                 log.info("MongoDB unique indexes successfully verified for Ticket collection");
             } catch (Exception ex) {
-                log.warn("Non-fatal: Failed to ensure indexes for Ticket collection: {}", ex.getMessage());
+                log.warn("Initial index verification encountered duplicate keys or conflict: {}. Attempting self-healing deduplication...", ex.getMessage());
+                try {
+                    selfHealDuplicateTickets();
+                    ensureUniqueIndexes();
+                    log.info("MongoDB unique indexes successfully established after self-healing deduplication");
+                } catch (Exception innerEx) {
+                    log.warn("Non-fatal: Deferred index verification for Ticket collection: {}", innerEx.getMessage());
+                }
             }
+        }
+    }
+
+    private void ensureUniqueIndexes() {
+        mongoTemplate.indexOps(Ticket.class).ensureIndex(
+                new org.springframework.data.mongodb.core.index.Index().on("bookingId", org.springframework.data.domain.Sort.Direction.ASC).unique()
+        );
+        mongoTemplate.indexOps(Ticket.class).ensureIndex(
+                new org.springframework.data.mongodb.core.index.Index().on("ticketNumber", org.springframework.data.domain.Sort.Direction.ASC).unique()
+        );
+        mongoTemplate.indexOps(Ticket.class).ensureIndex(
+                new org.springframework.data.mongodb.core.index.Index().on("userId", org.springframework.data.domain.Sort.Direction.ASC).on("issuedAt", org.springframework.data.domain.Sort.Direction.DESC)
+        );
+        mongoTemplate.indexOps(Ticket.class).ensureIndex(
+                new org.springframework.data.mongodb.core.index.Index().on("flightId", org.springframework.data.domain.Sort.Direction.ASC).on("status", org.springframework.data.domain.Sort.Direction.ASC)
+        );
+    }
+
+    /**
+     * Self-healing deduplication: detects any historical duplicate bookingId records in the tickets collection,
+     * preserves the authoritative ticket matching the Booking record, and safely cleans up orphaned duplicates.
+     */
+    public synchronized void selfHealDuplicateTickets() {
+        try {
+            org.springframework.data.mongodb.core.aggregation.Aggregation aggregation =
+                    org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation(
+                            org.springframework.data.mongodb.core.aggregation.Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("bookingId").exists(true).ne(null)),
+                            org.springframework.data.mongodb.core.aggregation.Aggregation.group("bookingId").count().as("count").push("$$ROOT").as("tickets"),
+                            org.springframework.data.mongodb.core.aggregation.Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("count").gt(1))
+                    );
+
+            org.springframework.data.mongodb.core.aggregation.AggregationResults<org.bson.Document> results =
+                    mongoTemplate.aggregate(aggregation, "tickets", org.bson.Document.class);
+
+            List<org.bson.Document> duplicateGroups = results.getMappedResults();
+            if (duplicateGroups.isEmpty()) {
+                return;
+            }
+
+            log.info("Self-healing detected {} duplicate bookingId group(s) in tickets collection", duplicateGroups.size());
+
+            for (org.bson.Document group : duplicateGroups) {
+                String bookingId = group.getString("_id");
+                List<org.bson.Document> ticketDocs = group.getList("tickets", org.bson.Document.class);
+                if (ticketDocs == null || ticketDocs.size() <= 1) {
+                    continue;
+                }
+
+                Optional<Booking> bookingOpt = bookingRepository.findById(bookingId);
+                String linkedTicketId = bookingOpt.map(Booking::getTicketId).orElse(null);
+                String linkedTicketNumber = bookingOpt.map(Booking::getTicketNumber).orElse(null);
+
+                org.bson.Document authoritativeDoc = null;
+                List<org.bson.Document> toDelete = new ArrayList<>();
+
+                for (org.bson.Document doc : ticketDocs) {
+                    String docId = doc.get("_id") != null ? doc.get("_id").toString() : null;
+                    String docTicketNumber = doc.getString("ticketNumber");
+                    String status = doc.getString("status");
+
+                    if (authoritativeDoc == null) {
+                        authoritativeDoc = doc;
+                    } else {
+                        if (docId != null && docId.equals(linkedTicketId)) {
+                            toDelete.add(authoritativeDoc);
+                            authoritativeDoc = doc;
+                        } else if (docTicketNumber != null && docTicketNumber.equals(linkedTicketNumber)) {
+                            toDelete.add(authoritativeDoc);
+                            authoritativeDoc = doc;
+                        } else if ("ISSUED".equals(status) && !"ISSUED".equals(authoritativeDoc.getString("status"))) {
+                            toDelete.add(authoritativeDoc);
+                            authoritativeDoc = doc;
+                        } else {
+                            toDelete.add(doc);
+                        }
+                    }
+                }
+
+                log.info("Deduplication: Preserving ticket {} (ID: {}) for bookingId: {}",
+                        authoritativeDoc.getString("ticketNumber"), authoritativeDoc.get("_id"), bookingId);
+
+                for (org.bson.Document delDoc : toDelete) {
+                    Object delId = delDoc.get("_id");
+                    log.info("Deduplication: Removing orphaned duplicate ticket {} (ID: {})",
+                            delDoc.getString("ticketNumber"), delId);
+                    mongoTemplate.remove(new org.springframework.data.mongodb.core.query.Query(
+                            org.springframework.data.mongodb.core.query.Criteria.where("_id").is(delId)), "tickets");
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Self-healing deduplication encountered an error: {}", ex.getMessage());
         }
     }
 
