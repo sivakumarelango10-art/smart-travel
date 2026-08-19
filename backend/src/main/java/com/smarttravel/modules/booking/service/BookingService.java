@@ -42,21 +42,31 @@ public interface BookingService {
     BookingResponse getBookingByReference(String reference, String userId, boolean isAdmin);
 
     /**
-     * Retrieves paginated bookings for the authenticated user.
+     * Retrieves paginated bookings for the authenticated user with optional status filter.
      *
      * @param userId   User ID
+     * @param status   Optional BookingStatus filter
      * @param pageable Pagination parameters
      * @return Page of booking responses
      */
-    PageResponse<BookingResponse> getUserBookings(String userId, Pageable pageable);
+    PageResponse<BookingResponse> getUserBookings(String userId, com.smarttravel.modules.booking.model.BookingStatus status, Pageable pageable);
+
+    default PageResponse<BookingResponse> getUserBookings(String userId, Pageable pageable) {
+        return getUserBookings(userId, null, pageable);
+    }
 
     /**
-     * Retrieves paginated bookings across all users (Admin operation).
+     * Retrieves paginated bookings across all users with optional status filter (Admin operation).
      *
+     * @param status   Optional BookingStatus filter
      * @param pageable Pagination parameters
      * @return Page of all booking responses
      */
-    PageResponse<BookingResponse> getAllBookings(Pageable pageable);
+    PageResponse<BookingResponse> getAllBookings(com.smarttravel.modules.booking.model.BookingStatus status, Pageable pageable);
+
+    default PageResponse<BookingResponse> getAllBookings(Pageable pageable) {
+        return getAllBookings(null, pageable);
+    }
 
     /**
      * Cancels a booking, updates its status to CANCELLED, and releases reserved cabin seats atomically.

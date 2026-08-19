@@ -78,12 +78,14 @@ public class BookingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Full authentication is required")
     })
     public ResponseEntity<ApiResponse<PageResponse<BookingResponse>>> getUserBookings(
+            @Parameter(description = "Optional Booking Status filter", example = "CONFIRMED")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) com.smarttravel.modules.booking.model.BookingStatus status,
             @Parameter(description = "Pagination and sorting parameters")
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
         String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
 
-        PageResponse<BookingResponse> response = bookingService.getUserBookings(userId, pageable);
+        PageResponse<BookingResponse> response = bookingService.getUserBookings(userId, status, pageable);
         return ResponseEntity.ok(ApiResponse.success("User bookings retrieved successfully", response));
     }
 

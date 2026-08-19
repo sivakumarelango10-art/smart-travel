@@ -166,7 +166,7 @@ class BookingControllerTest {
     @DisplayName("GET /api/v1/bookings returns paginated list of user bookings")
     void testGetUserBookings() throws Exception {
         PageResponse<BookingResponse> pageResponse = PageResponse.from(new PageImpl<>(List.of(sampleResponse), PageRequest.of(0, 10), 1));
-        when(bookingService.getUserBookings(any(), any())).thenReturn(pageResponse);
+        when(bookingService.getUserBookings(any(), any(), any())).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/v1/bookings")
                         .contentType(MediaType.APPLICATION_JSON))

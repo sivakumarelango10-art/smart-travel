@@ -33,17 +33,29 @@ public class BookingExpirationServiceImpl implements BookingExpirationService {
     private final PaymentRepository paymentRepository;
     private final PaymentStateMachine paymentStateMachine;
     private final MongoTemplate mongoTemplate;
+    private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BookingExpirationServiceImpl(BookingRepository bookingRepository,
+                                        FlightInventoryReservationService reservationService,
+                                        PaymentRepository paymentRepository,
+                                        PaymentStateMachine paymentStateMachine,
+                                        MongoTemplate mongoTemplate,
+                                        @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService) {
+        this.bookingRepository = bookingRepository;
+        this.reservationService = reservationService;
+        this.paymentRepository = paymentRepository;
+        this.paymentStateMachine = paymentStateMachine;
+        this.mongoTemplate = mongoTemplate;
+        this.seatMapService = seatMapService;
+    }
 
     public BookingExpirationServiceImpl(BookingRepository bookingRepository,
                                         FlightInventoryReservationService reservationService,
                                         PaymentRepository paymentRepository,
                                         PaymentStateMachine paymentStateMachine,
                                         MongoTemplate mongoTemplate) {
-        this.bookingRepository = bookingRepository;
-        this.reservationService = reservationService;
-        this.paymentRepository = paymentRepository;
-        this.paymentStateMachine = paymentStateMachine;
-        this.mongoTemplate = mongoTemplate;
+        this(bookingRepository, reservationService, paymentRepository, paymentStateMachine, mongoTemplate, null);
     }
 
     @Override
@@ -117,6 +129,15 @@ public class BookingExpirationServiceImpl implements BookingExpirationService {
         } else {
             log.error("Failed to release seats for expired booking ID: {}, flight ID: {}, cabin: {}",
                     booking.getId(), booking.getFlightId(), booking.getCabinClass());
+        }
+
+        // Release physical seats
+        if (seatMapService != null) {
+            try {
+                seatMapService.releaseSeats(booking.getId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Error releasing physical seats for expired booking ID: {}", booking.getId(), ex);
+            }
         }
 
         // 3. Mark active payments for this booking as EXPIRED

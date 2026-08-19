@@ -49,9 +49,11 @@ public class AdminBookingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "ROLE_ADMIN authority required")
     })
     public ResponseEntity<ApiResponse<PageResponse<BookingResponse>>> getAllBookings(
+            @Parameter(description = "Optional Booking Status filter", example = "CONFIRMED")
+            @org.springframework.web.bind.annotation.RequestParam(required = false) com.smarttravel.modules.booking.model.BookingStatus status,
             @Parameter(description = "Pagination parameters")
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        PageResponse<BookingResponse> response = bookingService.getAllBookings(pageable);
+        PageResponse<BookingResponse> response = bookingService.getAllBookings(status, pageable);
         return ResponseEntity.ok(ApiResponse.success("All bookings retrieved successfully", response));
     }
 

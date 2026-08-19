@@ -26,6 +26,10 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     Page<Booking> findByUserId(String userId, Pageable pageable);
 
+    Page<Booking> findByUserIdAndStatus(String userId, BookingStatus status, Pageable pageable);
+
+    Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
+
     List<Booking> findByFlightId(String flightId);
 
     List<Booking> findByStatus(BookingStatus status);

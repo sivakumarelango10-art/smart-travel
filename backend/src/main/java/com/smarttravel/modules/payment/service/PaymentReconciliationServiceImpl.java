@@ -36,6 +36,7 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
     private final BookingStateMachine bookingStateMachine;
     private final MongoTemplate mongoTemplate;
     private final com.smarttravel.modules.ticket.service.TicketService ticketService;
+    private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
 
     @Autowired
     public PaymentReconciliationServiceImpl(PaymentRepository paymentRepository,
@@ -43,14 +44,34 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
                                             PaymentStateMachine paymentStateMachine,
                                             BookingStateMachine bookingStateMachine,
                                             @Autowired(required = false) MongoTemplate mongoTemplate,
-                                            @org.springframework.context.annotation.Lazy com.smarttravel.modules.ticket.service.TicketService ticketService) {
+                                            @org.springframework.context.annotation.Lazy @Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
+                                            @org.springframework.context.annotation.Lazy @Autowired(required = false) com.smarttravel.modules.flight.service.SeatMapService seatMapService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.paymentStateMachine = paymentStateMachine;
         this.bookingStateMachine = bookingStateMachine;
         this.mongoTemplate = mongoTemplate;
         this.ticketService = ticketService;
-        log.info("PaymentReconciliationServiceImpl initialized with ticketService: {}", ticketService != null ? "ACTIVE" : "NULL");
+        this.seatMapService = seatMapService;
+        log.info("PaymentReconciliationServiceImpl initialized with ticketService: {}, seatMapService: {}",
+                ticketService != null ? "ACTIVE" : "NULL",
+                seatMapService != null ? "ACTIVE" : "NULL");
+    }
+
+    public PaymentReconciliationServiceImpl(PaymentRepository paymentRepository,
+                                            BookingRepository bookingRepository,
+                                            PaymentStateMachine paymentStateMachine,
+                                            BookingStateMachine bookingStateMachine,
+                                            MongoTemplate mongoTemplate,
+                                            com.smarttravel.modules.ticket.service.TicketService ticketService) {
+        this(paymentRepository, bookingRepository, paymentStateMachine, bookingStateMachine, mongoTemplate, ticketService, null);
+    }
+
+    public PaymentReconciliationServiceImpl(PaymentRepository paymentRepository,
+                                            BookingRepository bookingRepository,
+                                            PaymentStateMachine paymentStateMachine,
+                                            BookingStateMachine bookingStateMachine) {
+        this(paymentRepository, bookingRepository, paymentStateMachine, bookingStateMachine, null, null, null);
     }
 
     @Override
@@ -108,6 +129,13 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
                         log.warn("Non-fatal: Ticket issuance error during idempotent confirmation for booking ID: {}", booking.getId(), ex);
                     }
                 }
+                if (seatMapService != null) {
+                    try {
+                        seatMapService.confirmSeats(booking.getId());
+                    } catch (Exception ex) {
+                        log.warn("Non-fatal: Error confirming seats for booking ID: {}", booking.getId(), ex);
+                    }
+                }
                 return payment;
             }
             // Update payment record to VERIFIED if not yet updated
@@ -122,6 +150,13 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
                     ticketService.issueTicket(booking.getId());
                 } catch (Exception ex) {
                     log.warn("Non-fatal: Ticket issuance error for confirmed booking ID: {}", booking.getId(), ex);
+                }
+            }
+            if (seatMapService != null) {
+                try {
+                    seatMapService.confirmSeats(booking.getId());
+                } catch (Exception ex) {
+                    log.warn("Non-fatal: Error confirming seats for booking ID: {}", booking.getId(), ex);
                 }
             }
             return saved;
@@ -196,6 +231,15 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
             }
         }
 
+        // 8. Confirm any reserved physical seats
+        if (seatMapService != null) {
+            try {
+                seatMapService.confirmSeats(booking.getId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Failed to confirm physical seats for booking ID: {}", booking.getId(), ex);
+            }
+        }
+
         return savedPayment;
     }
 
@@ -233,6 +277,14 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
         }
         payment.setFailureReason(failureReason != null ? failureReason : "Payment failed at gateway");
         payment.setUpdatedAt(Instant.now());
+
+        if (payment.getBookingId() != null && seatMapService != null) {
+            try {
+                seatMapService.releaseSeats(payment.getBookingId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Failed to release physical seats on payment failure for booking ID: {}", payment.getBookingId(), ex);
+            }
+        }
 
         Payment saved = paymentRepository.save(payment);
         log.info("Payment ID: {} marked as FAILED with reason: {}", saved.getId(), saved.getFailureReason());

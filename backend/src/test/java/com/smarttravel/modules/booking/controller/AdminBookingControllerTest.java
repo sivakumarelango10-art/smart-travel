@@ -83,7 +83,7 @@ class AdminBookingControllerTest {
     @DisplayName("GET /api/v1/admin/bookings returns all bookings paginated")
     void testGetAllBookings() throws Exception {
         PageResponse<BookingResponse> pageResponse = PageResponse.from(new PageImpl<>(List.of(sampleResponse), PageRequest.of(0, 20), 1));
-        when(bookingService.getAllBookings(any())).thenReturn(pageResponse);
+        when(bookingService.getAllBookings(any(), any())).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/v1/admin/bookings")
                         .contentType(MediaType.APPLICATION_JSON))

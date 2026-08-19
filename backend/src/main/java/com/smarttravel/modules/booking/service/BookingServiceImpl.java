@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Core implementation of flight booking management with atomic seat reservation.
@@ -56,6 +57,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingMapper bookingMapper;
     private final BookingProperties bookingProperties;
     private final com.smarttravel.modules.ticket.service.TicketService ticketService;
+    private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -66,7 +68,8 @@ public class BookingServiceImpl implements BookingService {
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper,
                               BookingProperties bookingProperties,
-                              @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService) {
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService) {
         this.bookingRepository = bookingRepository;
         this.flightRepository = flightRepository;
         this.reservationService = reservationService;
@@ -76,6 +79,7 @@ public class BookingServiceImpl implements BookingService {
         this.bookingMapper = bookingMapper;
         this.bookingProperties = bookingProperties;
         this.ticketService = ticketService;
+        this.seatMapService = seatMapService;
     }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -85,7 +89,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null);
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null);
     }
 
     @Override
@@ -117,6 +121,19 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("Cannot book a flight whose departure time has already passed");
         }
 
+        // Check for requested seat numbers
+        List<String> requestedSeats = request.getPassengers().stream()
+                .map(com.smarttravel.modules.booking.dto.PassengerDto::getSeatNumber)
+                .filter(s -> s != null && !s.trim().isEmpty())
+                .map(String::trim)
+                .collect(Collectors.toList());
+
+        // Validate no duplicate seat requests in this single booking
+        Set<String> uniqueRequestedSeats = new java.util.HashSet<>(requestedSeats);
+        if (uniqueRequestedSeats.size() < requestedSeats.size()) {
+            throw new BadRequestException("Duplicate seat selection within the passenger list");
+        }
+
         // 2. Determine base price for the selected cabin
         BigDecimal basePrice = resolveBasePrice(flight, cabinClass);
 
@@ -140,8 +157,22 @@ public class BookingServiceImpl implements BookingService {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(java.time.Duration.ofMinutes(timeoutMinutes));
 
+        String bookingId = new org.bson.types.ObjectId().toHexString();
+
+        // Hold physical seats if requested (with compensating rollback)
+        if (!requestedSeats.isEmpty() && seatMapService != null) {
+            try {
+                seatMapService.holdSeats(flight.getId(), cabinClass, requestedSeats, bookingId, pnr, expiresAt);
+            } catch (Exception ex) {
+                log.warn("Seat hold failed for flight ID: {}, seats: {}. Executing compensating cabin inventory release.", flight.getId(), requestedSeats, ex);
+                reservationService.releaseSeats(flight.getId(), cabinClass, passengerCount);
+                throw ex;
+            }
+        }
+
         // 7. Construct Booking entity
         Booking booking = Booking.builder()
+                .id(bookingId)
                 .bookingReference(pnr)
                 .userId(userId)
                 .userEmail(userEmail)
@@ -174,6 +205,9 @@ public class BookingServiceImpl implements BookingService {
         } catch (Exception ex) {
             log.error("Failed to persist booking for flight ID: {}. Executing compensating seat release.", flight.getId(), ex);
             reservationService.releaseSeats(flight.getId(), cabinClass, passengerCount);
+            if (!requestedSeats.isEmpty() && seatMapService != null) {
+                seatMapService.releaseSeats(bookingId);
+            }
             throw ex;
         }
 
@@ -214,16 +248,20 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public PageResponse<BookingResponse> getUserBookings(String userId, Pageable pageable) {
-        log.debug("Fetching bookings for user ID: {}", userId);
-        Page<Booking> page = bookingRepository.findByUserId(userId, pageable);
+    public PageResponse<BookingResponse> getUserBookings(String userId, BookingStatus status, Pageable pageable) {
+        log.debug("Fetching bookings for user ID: {} (status: {})", userId, status);
+        Page<Booking> page = status != null
+                ? bookingRepository.findByUserIdAndStatus(userId, status, pageable)
+                : bookingRepository.findByUserId(userId, pageable);
         return PageResponse.from(page.map(bookingMapper::toResponse));
     }
 
     @Override
-    public PageResponse<BookingResponse> getAllBookings(Pageable pageable) {
-        log.debug("Admin fetching all bookings with pagination");
-        Page<Booking> page = bookingRepository.findAll(pageable);
+    public PageResponse<BookingResponse> getAllBookings(BookingStatus status, Pageable pageable) {
+        log.debug("Admin fetching all bookings with pagination (status: {})", status);
+        Page<Booking> page = status != null
+                ? bookingRepository.findByStatus(status, pageable)
+                : bookingRepository.findAll(pageable);
         return PageResponse.from(page.map(bookingMapper::toResponse));
     }
 
@@ -269,7 +307,16 @@ public class BookingServiceImpl implements BookingService {
                     booking.getPassengerCount(), booking.getCabinClass(), booking.getBookingReference());
         }
 
-        // 4. Synchronously cancel any issued ticket
+        // 4. Release any physical seats assigned to this booking
+        if (seatMapService != null) {
+            try {
+                seatMapService.releaseSeats(booking.getId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Failed to release physical seats for booking ID: {}", booking.getId(), ex);
+            }
+        }
+
+        // 5. Synchronously cancel any issued ticket
         if (ticketService != null) {
             try {
                 ticketService.cancelTicketForBooking(booking.getId(), reason);
