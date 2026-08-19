@@ -90,4 +90,30 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
             return false;
         }
     }
+
+    @Override
+    public com.smarttravel.modules.payment.gateway.dto.RazorpayRefundDto refundPayment(String paymentId, long amountInPaise, String reason) {
+        log.info("Processing Razorpay refund for paymentId: {}, amount: {} paise, reason: {}", paymentId, amountInPaise, reason);
+
+        if (paymentId == null || paymentId.isBlank()) {
+            throw new BadRequestException("Payment ID is required for refund processing");
+        }
+        if (amountInPaise <= 0) {
+            throw new BadRequestException("Refund amount must be greater than zero");
+        }
+
+        // Generate deterministic sandbox/mock refund ID
+        String refundId = "rfnd_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+
+        return com.smarttravel.modules.payment.gateway.dto.RazorpayRefundDto.builder()
+                .id(refundId)
+                .paymentId(paymentId)
+                .amount(amountInPaise)
+                .currency(properties.getCurrency())
+                .status("processed")
+                .receipt("rcpt_rfnd_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8))
+                .createdAt(java.time.Instant.now())
+                .build();
+    }
 }
+

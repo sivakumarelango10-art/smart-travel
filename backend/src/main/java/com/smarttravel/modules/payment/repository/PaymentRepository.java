@@ -25,6 +25,8 @@ public interface PaymentRepository extends MongoRepository<Payment, String> {
 
     List<Payment> findByBookingId(String bookingId);
 
+    Optional<Payment> findFirstByBookingIdOrderByCreatedAtDesc(String bookingId);
+
     List<Payment> findByUserId(String userId);
 
     Optional<Payment> findFirstByBookingIdAndPaymentStatusIn(String bookingId, Collection<PaymentStatus> statuses);

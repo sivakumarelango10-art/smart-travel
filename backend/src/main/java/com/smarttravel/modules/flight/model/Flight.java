@@ -71,6 +71,10 @@ public class Flight {
 
     private Instant lastStatusUpdated;
 
+    private String operationalNotes;
+
+    private Instant lastOperationalUpdate;
+
     private boolean active = true;
 
     @CreatedDate
@@ -89,6 +93,7 @@ public class Flight {
                   Set<CabinClass> cabinClasses, java.util.List<CabinInventory> cabinInventories,
                   FlightStatus status, Integer delayMinutes, String delayReason,
                   Instant revisedDepartureTime, Instant estimatedArrival, Instant lastStatusUpdated,
+                  String operationalNotes, Instant lastOperationalUpdate,
                   boolean active, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.flightNumber = flightNumber;
@@ -111,6 +116,8 @@ public class Flight {
         this.revisedDepartureTime = revisedDepartureTime;
         this.estimatedArrival = estimatedArrival;
         this.lastStatusUpdated = lastStatusUpdated;
+        this.operationalNotes = operationalNotes;
+        this.lastOperationalUpdate = lastOperationalUpdate;
         this.active = active;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -142,6 +149,8 @@ public class Flight {
         private Instant revisedDepartureTime;
         private Instant estimatedArrival;
         private Instant lastStatusUpdated;
+        private String operationalNotes;
+        private Instant lastOperationalUpdate;
         private boolean active = true;
         private Instant createdAt;
         private Instant updatedAt;
@@ -246,6 +255,16 @@ public class Flight {
             return this;
         }
 
+        public Builder operationalNotes(String operationalNotes) {
+            this.operationalNotes = operationalNotes;
+            return this;
+        }
+
+        public Builder lastOperationalUpdate(Instant lastOperationalUpdate) {
+            this.lastOperationalUpdate = lastOperationalUpdate;
+            return this;
+        }
+
         public Builder active(boolean active) {
             this.active = active;
             return this;
@@ -270,7 +289,8 @@ public class Flight {
             return new Flight(id, flightNumber, airline, airlineCode, departureAirport, arrivalAirport,
                     departureTime, arrivalTime, durationMinutes, aircraftModel, basePrice,
                     totalSeats, availableSeats, cabinClasses, cabinInventories, status, delayMinutes, delayReason,
-                    revisedDepartureTime, estimatedArrival, lastStatusUpdated, active, createdAt, updatedAt);
+                    revisedDepartureTime, estimatedArrival, lastStatusUpdated, operationalNotes, lastOperationalUpdate,
+                    active, createdAt, updatedAt);
         }
     }
 
@@ -448,6 +468,22 @@ public class Flight {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getOperationalNotes() {
+        return operationalNotes;
+    }
+
+    public void setOperationalNotes(String operationalNotes) {
+        this.operationalNotes = operationalNotes;
+    }
+
+    public Instant getLastOperationalUpdate() {
+        return lastOperationalUpdate;
+    }
+
+    public void setLastOperationalUpdate(Instant lastOperationalUpdate) {
+        this.lastOperationalUpdate = lastOperationalUpdate;
     }
 
     public Instant getCreatedAt() {

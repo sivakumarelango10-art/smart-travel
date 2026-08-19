@@ -29,4 +29,16 @@ public interface RazorpayPaymentGateway {
      * @return True if signature is cryptographically valid, false otherwise
      */
     boolean verifyPaymentSignature(String orderId, String paymentId, String signature);
+
+    /**
+     * Initiates a refund for a previously captured Razorpay payment.
+     *
+     * @param paymentId     Razorpay Payment ID
+     * @param amountInPaise Refund amount in paise
+     * @param reason        Refund reason / note
+     * @return Created Razorpay refund details
+     */
+    com.smarttravel.modules.payment.gateway.dto.RazorpayRefundDto refundPayment(String paymentId, long amountInPaise, String reason);
 }
+
+

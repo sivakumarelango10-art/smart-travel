@@ -87,8 +87,24 @@ class SecurityAccessTest {
     @MockBean
     private com.smarttravel.modules.booking.service.CheckInService checkInService;
 
+    @MockBean
+    private com.smarttravel.modules.flight.disruption.service.FlightDisruptionService flightDisruptionService;
+
+    @MockBean
+    private com.smarttravel.modules.flight.impact.service.FlightImpactService flightImpactService;
+
+    @MockBean
+    private com.smarttravel.modules.payment.refund.service.RefundService refundService;
+
+    @MockBean
+    private com.smarttravel.modules.payment.refund.service.RefundEligibilityService refundEligibilityService;
+
+    @MockBean
+    private com.smarttravel.modules.notification.service.NotificationService notificationService;
+
     @Autowired
     private ObjectMapper objectMapper;
+
 
     @RestController
     public static class ProtectedSampleController {

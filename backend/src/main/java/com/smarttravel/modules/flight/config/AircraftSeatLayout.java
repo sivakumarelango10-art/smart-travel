@@ -132,4 +132,17 @@ public class AircraftSeatLayout {
             );
         }
     }
+
+    public static int getTotalSeatCapacity(String aircraftModel) {
+        String model = aircraftModel != null ? aircraftModel.toUpperCase() : "";
+        if (model.contains("777") || model.contains("350") || model.contains("787") || model.contains("WIDEBODY")) {
+            return 334;
+        } else if (model.contains("737") || model.contains("BOEING")) {
+            return 174;
+        } else {
+            return 176;
+        }
+    }
 }
+
+
