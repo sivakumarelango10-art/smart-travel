@@ -27,7 +27,7 @@ public class FlightController {
         this.flightService = flightService;
     }
 
-    @GetMapping
+    @GetMapping({"", "/search"})
     @Operation(summary = "Search Flights", description = "Multi-criteria flight search supporting origin, destination, departure date, airline, cabin class, passenger count (1-9), price range, time windows, sorting, and pagination.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Flights retrieved successfully"),

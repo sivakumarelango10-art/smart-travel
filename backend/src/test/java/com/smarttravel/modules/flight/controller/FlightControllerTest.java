@@ -94,6 +94,49 @@ class FlightControllerTest {
     }
 
     @Test
+    @DisplayName("GET /v1/flights/search invokes searchFlights and DOES NOT route to getFlightById('search')")
+    void testSearchFlightsExplicitSearchPath() throws Exception {
+        PageResponse<FlightResponse> pageResponse = PageResponse.from(new org.springframework.data.domain.PageImpl<>(List.of(sampleResponse)));
+        when(flightService.searchFlights(any(FlightSearchCriteria.class))).thenReturn(pageResponse);
+
+        mockMvc.perform(get("/v1/flights/search")
+                        .param("origin", "BOM")
+                        .param("destination", "DXB")
+                        .param("departureDate", "2026-08-20")
+                        .param("cabinClass", "ECONOMY")
+                        .param("passengers", "1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Flights retrieved successfully"))
+                .andExpect(jsonPath("$.data.content[0].flightNumber").value("AI-101"))
+                .andExpect(jsonPath("$.data.totalElements").value(1));
+
+        // CRITICAL REGRESSION ASSERTION: getFlightById("search") must NEVER be called!
+        org.mockito.Mockito.verify(flightService, org.mockito.Mockito.never()).getFlightById("search");
+        org.mockito.Mockito.verify(flightService, org.mockito.Mockito.times(1)).searchFlights(any(FlightSearchCriteria.class));
+    }
+
+    @Test
+    @DisplayName("GET /v1/flights/search returns HTTP 200 with empty list when no flights found")
+    void testSearchFlightsEmptyResults() throws Exception {
+        PageResponse<FlightResponse> emptyPage = PageResponse.from(new org.springframework.data.domain.PageImpl<>(List.of()));
+        when(flightService.searchFlights(any(FlightSearchCriteria.class))).thenReturn(emptyPage);
+
+        mockMvc.perform(get("/v1/flights/search")
+                        .param("origin", "BOM")
+                        .param("destination", "DXB")
+                        .param("departureDate", "2026-08-20")
+                        .param("cabinClass", "ECONOMY")
+                        .param("passengers", "1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isEmpty())
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/flights/{id} returns flight details")
     void testGetFlightById() throws Exception {
         when(flightService.getFlightById("66c1e101f1a2b3c4d5e6f702")).thenReturn(sampleResponse);
@@ -105,6 +148,18 @@ class FlightControllerTest {
                 .andExpect(jsonPath("$.data.id").value("66c1e101f1a2b3c4d5e6f702"))
                 .andExpect(jsonPath("$.data.flightNumber").value("AI-101"))
                 .andExpect(jsonPath("$.data.departureAirport.code").value("DEL"));
+    }
+
+    @Test
+    @DisplayName("GET /v1/flights/{id} returns flight details")
+    void testGetFlightByIdV1Path() throws Exception {
+        when(flightService.getFlightById("66c1e101f1a2b3c4d5e6f702")).thenReturn(sampleResponse);
+
+        mockMvc.perform(get("/v1/flights/66c1e101f1a2b3c4d5e6f702")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value("66c1e101f1a2b3c4d5e6f702"));
     }
 
     @Test
