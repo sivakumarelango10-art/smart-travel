@@ -7,7 +7,8 @@ export const REFRESH_TOKEN_KEY = 'smarttravel_refresh_token';
 export const USER_KEY = 'smarttravel_user';
 
 /**
- * Configured Axios HTTP Client with JWT interceptors, X-Request-ID propagation, and standardized error normalization.
+ * Hardened Axios HTTP Client with JWT interceptors, X-Request-ID propagation,
+ * request timeout safeguards, and standardized error normalization.
  */
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -17,7 +18,7 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Request Interceptor: Attach JWT Token & client Correlation ID if available
+// Request Interceptor: Attach JWT Token & Correlation headers
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -29,7 +30,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Normalize errors & handle 401 token invalidation
+// Response Interceptor: Normalize RFC errors & handle 401 token invalidation
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ErrorResponse>) => {
@@ -39,13 +40,21 @@ apiClient.interceptors.response.use(
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        window.dispatchEvent(new Event('auth:unauthorized'));
       }
       return Promise.reject(error.response.data);
+    } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return Promise.reject({
+        status: 408,
+        error: 'REQUEST_TIMEOUT',
+        message: 'The request took too long to complete. Please verify your connection and try again.',
+        timestamp: new Date().toISOString(),
+      });
     } else if (error.request) {
       return Promise.reject({
         status: 0,
         error: 'NETWORK_ERROR',
-        message: 'Unable to communicate with SmartTravel backend service. Please verify your connection or try again.',
+        message: 'Unable to communicate with SmartTravel backend services. Please verify your connection or try again.',
         timestamp: new Date().toISOString(),
       });
     }
