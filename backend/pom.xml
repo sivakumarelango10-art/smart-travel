@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.smarttravel</groupId>
     <artifactId>smarttravel-backend</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>SmartTravel Platform Backend</name>
     <description>Enterprise Full-Stack Travel Booking Platform Engine</description>
 

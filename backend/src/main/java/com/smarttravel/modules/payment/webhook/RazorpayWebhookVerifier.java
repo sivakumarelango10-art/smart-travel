@@ -97,7 +97,11 @@ public class RazorpayWebhookVerifier {
             log.warn("RAZORPAY_WEBHOOK_SECRET is not configured; falling back to RAZORPAY_KEY_SECRET for webhook verification.");
             return razorpayProperties.getKeySecret();
         }
-        log.error("Neither RAZORPAY_WEBHOOK_SECRET nor RAZORPAY_KEY_SECRET is configured. Webhook verification will fail.");
+        // In dev / test environments when Razorpay live gateway is disabled (mock mode), permit test signature validation
+        if (!razorpayProperties.isEnabled()) {
+            return "smarttravel_dev_secret_key";
+        }
+        log.error("Neither RAZORPAY_WEBHOOK_SECRET nor RAZORPAY_KEY_SECRET is configured in live production mode. Webhook verification will fail.");
         return null;
     }
 }
