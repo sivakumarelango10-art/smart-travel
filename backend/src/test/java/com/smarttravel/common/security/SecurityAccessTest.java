@@ -1,6 +1,6 @@
 package com.smarttravel.common.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.smarttravel.modules.auth.controller.AuthController;
 import com.smarttravel.modules.auth.dto.UserResponse;
 import com.smarttravel.modules.auth.service.AuthService;

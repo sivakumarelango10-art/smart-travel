@@ -26,11 +26,11 @@ import com.smarttravel.modules.payment.model.Payment;
 import com.smarttravel.modules.payment.model.PaymentStatus;
 import com.smarttravel.modules.payment.repository.PaymentRepository;
 import com.smarttravel.modules.payment.service.PaymentReconciliationService;
-import com.smarttravel.modules.payment.service.PaymentService;
+
 
 import com.smarttravel.modules.ticket.model.Ticket;
 import com.smarttravel.modules.ticket.repository.TicketRepository;
-import com.smarttravel.modules.ticket.service.TicketService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

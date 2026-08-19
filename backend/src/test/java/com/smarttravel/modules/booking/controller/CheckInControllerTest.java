@@ -1,6 +1,6 @@
 package com.smarttravel.modules.booking.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.smarttravel.common.security.CustomUserDetailsService;
 import com.smarttravel.common.security.JwtTokenProvider;
 import com.smarttravel.modules.booking.dto.BoardingPassResponse;

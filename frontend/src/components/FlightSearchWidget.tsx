@@ -220,113 +220,155 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
         )}
 
         {/* Airport & Date Interactive Selector Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch">
           {/* FROM AIRPORT */}
-          <div className="md:col-span-3.5 relative">
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition group cursor-pointer">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
-                <span className="flex items-center gap-1.5">
+          <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3 relative' : 'md:col-span-4 relative'}>
+            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-sky-500/50 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all duration-200 group cursor-pointer relative flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
+                <span className="flex items-center gap-1.5 uppercase tracking-wider font-bold text-slate-400 group-hover:text-sky-300 transition-colors">
                   <PlaneTakeoff className="w-3.5 h-3.5 text-sky-400" />
-                  FROM
+                  From
                 </span>
-                <span className="font-mono text-sky-400 font-bold">{selectedOriginAirport?.code}</span>
+                <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-400 font-black border border-sky-500/25">
+                  {selectedOriginAirport?.code}
+                </span>
               </div>
+
+              <div>
+                <div className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-sky-200 transition-colors truncate">
+                  {selectedOriginAirport?.city}
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                  {selectedOriginAirport?.name}
+                </p>
+              </div>
+
+              {/* Seamless accessible click-anywhere select overlay */}
               <select
                 value={origin}
                 onChange={(e) => {
                   setOrigin(e.target.value);
                   setError(null);
                 }}
-                className="w-full bg-transparent text-white font-black text-base focus:outline-none cursor-pointer appearance-none truncate"
+                aria-label="Departure Airport"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base bg-slate-900 text-white"
               >
                 {airports.map((a) => (
-                  <option key={a.code} value={a.code} className="bg-slate-900 text-white font-medium">
+                  <option key={a.code} value={a.code} className="bg-slate-900 text-white py-2">
                     {a.city} ({a.code}) - {a.name}
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400 truncate mt-0.5">{selectedOriginAirport?.name}</p>
             </div>
           </div>
 
           {/* SWAP BUTTON */}
-          <div className="md:col-span-1 flex items-center justify-center -my-2 md:my-0">
+          <div className="md:col-span-1 flex items-center justify-center -my-1 md:my-0">
             <button
               type="button"
               onClick={handleSwap}
               title="Swap From and To"
-              className="p-2.5 rounded-2xl bg-slate-800/90 hover:bg-sky-500 text-slate-300 hover:text-white border border-slate-700 hover:border-sky-400 transition-all duration-300 transform hover:rotate-180 shadow-md shadow-black/40 z-10"
+              className="w-10 h-10 rounded-2xl bg-slate-800/90 hover:bg-sky-500 text-sky-400 hover:text-white border border-slate-700/80 hover:border-sky-400 transition-all duration-300 transform hover:rotate-180 hover:scale-105 active:scale-95 shadow-lg shadow-black/40 flex items-center justify-center z-10"
             >
-              <ArrowLeftRight className="w-4 h-4 text-sky-400 group-hover:text-white" />
+              <ArrowLeftRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* TO AIRPORT */}
-          <div className="md:col-span-3.5 relative">
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition group cursor-pointer">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1">
-                <span className="flex items-center gap-1.5">
+          <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3 relative' : 'md:col-span-4 relative'}>
+            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-indigo-500/50 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all duration-200 group cursor-pointer relative flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
+                <span className="flex items-center gap-1.5 uppercase tracking-wider font-bold text-slate-400 group-hover:text-indigo-300 transition-colors">
                   <PlaneLanding className="w-3.5 h-3.5 text-indigo-400" />
-                  TO
+                  To
                 </span>
-                <span className="font-mono text-indigo-400 font-bold">{selectedDestAirport?.code}</span>
+                <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 font-black border border-indigo-500/25">
+                  {selectedDestAirport?.code}
+                </span>
               </div>
+
+              <div>
+                <div className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-indigo-200 transition-colors truncate">
+                  {selectedDestAirport?.city}
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                  {selectedDestAirport?.name}
+                </p>
+              </div>
+
+              {/* Seamless accessible click-anywhere select overlay */}
               <select
                 value={destination}
                 onChange={(e) => {
                   setDestination(e.target.value);
                   setError(null);
                 }}
-                className="w-full bg-transparent text-white font-black text-base focus:outline-none cursor-pointer appearance-none truncate"
+                aria-label="Destination Airport"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base bg-slate-900 text-white"
               >
                 {airports.map((a) => (
-                  <option key={a.code} value={a.code} className="bg-slate-900 text-white font-medium">
+                  <option key={a.code} value={a.code} className="bg-slate-900 text-white py-2">
                     {a.city} ({a.code}) - {a.name}
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400 truncate mt-0.5">{selectedDestAirport?.name}</p>
             </div>
           </div>
 
           {/* DEPARTURE DATE */}
-          <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-2' : 'md:col-span-4'}>
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition cursor-pointer">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1">
+          <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3' : 'md:col-span-3'}>
+            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-sky-500/50 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all duration-200 relative flex flex-col justify-between cursor-pointer group">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1.5">
                 <Calendar className="w-3.5 h-3.5 text-sky-400" />
-                <span>DEPARTURE</span>
+                <span className="uppercase tracking-wider font-bold group-hover:text-sky-300 transition-colors">Departure</span>
               </div>
+
+              <div>
+                <div className="text-base sm:text-lg font-black text-white tracking-tight">
+                  {new Date(departureDate + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  {new Date(departureDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}
+                </p>
+              </div>
+
               <input
                 type="date"
                 value={departureDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDepartureDate(e.target.value)}
-                className="w-full bg-transparent text-white font-black text-sm sm:text-base focus:outline-none cursor-pointer [color-scheme:dark]"
+                aria-label="Departure Date"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
               />
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {new Date(departureDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </p>
             </div>
           </div>
 
           {/* RETURN DATE (If Round Trip) */}
           {tripType === 'ROUND_TRIP' && (
             <div className="md:col-span-2">
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950 border border-slate-800 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition cursor-pointer">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1">
+              <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-emerald-500/50 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all duration-200 relative flex flex-col justify-between cursor-pointer group">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1.5">
                   <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>RETURN</span>
+                  <span className="uppercase tracking-wider font-bold group-hover:text-emerald-300 transition-colors">Return</span>
                 </div>
+
+                <div>
+                  <div className="text-base sm:text-lg font-black text-white tracking-tight">
+                    {new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                    {new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}
+                  </p>
+                </div>
+
                 <input
                   type="date"
                   value={returnDate}
                   min={departureDate}
                   onChange={(e) => setReturnDate(e.target.value)}
-                  className="w-full bg-transparent text-white font-black text-sm sm:text-base focus:outline-none cursor-pointer [color-scheme:dark]"
+                  aria-label="Return Date"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {new Date(returnDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </p>
               </div>
             </div>
           )}
