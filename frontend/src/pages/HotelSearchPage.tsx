@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Hotel as HotelIcon, Search, Star, MapPin, ArrowRight } from 'lucide-react';
 import { Hotel } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { StarRating } from '../components/StarRating';
 import { HotelCardSkeleton } from '../components/HotelCardSkeleton';
+import { ImageWithFallback } from '../components/ImageWithFallback';
 import { recommendationService } from '../services/recommendationService';
 
 export const HotelSearchPage: React.FC = () => {
@@ -21,39 +22,44 @@ export const HotelSearchPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  const fetchHotels = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await hotelService.searchHotels({
-        city: city.trim() || undefined,
-        minStars,
-        maxPrice,
-        page,
-        size: 9,
-      });
-      setHotels(res.content);
-      setTotalCount(res.totalElements);
-      setTotalPages(res.totalPages);
-
-      // Track search activity for recommendations
-      if (city.trim()) {
-        recommendationService.trackActivity({
-          activityType: 'SEARCH_HOTEL',
-          targetId: city.trim(),
-          targetType: 'HOTEL',
-          metadata: { city: city.trim() },
-        });
-      }
-    } catch (err) {
-      console.error('Failed to search hotels', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [city, minStars, maxPrice, page]);
-
   useEffect(() => {
-    fetchHotels();
-  }, [fetchHotels]);
+    let isCurrent = true;
+    setLoading(true);
+    hotelService.searchHotels({
+      city: city.trim() || undefined,
+      minStars,
+      maxPrice,
+      page,
+      size: 9,
+    }).then((res) => {
+      if (isCurrent) {
+        setHotels(res.content);
+        setTotalCount(res.totalElements);
+        setTotalPages(res.totalPages);
+
+        if (city.trim()) {
+          recommendationService.trackActivity({
+            activityType: 'SEARCH_HOTEL',
+            targetId: city.trim(),
+            targetType: 'HOTEL',
+            metadata: { city: city.trim() },
+          });
+        }
+      }
+    }).catch((err) => {
+      if (isCurrent) {
+        console.error('Failed to search hotels', err);
+      }
+    }).finally(() => {
+      if (isCurrent) {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [city, minStars, maxPrice, page]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +68,6 @@ export const HotelSearchPage: React.FC = () => {
     if (city.trim()) params.city = city.trim();
     if (minStars) params.minStars = String(minStars);
     setSearchParams(params);
-    fetchHotels();
   };
 
   const cities = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Hyderabad', 'Goa', 'Kolkata'];
@@ -187,27 +192,35 @@ export const HotelSearchPage: React.FC = () => {
                 className="group bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/5 backdrop-blur-md"
               >
                 <div>
-                  {/* Image Placeholder Banner */}
-                  <div className="h-44 bg-gradient-to-br from-indigo-950 via-slate-900 to-cyan-950 relative p-4 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-amber-500/20 backdrop-blur-sm">
-                        <Star className="w-3 h-3 fill-amber-400" />
-                        {hotel.starRating}-Star Hotel
-                      </span>
-                      {hotel.nearestAirportCode && (
-                        <span className="text-[11px] font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30 backdrop-blur-sm">
-                          Near {hotel.nearestAirportCode}
+                  {/* Hotel Image Card Banner */}
+                  <div className="h-48 relative overflow-hidden">
+                    <ImageWithFallback
+                      src={hotel.imageUrls?.[0]}
+                      alt={`${hotel.name} luxury facade`}
+                      containerClassName="w-full h-full"
+                      className="group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-amber-500/20 backdrop-blur-md shadow-md">
+                          <Star className="w-3 h-3 fill-amber-400" />
+                          {hotel.starRating}-Star Hotel
                         </span>
-                      )}
-                    </div>
+                        {hotel.nearestAirportCode && (
+                          <span className="text-[11px] font-mono text-cyan-300 bg-slate-950/80 px-2 py-0.5 rounded border border-cyan-500/30 backdrop-blur-md">
+                            Near {hotel.nearestAirportCode}
+                          </span>
+                        )}
+                      </div>
 
-                    <div>
-                      <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors drop-shadow-md">
-                        {hotel.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5 drop-shadow">
-                        <MapPin className="w-3 h-3 text-cyan-400" />
-                        <span>{hotel.address?.city}, {hotel.address?.state}</span>
+                      <div>
+                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors drop-shadow-md">
+                          {hotel.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5 drop-shadow">
+                          <MapPin className="w-3 h-3 text-cyan-400" />
+                          <span>{hotel.address?.city}, {hotel.address?.state}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

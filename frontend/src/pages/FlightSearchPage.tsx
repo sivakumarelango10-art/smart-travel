@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Plane,
@@ -9,7 +9,8 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
-  Users
+  Users,
+  ArrowLeftRight
 } from 'lucide-react';
 import { Flight, CabinClass } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -40,8 +41,10 @@ export const FlightSearchPage: React.FC = () => {
   const [timeWindow, setTimeWindow] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('CHEAPEST');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
+  const searchSeqRef = useRef<number>(0);
 
-  const fetchFlights = async () => {
+  const fetchFlights = useCallback(async () => {
+    const seq = ++searchSeqRef.current;
     try {
       setLoading(true);
       setError(null);
@@ -55,6 +58,8 @@ export const FlightSearchPage: React.FC = () => {
         page: 0,
         size: 50,
       });
+
+      if (seq !== searchSeqRef.current) return;
 
       if (res.success && res.data?.content) {
         setFlights(res.data.content);
@@ -72,16 +77,24 @@ export const FlightSearchPage: React.FC = () => {
         setFlights([]);
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to fetch flight schedules. Please try again.');
+      if (seq !== searchSeqRef.current) return;
+      const rawMsg = err?.message || '';
+      if (rawMsg.toLowerCase().includes('not found') || rawMsg.toLowerCase().includes('search')) {
+        setError('No direct flights found matching your selected date and route. Try modifying your dates or departure filters.');
+      } else {
+        setError(rawMsg || 'Unable to retrieve live flight schedules. Please check your network connection.');
+      }
       setFlights([]);
     } finally {
-      setLoading(false);
+      if (seq === searchSeqRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [origin, destination, departureDate, cabinClass, passengers]);
 
   useEffect(() => {
     fetchFlights();
-  }, [origin, destination, departureDate, cabinClass, passengers]);
+  }, [fetchFlights]);
 
   // Extract unique airlines
   const availableAirlines = Array.from(new Set(flights.map((f) => f.airline)));
@@ -160,6 +173,22 @@ export const FlightSearchPage: React.FC = () => {
                 <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                   {origin} ➔ {destination}
                 </h1>
+                <button
+                  type="button"
+                  title="Swap Origin and Destination"
+                  onClick={() => {
+                    setSearchParams({
+                      origin: destination,
+                      destination: origin,
+                      departureDate,
+                      cabinClass,
+                      passengers: passengers.toString(),
+                    });
+                  }}
+                  className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 transition-transform active:rotate-180 duration-300"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                </button>
                 <span className="text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
                   {cabinClass.replace('_', ' ')}
                 </span>

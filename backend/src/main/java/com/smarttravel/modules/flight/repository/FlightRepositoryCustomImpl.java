@@ -65,20 +65,28 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
         // Always filter by active flights
         andCriteriaList.add(Criteria.where("active").is(true));
 
-        // Origin filter (match 3-letter IATA code or city name)
+        // Origin filter (match 3-letter IATA code directly or city name)
         if (criteria.getOrigin() != null && !criteria.getOrigin().isBlank()) {
             String origin = criteria.getOrigin().trim();
-            Criteria codeMatch = Criteria.where("departureAirport.code").is(origin.toUpperCase());
-            Criteria cityMatch = Criteria.where("departureAirport.city").regex(Pattern.quote(origin), "i");
-            andCriteriaList.add(new Criteria().orOperator(codeMatch, cityMatch));
+            if (origin.length() == 3 && origin.matches("(?i)[A-Z]{3}")) {
+                andCriteriaList.add(Criteria.where("departureAirport.code").is(origin.toUpperCase()));
+            } else {
+                Criteria codeMatch = Criteria.where("departureAirport.code").is(origin.toUpperCase());
+                Criteria cityMatch = Criteria.where("departureAirport.city").regex(Pattern.quote(origin), "i");
+                andCriteriaList.add(new Criteria().orOperator(codeMatch, cityMatch));
+            }
         }
 
-        // Destination filter (match 3-letter IATA code or city name)
+        // Destination filter (match 3-letter IATA code directly or city name)
         if (criteria.getDestination() != null && !criteria.getDestination().isBlank()) {
             String dest = criteria.getDestination().trim();
-            Criteria codeMatch = Criteria.where("arrivalAirport.code").is(dest.toUpperCase());
-            Criteria cityMatch = Criteria.where("arrivalAirport.city").regex(Pattern.quote(dest), "i");
-            andCriteriaList.add(new Criteria().orOperator(codeMatch, cityMatch));
+            if (dest.length() == 3 && dest.matches("(?i)[A-Z]{3}")) {
+                andCriteriaList.add(Criteria.where("arrivalAirport.code").is(dest.toUpperCase()));
+            } else {
+                Criteria codeMatch = Criteria.where("arrivalAirport.code").is(dest.toUpperCase());
+                Criteria cityMatch = Criteria.where("arrivalAirport.city").regex(Pattern.quote(dest), "i");
+                andCriteriaList.add(new Criteria().orOperator(codeMatch, cityMatch));
+            }
         }
 
         // Departure Date and Time Window filter
@@ -143,20 +151,17 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
             andCriteriaList.add(Criteria.where("basePrice").lte(criteria.getMaxPrice()));
         }
 
-        // Status filter (exclude cancelled/arrived/diverted by default if not explicitly specified)
+        // Status filter (match operational bookable statuses by default if not explicitly specified)
         if (criteria.getStatus() != null) {
             andCriteriaList.add(Criteria.where("status").is(criteria.getStatus()));
         } else {
-            andCriteriaList.add(Criteria.where("status").nin(FlightStatus.CANCELLED, FlightStatus.ARRIVED, FlightStatus.DIVERTED));
+            andCriteriaList.add(Criteria.where("status").in(FlightStatus.SCHEDULED, FlightStatus.BOARDING, FlightStatus.ON_TIME, FlightStatus.DELAYED));
         }
 
         Query query = new Query();
         if (!andCriteriaList.isEmpty()) {
             query.addCriteria(new Criteria().andOperator(andCriteriaList.toArray(new Criteria[0])));
         }
-
-        // Count total matching elements
-        long total = mongoTemplate.count(query, Flight.class);
 
         // Sorting
         Sort sort = buildSort(criteria.getSortBy(), criteria.getSortDirection());
@@ -167,6 +172,17 @@ public class FlightRepositoryCustomImpl implements FlightRepositoryCustom {
 
         query.with(pageable);
         List<Flight> flights = mongoTemplate.find(query, Flight.class);
+
+        long total;
+        if (pageNum == 0 && flights.size() < pageSize) {
+            total = flights.size();
+        } else {
+            Query countQuery = new Query();
+            if (!andCriteriaList.isEmpty()) {
+                countQuery.addCriteria(new Criteria().andOperator(andCriteriaList.toArray(new Criteria[0])));
+            }
+            total = mongoTemplate.count(countQuery, Flight.class);
+        }
 
         return new PageImpl<>(flights, pageable, total);
     }

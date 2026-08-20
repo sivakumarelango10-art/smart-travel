@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Seeds demo hotels, default pricing rules, and initial system admin on application startup.
+ * Seeds demo hotels with rich photo galleries, default pricing rules, and initial system admin on application startup.
  */
 @Component
 public class HotelAndPricingDataSeeder implements ApplicationRunner {
@@ -92,13 +92,18 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
             return;
         }
 
-        log.info("Seeding demo hotel data...");
+        log.info("Seeding demo hotel data with rich imagery...");
 
         List<Hotel> hotels = List.of(
                 // Delhi Hotels
                 buildHotel("The Imperial New Delhi", "Delhi", "DEL", 5,
                         new BigDecimal("15000"),
                         "Janpath, New Delhi, 110001", "Delhi",
+                        List.of(
+                                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Spa", "Fine Dining", "Business Center", "Valet Parking", "Concierge"),
                         List.of(
                                 buildRoom("rm-01", "Superior Room", RoomCategory.STANDARD, 5000, "Queen", 2, 350),
@@ -108,6 +113,11 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("Taj Hotel New Delhi", "Delhi", "DEL", 5,
                         new BigDecimal("12000"),
                         "1 Mansingh Road, New Delhi", "Delhi",
+                        List.of(
+                                "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Spa", "24hr Room Service", "Gym", "Business Lounge"),
                         List.of(
                                 buildRoom("rm-01", "Standard Room", RoomCategory.STANDARD, 4500, "Twin", 2, 320),
@@ -119,6 +129,11 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("The Oberoi Mumbai", "Mumbai", "BOM", 5,
                         new BigDecimal("18000"),
                         "Nariman Point, Mumbai 400021", "Maharashtra",
+                        List.of(
+                                "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Ocean View", "Pool", "Spa", "4 Restaurants", "Helicopter Service"),
                         List.of(
                                 buildRoom("rm-01", "Luxury Room", RoomCategory.DELUXE, 9000, "King", 2, 420),
@@ -128,6 +143,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("ITC Grand Central Mumbai", "Mumbai", "BOM", 5,
                         new BigDecimal("8500"),
                         "Dr Babasaheb Ambedkar Road, Mumbai", "Maharashtra",
+                        List.of(
+                                "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Gym", "Spa", "Multi-cuisine Restaurant", "Club Lounge"),
                         List.of(
                                 buildRoom("rm-01", "Classic Room", RoomCategory.STANDARD, 3500, "Twin", 2, 300),
@@ -139,6 +158,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("The Leela Palace Bengaluru", "Bangalore", "BLR", 5,
                         new BigDecimal("14000"),
                         "23 Airport Road, Bengaluru 560008", "Karnataka",
+                        List.of(
+                                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Spa", "Rooftop Bar", "Business Center", "24hr Dining"),
                         List.of(
                                 buildRoom("rm-01", "Deluxe Room", RoomCategory.DELUXE, 7000, "King", 2, 450),
@@ -148,6 +171,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("Marriott Whitefield Bengaluru", "Bangalore", "BLR", 4,
                         new BigDecimal("6500"),
                         "8 EPIP Zone, Whitefield, Bengaluru", "Karnataka",
+                        List.of(
+                                "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Gym", "Restaurant", "Business Lounge"),
                         List.of(
                                 buildRoom("rm-01", "Standard Room", RoomCategory.STANDARD, 3200, "Twin", 2, 300),
@@ -158,6 +185,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("The Park Chennai", "Chennai", "MAA", 5,
                         new BigDecimal("9000"),
                         "601 Anna Salai, Chennai 600006", "Tamil Nadu",
+                        List.of(
+                                "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Rooftop Pool", "Spa", "Bar", "Fine Dining", "Business Center"),
                         List.of(
                                 buildRoom("rm-01", "Classic Room", RoomCategory.STANDARD, 4000, "Queen", 2, 320),
@@ -169,6 +200,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("Taj Falaknuma Palace", "Hyderabad", "HYD", 5,
                         new BigDecimal("50000"),
                         "Engine Bowli, Falaknuma, Hyderabad", "Telangana",
+                        List.of(
+                                "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Palace Experience", "Pool", "Spa", "Horse Carriage", "Butler Service"),
                         List.of(
                                 buildRoom("rm-01", "Palace Room", RoomCategory.DELUXE, 25000, "King", 2, 800),
@@ -179,6 +214,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("Taj Exotica Goa", "Goa", "GOI", 5,
                         new BigDecimal("22000"),
                         "Calwaddo, Salcete, Goa 403712", "Goa",
+                        List.of(
+                                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Private Beach", "Pool", "Spa", "Water Sports", "Tennis Court"),
                         List.of(
                                 buildRoom("rm-01", "Luxury Room", RoomCategory.DELUXE, 10000, "King", 2, 500),
@@ -190,6 +229,10 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 buildHotel("ITC Royal Bengal Kolkata", "Kolkata", "CCU", 5,
                         new BigDecimal("10000"),
                         "1, J. B. S. Haldane Avenue, Kolkata", "West Bengal",
+                        List.of(
+                                "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+                        ),
                         List.of("Pool", "Spa", "Golf Course View", "24hr Dining", "Business Center"),
                         List.of(
                                 buildRoom("rm-01", "Welcome Room", RoomCategory.STANDARD, 4200, "Twin", 2, 350),
@@ -199,7 +242,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
         );
 
         hotelRepository.saveAll(hotels);
-        log.info("Seeded {} hotels", hotels.size());
+        log.info("Seeded {} hotels with rich photo galleries", hotels.size());
     }
 
     private void seedPricingRules() {
@@ -211,30 +254,18 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
         log.info("Seeding default dynamic pricing rules...");
 
         List<DynamicPricingRule> rules = List.of(
-                // Demand bands
-                buildDemandRule("Low Demand (0-40%)", 1, 0.0, 0.0, 0.40, "Standard pricing — low demand"),
-                buildDemandRule("Moderate Demand (40-60%)", 2, 5.0, 0.40, 0.60, "Moderate demand — slight surcharge"),
-                buildDemandRule("High Demand (60-80%)", 3, 10.0, 0.60, 0.80, "High demand — seat availability limited"),
-                buildDemandRule("Very High Demand (80-90%)", 4, 20.0, 0.80, 0.90, "Very high demand — limited seats"),
-                buildDemandRule("Near Sold Out (90-100%)", 5, 30.0, 0.90, 1.0, "Near capacity — last few seats"),
+                // Demand/Occupancy Rules
+                buildDemandRule("High Occupancy Surge (>80%)", 1, 0.20, 0.80, 1.00, "20% surge when flight/hotel reaches 80% occupancy"),
+                buildDemandRule("Extreme Occupancy Surge (>90%)", 2, 0.35, 0.90, 1.00, "35% surge when flight/hotel reaches 90% occupancy"),
+                buildDemandRule("Low Demand Discount (<30%)", 3, -0.10, 0.00, 0.30, "10% discount when occupancy is below 30% to stimulate bookings"),
 
-                // Seasonal — Summer (April to June)
-                buildTimeBoundRule("Summer Season Surge", DynamicPricingRuleType.SEASONAL, 10, 15.0,
-                        LocalDate.of(LocalDate.now().getYear(), 4, 1),
-                        LocalDate.of(LocalDate.now().getYear(), 6, 30),
-                        "Summer travel season surcharge"),
-
-                // Seasonal — New Year
-                buildTimeBoundRule("New Year Surge", DynamicPricingRuleType.SEASONAL, 11, 20.0,
-                        LocalDate.of(LocalDate.now().getYear(), 12, 26),
-                        LocalDate.of(LocalDate.now().getYear() + 1, 1, 5),
-                        "New Year travel peak"),
-
-                // Holiday surcharge examples (Diwali 2026)
-                buildTimeBoundRule("Diwali 2026", DynamicPricingRuleType.HOLIDAY, 20, 15.0,
-                        LocalDate.of(2026, 10, 18),
-                        LocalDate.of(2026, 10, 25),
-                        "Diwali festival holiday surcharge")
+                // Seasonal Rules
+                buildTimeBoundRule("Summer Vacation Peak (May-Jun)", DynamicPricingRuleType.SEASONAL, 10, 0.15,
+                        LocalDate.of(2026, 5, 1), LocalDate.of(2026, 6, 30), "15% summer holiday surge"),
+                buildTimeBoundRule("Diwali Festival High Season (Oct-Nov)", DynamicPricingRuleType.HOLIDAY, 15, 0.30,
+                        LocalDate.of(2026, 10, 20), LocalDate.of(2026, 11, 15), "30% Diwali festive demand peak"),
+                buildTimeBoundRule("Year End & New Year Surge (Dec-Jan)", DynamicPricingRuleType.HOLIDAY, 20, 0.40,
+                        LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), "40% New Year holiday travel surge")
         );
 
         pricingRuleRepository.saveAll(rules);
@@ -245,6 +276,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
     private Hotel buildHotel(String name, String city, String airportCode, int stars,
                               BigDecimal baseRate, String addressLine1, String state,
+                              List<String> imageUrls,
                               List<String> amenities, List<RoomType> roomTypes) {
         return Hotel.builder()
                 .name(name)
@@ -256,13 +288,14 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                         .build())
                 .nearestAirportCode(airportCode)
                 .starRating(stars)
-                .description("Luxury " + stars + "-star hotel in " + city + " offering world-class amenities and exceptional service.")
+                .description("Luxury " + stars + "-star hotel in " + city + " offering world-class amenities, award-winning culinary dining, and exceptional personalized service.")
                 .baseNightlyRate(baseRate)
                 .currency("INR")
+                .imageUrls(imageUrls)
                 .amenities(amenities)
                 .contactInfo(new HotelContactInfo("+91-11-12345678", "reservations@hotel.com", null))
-                .averageRating(4.2 + (stars - 4) * 0.2)
-                .totalReviews(120 + stars * 30)
+                .averageRating(4.3 + (stars - 4) * 0.3)
+                .totalReviews(140 + stars * 45)
                 .active(true)
                 .roomTypes(roomTypes)
                 .build();
@@ -286,7 +319,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                 .taxAmount(tax)
                 .totalNightlyRate(rate.add(tax))
                 .currency("INR")
-                .amenities(List.of("Free WiFi", "Mini Bar", "Smart TV", "In-room Safe"))
+                .amenities(List.of("Free WiFi", "Mini Bar", "Smart TV", "In-room Safe", "Coffee Maker"))
                 .breakfastIncluded(category == RoomCategory.SUITE || category == RoomCategory.PRESIDENTIAL_SUITE)
                 .refundable(true)
                 .build();

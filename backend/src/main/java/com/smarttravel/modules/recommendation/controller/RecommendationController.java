@@ -18,7 +18,7 @@ import java.util.Map;
  * REST controller for personalized recommendations and activity tracking.
  */
 @RestController
-@RequestMapping("/v1/recommendations")
+@RequestMapping({"/api/v1/recommendations", "/v1/recommendations"})
 @Tag(name = "Recommendations", description = "Personalized flight and hotel recommendations")
 public class RecommendationController {
 

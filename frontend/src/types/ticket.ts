@@ -38,6 +38,7 @@ export interface Ticket {
 export interface BoardingPass {
   id: string;
   checkInNumber: string;
+  boardingPassNumber?: string;
   bookingId: string;
   bookingReference: string;
   ticketNumber: string;
@@ -45,6 +46,7 @@ export interface BoardingPass {
   passengerName: string;
   flightNumber: string;
   airline: string;
+  airlineCode?: string;
   departureAirport: AirportInfo;
   arrivalAirport: AirportInfo;
   departureTime: string;

@@ -49,11 +49,11 @@ public class MongoIndexConfig {
         try {
             // 1. Flights collection compound indexes
             var flightOps = mongoTemplate.indexOps("flights");
-            flightOps.ensureIndex(new Index().on("origin", Sort.Direction.ASC)
-                    .on("destination", Sort.Direction.ASC)
-                    .on("departureTime", Sort.Direction.ASC)
+            flightOps.ensureIndex(new Index().on("departureAirport.code", Sort.Direction.ASC)
+                    .on("arrivalAirport.code", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
-                    .named("idx_flight_search_composite"));
+                    .on("departureTime", Sort.Direction.ASC)
+                    .named("idx_flight_esr_composite"));
             flightOps.ensureIndex(new Index().on("flightNumber", Sort.Direction.ASC)
                     .named("idx_flight_number"));
             flightOps.ensureIndex(new Index().on("status", Sort.Direction.ASC)
@@ -62,6 +62,9 @@ public class MongoIndexConfig {
 
             // 2. Bookings collection compound indexes
             var bookingOps = mongoTemplate.indexOps("bookings");
+            bookingOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_booking_user_date"));
             bookingOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
@@ -74,10 +77,13 @@ public class MongoIndexConfig {
 
             // 4. Hotels collection compound indexes
             var hotelOps = mongoTemplate.indexOps("hotels");
-            hotelOps.ensureIndex(new Index().on("city", Sort.Direction.ASC)
+            hotelOps.ensureIndex(new Index().on("address.city", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .on("starRating", Sort.Direction.DESC)
-                    .named("idx_hotel_city_active_rating"));
+                    .named("idx_hotel_address_city_rating"));
+            hotelOps.ensureIndex(new Index().on("nearestAirportCode", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .named("idx_hotel_airport_active"));
 
             // 5. Rooms collection indexes
             var roomOps = mongoTemplate.indexOps("rooms");
@@ -110,9 +116,11 @@ public class MongoIndexConfig {
             // 9. Notifications collection
             var notifOps = mongoTemplate.indexOps("notifications");
             notifOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
-                    .on("isRead", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
-                    .named("idx_notification_user_read_date"));
+                    .named("idx_notification_user_created_date"));
+            notifOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+                    .on("read", Sort.Direction.ASC)
+                    .named("idx_notification_user_read_status"));
 
             // 10. Payments collection
             var paymentOps = mongoTemplate.indexOps("payments");

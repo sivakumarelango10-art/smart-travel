@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import {
   Download,
   Printer,
-  Plane,
   Users,
   BookmarkCheck
 } from 'lucide-react';
 import { Ticket } from '../types/api';
 import { ticketService } from '../services/ticketService';
+import { AirlineLogo } from '../components/AirlineLogo';
 
 export const TicketPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -120,9 +120,7 @@ export const TicketPage: React.FC = () => {
         {/* Ticket Header */}
         <div className="p-6 sm:p-7 bg-gradient-to-r from-sky-950/60 to-indigo-950/60 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center font-black">
-              <Plane className="w-6 h-6" />
-            </div>
+            <AirlineLogo airline={ticket.airline} airlineCode={ticket.airlineCode} size="lg" />
             <div>
               <h2 className="font-extrabold text-white text-lg leading-tight">{ticket.airline}</h2>
               <p className="text-xs text-slate-400 font-medium">E-Ticket Receipt & Itinerary</p>

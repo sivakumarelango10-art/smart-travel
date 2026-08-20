@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -43,8 +44,17 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
             return Collections.emptyMap();
         }
 
-        // Fetch recent user interactions across the platform (last 30 days)
-        List<UserActivity> allActivities = activityRepository.findAll(); // In-memory projection
+        // Fetch user interactions across the platform
+        List<UserActivity> allActivities = activityRepository.findAll();
+        if (allActivities == null || allActivities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        // Fast check: exit immediately if target user has zero activities
+        boolean hasTargetUserActivity = allActivities.stream().anyMatch(a -> userId.equals(a.getUserId()));
+        if (!hasTargetUserActivity) {
+            return Collections.emptyMap();
+        }
 
         // Build User -> (Item -> Weight) profile matrix
         Map<String, Map<String, Double>> userItemMatrix = new HashMap<>();
@@ -59,11 +69,6 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
                     .merge(item, weight, Double::sum);
         }
 
-        Map<String, Double> targetUserItems = userItemMatrix.get(userId);
-        if (targetUserItems == null || targetUserItems.isEmpty()) {
-            return Collections.emptyMap(); // Cold start for user -> heuristic fallback
-        }
-
         // Build Item -> (User -> Weight) inverse index for fast similarity lookup
         Map<String, Map<String, Double>> itemUserMatrix = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> entry : userItemMatrix.entrySet()) {
@@ -72,6 +77,11 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
                 itemUserMatrix.computeIfAbsent(itemEntry.getKey(), k -> new HashMap<>())
                         .put(u, itemEntry.getValue());
             }
+        }
+
+        Map<String, Double> targetUserItems = userItemMatrix.getOrDefault(userId, Collections.emptyMap());
+        if (targetUserItems.isEmpty()) {
+            return Collections.emptyMap();
         }
 
         Map<String, Double> scores = new HashMap<>();

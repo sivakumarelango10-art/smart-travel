@@ -21,7 +21,7 @@ import java.util.List;
  * REST controller for hotel search and room selection.
  */
 @RestController
-@RequestMapping("/v1/hotels")
+@RequestMapping({"/api/v1/hotels", "/v1/hotels"})
 @Tag(name = "Hotels", description = "Hotel catalog, search, and room selection")
 public class HotelController {
 
@@ -32,7 +32,7 @@ public class HotelController {
     }
 
     @Operation(summary = "Search hotels by city, airport, stars, and/or price")
-    @GetMapping
+    @GetMapping({"", "/search"})
     public ResponseEntity<ApiResponse<Page<Hotel>>> searchHotels(
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String airportCode,

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Plane, Hotel as HotelIcon, ArrowRight, Star, Compass } from 'lucide-react';
 import { RecommendationItem } from '../types/api';
 import { recommendationService } from '../services/recommendationService';
+import { AirlineLogo } from './AirlineLogo';
 import { useAuth } from '../context/AuthContext';
 
 export const RecommendationsSection: React.FC = () => {
@@ -168,8 +169,9 @@ export const RecommendationsSection: React.FC = () => {
                     )}
 
                     {isFlight && item.airline && (
-                      <div className="mt-2 text-xs text-slate-400 flex items-center gap-1">
-                        <span>{item.airline}</span>
+                      <div className="mt-2 text-xs text-slate-400 flex items-center gap-2">
+                        <AirlineLogo airline={item.airline} size="xs" />
+                        <span className="font-medium text-slate-300">{item.airline}</span>
                         {item.fromCode && item.toCode && (
                           <span className="text-[11px] font-mono text-cyan-400/80 ml-auto bg-cyan-500/10 px-1.5 py-0.5 rounded">
                             {item.fromCode} → {item.toCode}

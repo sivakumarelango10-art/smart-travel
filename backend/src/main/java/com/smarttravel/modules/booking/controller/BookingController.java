@@ -68,7 +68,7 @@ public class BookingController {
                 .body(ApiResponse.success("Booking created successfully", response));
     }
 
-    @GetMapping
+    @GetMapping({"", "/my-bookings"})
     @Operation(
             summary = "Get Authenticated User's Bookings",
             description = "Retrieves a paginated list of bookings owned by the authenticated traveler."

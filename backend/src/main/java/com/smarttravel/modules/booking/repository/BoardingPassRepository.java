@@ -19,6 +19,8 @@ public interface BoardingPassRepository extends MongoRepository<BoardingPass, St
 
     Optional<BoardingPass> findByBoardingPassNumber(String boardingPassNumber);
 
+    List<BoardingPass> findByBookingReference(String bookingReference);
+
     List<BoardingPass> findByCheckInId(String checkInId);
 
     boolean existsByBookingId(String bookingId);

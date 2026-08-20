@@ -156,6 +156,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/pricing/**", "/api/v1/pricing/**"
                         ).permitAll()
+                        // Public Boarding Pass Scanner Verification (GET only)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/boarding-passes/verify", "/api/v1/boarding-passes/verify"
+                        ).permitAll()
                         // Public Web Push public key
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/notifications/push/public-key", "/api/v1/notifications/push/public-key"

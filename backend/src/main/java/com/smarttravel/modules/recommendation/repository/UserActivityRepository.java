@@ -30,4 +30,7 @@ public interface UserActivityRepository extends MongoRepository<UserActivity, St
     /** Check if user already has an activity of this type for this target */
     boolean existsByUserIdAndTargetIdAndActivityType(
             String userId, String targetId, UserActivityType activityType);
+
+    List<UserActivity> findByCreatedAtAfterOrderByCreatedAtDesc(
+            Instant since, org.springframework.data.domain.Pageable pageable);
 }

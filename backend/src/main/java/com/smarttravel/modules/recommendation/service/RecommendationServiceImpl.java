@@ -93,6 +93,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_RECOMMENDATIONS, key = "'flight_' + (#userId != null ? #userId : 'anon') + '_' + #limit")
     public List<RecommendationItem> getFlightRecommendations(String userId, int limit) {
         Instant since = Instant.now().minus(ACTIVITY_LOOKBACK_DAYS, ChronoUnit.DAYS);
 
@@ -118,10 +119,13 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
-        // Fetch bookable flights
-        List<Flight> flights = flightRepository.findAll(PageRequest.of(0, 200)).getContent().stream()
-                .filter(f -> f.isActive() &&
+        // Fetch bounded candidate bookable flights
+        int candidatePoolSize = Math.max(limit * 3, 25);
+        var flightPage = flightRepository.findAll(PageRequest.of(0, candidatePoolSize));
+        List<Flight> flights = (flightPage != null ? flightPage.getContent() : Collections.<Flight>emptyList()).stream()
+                .filter(f -> f != null && f.isActive() &&
                         f.getStatus() == FlightStatus.SCHEDULED &&
+                        f.getDepartureTime() != null &&
                         f.getDepartureTime().isAfter(Instant.now()))
                 .collect(Collectors.toList());
 
@@ -130,6 +134,14 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .map(f -> f.getArrivalAirport() != null ? f.getArrivalAirport().getCode() : f.getId())
                 .collect(Collectors.toSet());
 
+        Set<String> viewedFlightIds = userId != null
+                ? activityRepository.findByUserIdAndActivityTypeOrderByCreatedAtDesc(userId, UserActivityType.VIEW)
+                        .stream()
+                        .map(UserActivity::getTargetId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet())
+                : Collections.emptySet();
+
         Map<String, Double> collabScores = userId != null
                 ? collaborativeFilteringService.computeCollaborativeScores(userId, candidateTargets)
                 : Collections.emptyMap();
@@ -137,7 +149,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         // Score each flight
         String finalHomeAirport = homeAirport;
         List<RecommendationItem> items = flights.stream()
-                .map(f -> scoreAndBuildFlight(f, userId, preferredArrivalCodes, finalHomeAirport, collabScores, since))
+                .map(f -> scoreAndBuildFlight(f, viewedFlightIds, preferredArrivalCodes, finalHomeAirport, collabScores, since))
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparingDouble(RecommendationItem::getScore).reversed())
                 .limit(limit)
@@ -147,6 +159,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_RECOMMENDATIONS, key = "'hotel_' + (#userId != null ? #userId : 'anon') + '_' + #limit")
     public List<RecommendationItem> getHotelRecommendations(String userId, int limit) {
         Set<String> preferredCities = new HashSet<>();
 
@@ -163,8 +176,12 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
-        List<Hotel> hotels = hotelRepository.findByActiveTrueOrderByAverageRatingDesc(PageRequest.of(0, 50))
-                .getContent();
+        int candidatePoolSize = Math.max(limit * 3, 20);
+        var hotelPage = hotelRepository.findByActiveTrueOrderByAverageRatingDesc(PageRequest.of(0, candidatePoolSize));
+        if (hotelPage == null) {
+            hotelPage = hotelRepository.findAll(PageRequest.of(0, candidatePoolSize));
+        }
+        List<Hotel> hotels = hotelPage != null ? hotelPage.getContent() : Collections.emptyList();
 
         Set<String> candidateHotelCities = hotels.stream()
                 .filter(h -> h.getAddress() != null && h.getAddress().getCity() != null)
@@ -184,6 +201,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_RECOMMENDATIONS, key = "'dest_' + #limit")
     public List<RecommendationItem> getPopularDestinations(int limit) {
         // Return top destination recommendations based on hotel cities
         List<Hotel> topHotels = hotelRepository
@@ -211,7 +229,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     // ── Private Scoring Helpers ───────────────────────────────────────────────
 
-    private RecommendationItem scoreAndBuildFlight(Flight flight, String userId,
+    private RecommendationItem scoreAndBuildFlight(Flight flight,
+                                                    Set<String> viewedFlightIds,
                                                     Set<String> preferredArrivalCodes,
                                                     String homeAirport,
                                                     Map<String, Double> collabScores,
@@ -234,13 +253,9 @@ public class RecommendationServiceImpl implements RecommendationService {
             contentScore = 100.0;
         }
 
-        // Activity-based score (25% weight): has user viewed/searched for this flight or destination?
-        if (userId != null) {
-            boolean viewed = activityRepository.existsByUserIdAndTargetIdAndActivityType(
-                    userId, flight.getId(), UserActivityType.VIEW);
-            if (viewed) {
-                activityScore = 100.0;
-            }
+        // Activity-based score (25% weight): has user viewed/searched for this flight?
+        if (viewedFlightIds.contains(flight.getId())) {
+            activityScore = 100.0;
         }
 
         // Collaborative filtering score (25% weight)

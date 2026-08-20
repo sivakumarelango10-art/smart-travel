@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
  * REST controller for user reviews and ratings.
  */
 @RestController
-@RequestMapping("/v1/reviews")
+@RequestMapping({"/api/v1/reviews", "/v1/reviews"})
 @Tag(name = "Reviews", description = "User reviews and ratings for flights and hotels")
 public class ReviewController {
 
@@ -64,15 +64,22 @@ public class ReviewController {
     }
 
     @Operation(summary = "Get reviews for a specific flight or hotel")
-    @GetMapping
+    @GetMapping({"", "/target/{targetType}/{targetId}"})
     public ResponseEntity<ApiResponse<Page<Review>>> getReviews(
-            @RequestParam ReviewTargetType targetType,
-            @RequestParam String targetId,
+            @PathVariable(required = false) ReviewTargetType targetType,
+            @PathVariable(required = false) String targetId,
+            @RequestParam(required = false) ReviewTargetType targetTypeParam,
+            @RequestParam(required = false) String targetIdParam,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
+        ReviewTargetType effectiveType = targetType != null ? targetType : targetTypeParam;
+        String effectiveId = targetId != null ? targetId : targetIdParam;
+
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
-        Page<Review> reviews = reviewService.getReviewsForTarget(targetType, targetId, pageable);
+        Page<Review> reviews = (effectiveType != null && effectiveId != null)
+                ? reviewService.getReviewsForTarget(effectiveType, effectiveId, pageable)
+                : Page.empty(pageable);
         return ResponseEntity.ok(ApiResponse.success("Reviews retrieved", reviews));
     }
 

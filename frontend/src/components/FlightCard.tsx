@@ -18,6 +18,7 @@ import { Flight, CabinClass } from '../types/api';
 import { PriceHistoryModal } from './PriceHistoryModal';
 import { PriceFreezeModal } from './PriceFreezeModal';
 import { PriceBreakdownCard } from './PriceBreakdownCard';
+import { AirlineLogo } from './AirlineLogo';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
 
@@ -111,16 +112,6 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     }
   };
 
-  // Airline color coding helper
-  const getAirlineColor = (name: string) => {
-    if (name.toLowerCase().includes('indigo')) return 'from-indigo-600 to-blue-700 text-white';
-    if (name.toLowerCase().includes('air india')) return 'from-rose-600 to-red-700 text-white';
-    if (name.toLowerCase().includes('vistara')) return 'from-purple-700 to-indigo-900 text-white';
-    if (name.toLowerCase().includes('spicejet')) return 'from-orange-500 to-red-600 text-white';
-    if (name.toLowerCase().includes('emirates')) return 'from-red-600 to-slate-900 text-white';
-    return 'from-sky-500 to-indigo-600 text-white';
-  };
-
   return (
     <>
       <div
@@ -176,13 +167,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         <div className="p-5 sm:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 lg:gap-6">
           {/* 1. Airline & Aircraft Info */}
           <div className="flex items-center gap-3.5 lg:w-56 shrink-0">
-            <div
-              className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${getAirlineColor(
-                flight.airline
-              )} flex items-center justify-center shadow-md font-extrabold text-sm shrink-0 border border-white/10`}
-            >
-              {flight.airline.slice(0, 2).toUpperCase()}
-            </div>
+            <AirlineLogo airline={flight.airline} airlineCode={flight.airlineCode} size="lg" />
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-white text-[15px] leading-snug truncate" title={flight.airline}>
                 {flight.airline}
