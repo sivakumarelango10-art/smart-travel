@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { FlightSearchWidget } from '../components/FlightSearchWidget';
 import { RecommendationsSection } from '../components/RecommendationsSection';
+import { OptimizedImage } from '../components/OptimizedImage';
 import { healthService } from '../services/healthService';
 import { HealthData } from '../types/api';
 
@@ -272,10 +273,13 @@ export const HomePage: React.FC = () => {
             style={{ transition: 'opacity 1s ease-in-out, transform 8s ease-out' }}
           >
             <img
-              src={dest.image}
+              src={`${dest.image}&fm=webp`}
               alt={dest.name}
               className="w-full h-full object-cover object-center"
               loading={idx === 0 ? 'eager' : 'lazy'}
+              decoding={idx === 0 ? 'sync' : 'async'}
+              // @ts-expect-error fetchpriority standard
+              fetchpriority={idx === 0 ? 'high' : 'low'}
             />
             {/* Dark Cinematic Gradients */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/40"></div>
@@ -446,13 +450,14 @@ export const HomePage: React.FC = () => {
             >
               {/* Image Container */}
               <div className="relative h-48 overflow-hidden">
-                <img
+                <OptimizedImage
                   src={dest.image}
                   alt={dest.city}
-                  className="dest-img w-full h-full object-cover"
-                  loading="lazy"
+                  aspectRatio="16/10"
+                  className="w-full h-full"
+                  imageClassName="dest-img group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none"></div>
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-sky-300 text-[10px] font-bold border border-white/10">
                   {dest.tag}
                 </span>
@@ -509,11 +514,12 @@ export const HomePage: React.FC = () => {
               onClick={() => handleQuickRoute(card.from, card.to)}
               className="relative h-80 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl cursor-pointer group flex flex-col justify-end p-6"
             >
-              <img
+              <OptimizedImage
                 src={card.image}
                 alt={card.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
+                aspectRatio="1/1"
+                className="absolute inset-0 w-full h-full"
+                imageClassName="transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
 

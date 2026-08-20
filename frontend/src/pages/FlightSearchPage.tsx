@@ -15,6 +15,7 @@ import { Flight, CabinClass } from '../types/api';
 import { flightService } from '../services/flightService';
 import { FlightSearchWidget } from '../components/FlightSearchWidget';
 import { FlightCard } from '../components/FlightCard';
+import { FlightCardSkeleton } from '../components/FlightCardSkeleton';
 import { FlightFilters } from '../components/FlightFilters';
 
 export const FlightSearchPage: React.FC = () => {
@@ -293,18 +294,9 @@ export const FlightSearchPage: React.FC = () => {
 
           {/* Flight Results Content */}
           {loading ? (
-            <div className="space-y-4 py-4">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="rounded-3xl bg-slate-900 border border-slate-800 p-6 space-y-4 animate-pulse"
-                >
-                  <div className="flex justify-between items-center">
-                    <div className="w-40 h-7 bg-slate-800 rounded-xl"></div>
-                    <div className="w-28 h-7 bg-slate-800 rounded-xl"></div>
-                  </div>
-                  <div className="h-14 bg-slate-800/60 rounded-2xl"></div>
-                </div>
+            <div className="space-y-4 py-2">
+              {[1, 2, 3, 4].map((i) => (
+                <FlightCardSkeleton key={i} />
               ))}
             </div>
           ) : error ? (

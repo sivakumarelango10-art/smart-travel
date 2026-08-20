@@ -12,6 +12,7 @@ import {
 import { Booking, RefundDetails } from '../types/api';
 import { bookingService } from '../services/bookingService';
 import { paymentService } from '../services/paymentService';
+import { BookingSkeleton } from '../components/BookingSkeleton';
 
 export const MyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -155,9 +156,10 @@ export const MyBookingsPage: React.FC = () => {
 
       {/* Bookings List */}
       {loading ? (
-        <div className="py-24 text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400 font-bold">Synchronizing your booking records...</p>
+        <div className="space-y-4 py-2">
+          {[1, 2, 3].map((i) => (
+            <BookingSkeleton key={i} />
+          ))}
         </div>
       ) : error ? (
         <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-3 shadow-xl">

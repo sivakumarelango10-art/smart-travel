@@ -4,6 +4,7 @@ import { Hotel as HotelIcon, Search, Star, MapPin, ArrowRight } from 'lucide-rea
 import { Hotel } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { StarRating } from '../components/StarRating';
+import { HotelCardSkeleton } from '../components/HotelCardSkeleton';
 import { recommendationService } from '../services/recommendationService';
 
 export const HotelSearchPage: React.FC = () => {
@@ -158,10 +159,7 @@ export const HotelSearchPage: React.FC = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-80 bg-slate-900/60 border border-slate-800 rounded-2xl animate-pulse p-4"
-              />
+              <HotelCardSkeleton key={i} />
             ))}
           </div>
         ) : hotels.length === 0 ? (

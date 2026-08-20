@@ -22,6 +22,9 @@ public class CacheConfig {
     public static final String CACHE_ANALYTICS_PAYMENTS = "analytics_payments";
     public static final String CACHE_ANALYTICS_CUSTOMERS = "analytics_customers";
     public static final String CACHE_ANALYTICS_DASHBOARD = "analytics_dashboard";
+    public static final String CACHE_AIRPORTS = "airports";
+    public static final String CACHE_HOTEL_STATIC = "hotel_static";
+    public static final String CACHE_RECOMMENDATIONS = "recommendations";
 
     @Bean
     public CacheManager cacheManager() {
@@ -33,7 +36,10 @@ public class CacheConfig {
                 CACHE_ANALYTICS_SEATS,
                 CACHE_ANALYTICS_PAYMENTS,
                 CACHE_ANALYTICS_CUSTOMERS,
-                CACHE_ANALYTICS_DASHBOARD
+                CACHE_ANALYTICS_DASHBOARD,
+                CACHE_AIRPORTS,
+                CACHE_HOTEL_STATIC,
+                CACHE_RECOMMENDATIONS
         );
 
         cacheManager.setCaffeine(Caffeine.newBuilder()

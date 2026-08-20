@@ -55,6 +55,7 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, key = "#hotelId")
     public Hotel getHotelById(String hotelId) {
         return hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", hotelId));

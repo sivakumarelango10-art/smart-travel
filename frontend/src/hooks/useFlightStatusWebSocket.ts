@@ -19,6 +19,11 @@ export function useFlightStatusWebSocket({
   const [latestEvent, setLatestEvent] = useState<FlightStatusEvent | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const clientRef = useRef<Client | null>(null);
+  const onStatusUpdateRef = useRef(onStatusUpdate);
+
+  useEffect(() => {
+    onStatusUpdateRef.current = onStatusUpdate;
+  }, [onStatusUpdate]);
 
   const getWsUrl = useCallback(() => {
     if (WS_BASE_URL) return `${WS_BASE_URL}/ws`;
@@ -59,8 +64,8 @@ export function useFlightStatusWebSocket({
           try {
             const event: FlightStatusEvent = JSON.parse(message.body);
             setLatestEvent(event);
-            if (onStatusUpdate) {
-              onStatusUpdate(event);
+            if (onStatusUpdateRef.current) {
+              onStatusUpdateRef.current(event);
             }
           } catch (err) {
             console.error('Failed to parse flight status WebSocket message', err);
@@ -89,7 +94,7 @@ export function useFlightStatusWebSocket({
       clientRef.current = null;
       setIsConnected(false);
     };
-  }, [flightId, enabled, getWsUrl, onStatusUpdate]);
+  }, [flightId, enabled, getWsUrl]);
 
   return {
     isConnected,

@@ -78,6 +78,14 @@ apiClient.interceptors.response.use(
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
       return Promise.reject(error.response.data);
+    } else if (error.code === 'ERR_CANCELED') {
+      // Gracefully handle aborted requests
+      return Promise.reject({
+        status: 499,
+        error: 'REQUEST_ABORTED',
+        message: 'Request was cancelled by client.',
+        timestamp: new Date().toISOString(),
+      });
     } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
       return Promise.reject({
         status: 408,
@@ -96,3 +104,42 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Request Deduplication & Abort Controller Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+const activeAbortControllers = new Map<string, AbortController>();
+const inFlightRequests = new Map<string, Promise<any>>();
+
+/**
+ * Gets a cancellation signal for a specific key (cancelling previous pending request if any).
+ */
+export function getAbortSignal(key: string): AbortSignal {
+  if (activeAbortControllers.has(key)) {
+    activeAbortControllers.get(key)!.abort();
+  }
+  const controller = new AbortController();
+  activeAbortControllers.set(key, controller);
+  return controller.signal;
+}
+
+/**
+ * Executes a deduped GET request: if an identical request is already pending, shares its promise.
+ */
+export async function dedupedGet<T>(url: string, config?: any): Promise<T> {
+  const requestKey = `GET:${url}:${JSON.stringify(config?.params || {})}`;
+  if (inFlightRequests.has(requestKey)) {
+    return inFlightRequests.get(requestKey) as Promise<T>;
+  }
+
+  const promise = apiClient.get<T>(url, config)
+    .then((res) => res.data)
+    .finally(() => {
+      inFlightRequests.delete(requestKey);
+    });
+
+  inFlightRequests.set(requestKey, promise);
+  return promise;
+}
+

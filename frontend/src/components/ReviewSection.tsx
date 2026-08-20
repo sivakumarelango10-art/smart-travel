@@ -16,6 +16,7 @@ import {
   Send,
 } from 'lucide-react';
 import { StarRating } from './StarRating';
+import { ReviewSkeleton } from './ReviewSkeleton';
 import { Review, ReviewTargetType, ReviewReply } from '../types/api';
 import { reviewService } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
@@ -328,9 +329,10 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       {/* Reviews List */}
       <div className="mt-6 space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            Loading reviews...
+          <div className="space-y-4 py-2">
+            {[1, 2, 3].map((i) => (
+              <ReviewSkeleton key={i} />
+            ))}
           </div>
         ) : reviews.length === 0 ? (
           <div className="py-12 text-center text-slate-400">

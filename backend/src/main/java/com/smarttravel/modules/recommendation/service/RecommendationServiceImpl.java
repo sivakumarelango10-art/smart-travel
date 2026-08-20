@@ -77,6 +77,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_RECOMMENDATIONS, key = "(#userId != null ? #userId : 'anon') + '_' + #limit")
     public List<RecommendationItem> getRecommendations(String userId, int limit) {
         int half = limit / 2;
         List<RecommendationItem> flights = getFlightRecommendations(userId, half + (limit % 2));
