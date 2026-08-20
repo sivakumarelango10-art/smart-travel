@@ -127,8 +127,9 @@ public class FlightSimulationEngine {
 
         // 3. Compute revised timestamps if delayed
         if (nextStatus == FlightStatus.DELAYED) {
-            revisedDeparture = flight.getDepartureTime().plus(delayMinutes, ChronoUnit.MINUTES);
-            estimatedArrival = flight.getArrivalTime().plus(delayMinutes, ChronoUnit.MINUTES);
+            int delayMin = delayMinutes != null ? delayMinutes : 30;
+            revisedDeparture = flight.getDepartureTime().plus(delayMin, ChronoUnit.MINUTES);
+            estimatedArrival = flight.getArrivalTime().plus(delayMin, ChronoUnit.MINUTES);
         }
 
         // 4. Update via Domain Service (enforcing validation & history audit)

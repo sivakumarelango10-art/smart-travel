@@ -128,7 +128,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         
-        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
+        Class<?> reqType = ex.getRequiredType();
+        String requiredType = reqType != null ? reqType.getSimpleName() : "unknown";
         String message = String.format("Parameter '%s' should be of type %s", ex.getName(), requiredType);
 
         ErrorResponse errorResponse = ErrorResponse.builder()

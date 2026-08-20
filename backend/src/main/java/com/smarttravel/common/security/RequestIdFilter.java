@@ -33,9 +33,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
     private static final Pattern SAFE_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_\\-]{1,64}$");
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request,
+                                    @org.springframework.lang.NonNull HttpServletResponse response,
+                                    @org.springframework.lang.NonNull FilterChain filterChain) throws ServletException, IOException {
         String requestId = extractAndSanitizeRequestId(request);
 
         MDC.put(MDC_REQUEST_ID_KEY, requestId);

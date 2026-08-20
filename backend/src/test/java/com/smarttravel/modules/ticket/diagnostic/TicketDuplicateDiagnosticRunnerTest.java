@@ -110,8 +110,10 @@ class TicketDuplicateDiagnosticRunnerTest {
                 }
             }
 
-            log.info("  ==> PRESERVING authoritative ticket: _id={}, ticketNumber={}",
-                    authoritativeDoc.get("_id"), authoritativeDoc.getString("ticketNumber"));
+            if (authoritativeDoc != null) {
+                log.info("  ==> PRESERVING authoritative ticket: _id={}, ticketNumber={}",
+                        authoritativeDoc.get("_id"), authoritativeDoc.getString("ticketNumber"));
+            }
 
             for (Document delDoc : toDelete) {
                 Object delId = delDoc.get("_id");

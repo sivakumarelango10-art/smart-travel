@@ -30,8 +30,6 @@ public interface RefundRepository extends MongoRepository<Refund, String> {
 
     Page<Refund> findByStatus(RefundStatus status, Pageable pageable);
 
-    Page<Refund> findAll(Pageable pageable);
-
     boolean existsByPaymentIdAndStatusIn(String paymentId, List<RefundStatus> statuses);
 
     boolean existsByBookingIdAndStatusIn(String bookingId, List<RefundStatus> statuses);

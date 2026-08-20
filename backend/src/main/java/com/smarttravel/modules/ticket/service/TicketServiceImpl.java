@@ -168,8 +168,10 @@ public class TicketServiceImpl implements TicketService {
                     }
                 }
 
-                log.info("Deduplication: Preserving ticket {} (ID: {}) for bookingId: {}",
-                        authoritativeDoc.getString("ticketNumber"), authoritativeDoc.get("_id"), bookingId);
+                if (authoritativeDoc != null) {
+                    log.info("Deduplication: Preserving ticket {} (ID: {}) for bookingId: {}",
+                            authoritativeDoc.getString("ticketNumber"), authoritativeDoc.get("_id"), bookingId);
+                }
 
                 for (org.bson.Document delDoc : toDelete) {
                     Object delId = delDoc.get("_id");
