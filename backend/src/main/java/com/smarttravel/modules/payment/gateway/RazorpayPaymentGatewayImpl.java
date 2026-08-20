@@ -59,6 +59,12 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
             return false;
         }
 
+        // Support simulated signatures in development/sandbox mode
+        if (!properties.isEnabled() && (signature.startsWith("sim_") || signature.startsWith("mock_"))) {
+            log.info("Simulated payment signature accepted in sandbox/dev mode for orderId: {}", orderId);
+            return true;
+        }
+
         String secret = properties.getKeySecret();
         if (secret == null || secret.isBlank()) {
             // Default development fallback secret if not explicitly configured in environment

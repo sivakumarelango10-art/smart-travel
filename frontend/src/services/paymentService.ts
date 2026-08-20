@@ -17,6 +17,15 @@ export const paymentService = {
     return res.data;
   },
 
+  async verifyPayment(request: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  }): Promise<ApiResponse<any>> {
+    const res = await apiClient.post<ApiResponse<any>>('/v1/payments/verify', request);
+    return res.data;
+  },
+
   async simulateWebhookPayment(razorpayOrderId: string, amountPaise: number): Promise<ApiResponse<any>> {
     const eventId = 'evt_' + Math.random().toString(36).substring(2, 12);
     const paymentId = 'pay_' + Math.random().toString(36).substring(2, 12);
@@ -36,7 +45,11 @@ export const paymentService = {
       },
     };
 
-    const res = await apiClient.post<ApiResponse<any>>('/v1/payments/webhook', payload);
+    const res = await apiClient.post<ApiResponse<any>>('/v1/payments/webhook', payload, {
+      headers: {
+        'X-Razorpay-Signature': 'sim_sig_' + paymentId,
+      },
+    });
     return res.data;
   },
 };

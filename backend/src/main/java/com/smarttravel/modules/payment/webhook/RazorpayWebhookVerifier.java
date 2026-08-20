@@ -42,6 +42,14 @@ public class RazorpayWebhookVerifier {
             return false;
         }
 
+        // Support simulated signatures in development/sandbox mode
+        if (!razorpayProperties.isEnabled()) {
+            if (signatureHeader == null || signatureHeader.isBlank() || signatureHeader.startsWith("sim_") || signatureHeader.startsWith("mock_")) {
+                log.info("Simulated webhook signature accepted in sandbox/dev mode");
+                return true;
+            }
+        }
+
         if (signatureHeader == null || signatureHeader.isBlank()) {
             log.warn("Webhook signature verification failed: missing or empty signature header");
             return false;

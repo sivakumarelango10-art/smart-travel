@@ -73,8 +73,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setLoading(true);
     setError(null);
 
-    // If live Razorpay is available in window
-    if ((window as any).Razorpay && order.keyId) {
+    // If live Razorpay is available in window and valid key is present
+    if ((window as any).Razorpay && order.keyId && !order.keyId.startsWith('rzp_test_mock')) {
       const options = {
         key: order.keyId,
         amount: order.amount,
@@ -82,15 +82,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         name: 'SmartTravel Platform',
         description: `Flight Booking PNR: ${booking.bookingReference}`,
         order_id: order.razorpayOrderId,
-        handler: async () => {
+        handler: async (response: any) => {
           try {
-            // Reconcile via backend
-            await paymentService.simulateWebhookPayment(order.razorpayOrderId, order.amount);
+            await paymentService.verifyPayment({
+              razorpayOrderId: response.razorpay_order_id || order.razorpayOrderId,
+              razorpayPaymentId: response.razorpay_payment_id || `pay_${Date.now()}`,
+              razorpaySignature: response.razorpay_signature || `sim_sig_${Date.now()}`,
+            });
             setPaymentSuccess(true);
             setTimeout(() => onPaymentSuccess(), 1200);
-          } catch {
-            setError('Payment captured but confirmation is pending. Checking status...');
-            setTimeout(() => onPaymentSuccess(), 2000);
+          } catch (err: any) {
+            setError(err?.message || 'Payment captured but verification failed.');
+          } finally {
+            setLoading(false);
           }
         },
         prefill: {
@@ -103,16 +107,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       };
 
       const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (resp: any) {
+        setError(resp?.error?.description || 'Payment transaction failed on gateway.');
+        setLoading(false);
+      });
       rzp.open();
-      setLoading(false);
     } else {
-      // Development simulated webhook checkout
+      // Instant Verified Payment Simulation
       try {
-        await paymentService.simulateWebhookPayment(order.razorpayOrderId, order.amount);
+        const mockPaymentId = 'pay_' + Math.random().toString(36).substring(2, 14);
+        const mockSignature = 'sim_sig_' + Math.random().toString(36).substring(2, 18);
+        await paymentService.verifyPayment({
+          razorpayOrderId: order.razorpayOrderId,
+          razorpayPaymentId: mockPaymentId,
+          razorpaySignature: mockSignature,
+        });
         setPaymentSuccess(true);
         setTimeout(() => onPaymentSuccess(), 1200);
       } catch (err: any) {
-        setError(err?.message || 'Payment simulation failed. Please retry.');
+        // Fallback to simulated webhook if verify was unavailable
+        try {
+          await paymentService.simulateWebhookPayment(order.razorpayOrderId, order.amount);
+          setPaymentSuccess(true);
+          setTimeout(() => onPaymentSuccess(), 1200);
+        } catch (webhookErr: any) {
+          setError(webhookErr?.message || err?.message || 'Payment processing failed. Please retry.');
+        }
       } finally {
         setLoading(false);
       }
