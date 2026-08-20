@@ -14,7 +14,7 @@ spring:
       # Mandatory in production; no localhost fallback to prevent accidental split-brain
       uri: ${MONGODB_URI}
       database: ${MONGODB_DATABASE:smarttravel}
-      auto-index-creation: true
+      auto-index-creation: false
 
 # Production Logging Configuration
 logging:
