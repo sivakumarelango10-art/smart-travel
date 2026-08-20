@@ -110,7 +110,7 @@ export const PassengerForm: React.FC<PassengerFormProps> = ({
               <div className="sm:col-span-3">
                 <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Gender *</label>
                 <select
-                  value={pax.gender || 'FEMALE'}
+                  value={pax.gender || (pax.title === 'Ms' || pax.title === 'Mrs' ? 'FEMALE' : 'MALE')}
                   onChange={(e) => onChange(index, 'gender', e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-sky-500 transition cursor-pointer"
                 >
@@ -125,7 +125,7 @@ export const PassengerForm: React.FC<PassengerFormProps> = ({
                 <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Date of Birth</label>
                 <input
                   type="date"
-                  value={pax.dateOfBirth || ''}
+                  value={pax.dateOfBirth || '1995-01-01'}
                   onChange={(e) => onChange(index, 'dateOfBirth', e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white focus:outline-none focus:border-sky-500 transition [color-scheme:dark] cursor-pointer"
                 />

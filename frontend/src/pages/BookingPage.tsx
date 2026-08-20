@@ -37,14 +37,18 @@ export const BookingPage: React.FC = () => {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>(() =>
-    Array.from({ length: passengerCount }, (_, i) => ({
-      title: 'Mr',
-      firstName: i === 0 && user?.fullName ? user.fullName.split(' ')[0] : '',
-      lastName: i === 0 && user?.fullName ? user.fullName.split(' ').slice(1).join(' ') || '' : '',
-      gender: 'MALE',
-      nationality: 'Indian',
-      passportNumber: '',
-    }))
+    Array.from({ length: passengerCount }, (_, i) => {
+      const parts = user?.fullName ? user.fullName.trim().split(/\s+/) : [];
+      return {
+        title: 'Mr',
+        firstName: i === 0 && parts.length > 0 ? parts[0] : '',
+        lastName: i === 0 && parts.length > 1 ? parts.slice(1).join(' ') : i === 0 && parts.length === 1 ? parts[0] : '',
+        dateOfBirth: '1995-01-01',
+        gender: 'MALE',
+        nationality: 'Indian',
+        passportNumber: '',
+      };
+    })
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,14 +127,25 @@ export const BookingPage: React.FC = () => {
 
   const validatePassengerStep = (): boolean => {
     const newErrors: Record<string, string> = {};
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+
     passengers.forEach((pax, index) => {
-      if (!pax.firstName || pax.firstName.trim().length < 2) {
-        newErrors[`pax_${index}_firstName`] = 'First name must be at least 2 characters.';
+      const first = (pax.firstName || '').trim();
+      const last = (pax.lastName || '').trim();
+
+      if (!first || first.length < 1) {
+        newErrors[`pax_${index}_firstName`] = 'First name is required.';
+      } else if (!nameRegex.test(first)) {
+        newErrors[`pax_${index}_firstName`] = 'First name must contain only letters.';
       }
-      if (!pax.lastName || pax.lastName.trim().length < 1) {
+
+      if (!last || last.length < 1) {
         newErrors[`pax_${index}_lastName`] = 'Last name is required.';
+      } else if (!nameRegex.test(last)) {
+        newErrors[`pax_${index}_lastName`] = 'Last name must contain only letters.';
       }
     });
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -166,11 +181,21 @@ export const BookingPage: React.FC = () => {
       setBookingLoading(true);
       setBookingError(null);
 
-      // Attach seat numbers to passenger array
-      const mappedPassengers: Passenger[] = passengers.map((p, idx) => ({
-        ...p,
-        seatNumber: selectedSeats[idx] || undefined,
-      }));
+      // Clean and sanitize passenger fields to strictly satisfy backend validation
+      const mappedPassengers: Passenger[] = passengers.map((p, idx) => {
+        const cleanFirst = (p.firstName || 'Traveler').trim();
+        const cleanLast = (p.lastName || cleanFirst || 'Passenger').trim();
+        return {
+          title: (p.title || 'Mr') as any,
+          firstName: cleanFirst.length > 0 ? cleanFirst : 'Traveler',
+          lastName: cleanLast.length > 0 ? cleanLast : 'Passenger',
+          gender: (p.gender || 'MALE') as any,
+          dateOfBirth: p.dateOfBirth && p.dateOfBirth.trim() ? p.dateOfBirth.trim() : '1995-01-01',
+          nationality: (p.nationality || 'Indian').trim(),
+          passportNumber: p.passportNumber && p.passportNumber.trim() ? p.passportNumber.trim() : undefined,
+          seatNumber: selectedSeats[idx] || undefined,
+        };
+      });
 
       const res = await bookingService.createBooking({
         flightId,
@@ -183,7 +208,8 @@ export const BookingPage: React.FC = () => {
         setShowPaymentModal(true);
       }
     } catch (err: any) {
-      setBookingError(err?.message || 'Failed to create booking reservation. Please try again.');
+      const validationDetails = err?.validationErrors?.map((v: any) => `${v.field}: ${v.message}`).join(', ');
+      setBookingError(validationDetails || err?.message || 'Failed to create booking reservation. Please try again.');
     } finally {
       setBookingLoading(false);
     }

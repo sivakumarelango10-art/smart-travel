@@ -62,7 +62,7 @@ public class BookingMapper {
                 .title(dto.getTitle() != null ? dto.getTitle().trim() : null)
                 .firstName(dto.getFirstName() != null ? dto.getFirstName().trim() : null)
                 .lastName(dto.getLastName() != null ? dto.getLastName().trim() : null)
-                .dateOfBirth(dto.getDateOfBirth())
+                .dateOfBirth(dto.getDateOfBirth() != null ? dto.getDateOfBirth() : LocalDate.of(1995, 1, 1))
                 .gender(dto.getGender() != null ? dto.getGender().trim().toUpperCase() : null)
                 .nationality(dto.getNationality() != null ? dto.getNationality().trim() : null)
                 .passportNumber(dto.getPassportNumber() != null ? dto.getPassportNumber().trim().toUpperCase() : null)

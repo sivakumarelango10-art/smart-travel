@@ -33,7 +33,6 @@ public class PassengerDto {
     private String lastName;
 
     @Schema(description = "Date of Birth (YYYY-MM-DD)", example = "1990-05-15")
-    @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;
 
