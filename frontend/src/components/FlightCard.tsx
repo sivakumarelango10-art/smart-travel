@@ -27,13 +27,24 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   const depDate = new Date(flight.departureTime);
   const arrDate = new Date(flight.arrivalTime);
 
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  const formatTimeParts = (date: Date) => {
+    const hours = date.getHours();
+    const mins = date.getMinutes().toString().padStart(2, '0');
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    return {
+      time: `${h12.toString().padStart(2, '0')}:${mins}`,
+      period,
+    };
+  };
+
+  const depTime = formatTimeParts(depDate);
+  const arrTime = formatTimeParts(arrDate);
 
   const formatDuration = (mins: number) => {
     const hours = Math.floor(mins / 60);
     const m = mins % 60;
-    return `${hours}h ${m}m`;
+    return `${hours}h ${m > 0 ? `${m}m` : '00m'}`;
   };
 
   // Find matching cabin inventory
@@ -46,7 +57,11 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   const availableSeats = cabinInv ? cabinInv.availableSeats : flight.availableSeats;
 
   const isDisrupted = flight.status === 'DELAYED' || flight.status === 'CANCELLED';
-  const isBookable = flight.isBookable && availableSeats >= passengerCount && flight.status !== 'CANCELLED';
+  const isBookable =
+    (flight.isBookable === undefined || flight.isBookable === true) &&
+    availableSeats >= passengerCount &&
+    flight.status !== 'CANCELLED' &&
+    flight.status !== 'ARRIVED';
 
   const handleSelectFlight = () => {
     navigate(`/book/${flight.id}?cabinClass=${selectedCabin}&passengers=${passengerCount}`);
@@ -85,7 +100,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               ? `Flight Cancelled: ${flight.cancellationReason || 'Operational constraint'}`
               : `Flight Delayed by ${flight.delayMinutes || 0} minutes (Revised Departure: ${
                   flight.revisedDepartureTime
-                    ? formatTime(new Date(flight.revisedDepartureTime))
+                    ? `${formatTimeParts(new Date(flight.revisedDepartureTime)).time} ${formatTimeParts(new Date(flight.revisedDepartureTime)).period}`
                     : 'TBD'
                 })`}
           </span>
@@ -93,9 +108,9 @@ export const FlightCard: React.FC<FlightCardProps> = ({
       )}
 
       {/* Main Card Body */}
-      <div className="p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+      <div className="p-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-6">
         {/* 1. Airline & Aircraft Info */}
-        <div className="lg:col-span-3 flex items-center gap-3.5">
+        <div className="flex items-center gap-3.5 md:w-48 lg:w-56 shrink-0">
           <div
             className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${getAirlineColor(
               flight.airline
@@ -103,25 +118,29 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           >
             {flight.airline.slice(0, 2).toUpperCase()}
           </div>
-          <div>
-            <h3 className="font-extrabold text-white text-base leading-snug">{flight.airline}</h3>
-            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-              <span className="font-mono text-slate-300 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+          <div className="min-w-0">
+            <h3 className="font-extrabold text-white text-base leading-snug truncate" title={flight.airline}>
+              {flight.airline}
+            </h3>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 mt-0.5">
+              <span className="font-mono text-slate-300 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[11px]">
                 {flight.flightNumber}
               </span>
-              <span>•</span>
-              <span className="text-slate-400">{flight.aircraftModel}</span>
+              <span className="text-slate-400 text-[11px] truncate max-w-[100px]">{flight.aircraftModel}</span>
             </div>
           </div>
         </div>
 
         {/* 2. Route & Timings Visualizer */}
-        <div className="lg:col-span-5 flex items-center justify-between gap-4">
+        <div className="flex-1 flex items-center justify-between gap-4 sm:gap-6 px-0 md:px-4 py-3 md:py-0 border-y md:border-y-0 border-slate-800/80">
           {/* Departure */}
-          <div className="text-left min-w-[70px]">
-            <p className="text-2xl font-black text-white">{formatTime(depDate)}</p>
-            <p className="text-sm font-bold text-sky-400 mt-0.5">{flight.departureAirport.code}</p>
-            <p className="text-[11px] text-slate-400 truncate max-w-[100px]">{flight.departureAirport.city}</p>
+          <div className="text-left shrink-0">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">{depTime.time}</span>
+              <span className="text-xs font-black text-slate-400 uppercase">{depTime.period}</span>
+            </div>
+            <p className="text-sm font-bold text-sky-400 mt-1">{flight.departureAirport.code}</p>
+            <p className="text-xs text-slate-300 truncate max-w-[120px]">{flight.departureAirport.city}</p>
             {flight.departureAirport.terminal && (
               <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                 {flight.departureAirport.terminal}
@@ -130,8 +149,8 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </div>
 
           {/* Duration Graphic */}
-          <div className="flex-1 flex flex-col items-center px-2">
-            <span className="text-[11px] text-slate-400 font-bold flex items-center gap-1">
+          <div className="flex-1 flex flex-col items-center px-3 max-w-[160px]">
+            <span className="text-xs text-slate-400 font-bold flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-slate-500" />
               {formatDuration(flight.durationMinutes)}
             </span>
@@ -142,16 +161,19 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                 </div>
               </div>
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              {flight.stops === 0 ? 'Non-Stop' : `${flight.stops} Stop(s)`}
+            <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap">
+              {!flight.stops || flight.stops === 0 ? 'Non-Stop' : flight.stops === 1 ? '1 Stop' : `${flight.stops} Stops`}
             </span>
           </div>
 
           {/* Arrival */}
-          <div className="text-right min-w-[70px]">
-            <p className="text-2xl font-black text-white">{formatTime(arrDate)}</p>
-            <p className="text-sm font-bold text-sky-400 mt-0.5">{flight.arrivalAirport.code}</p>
-            <p className="text-[11px] text-slate-400 truncate max-w-[100px]">{flight.arrivalAirport.city}</p>
+          <div className="text-right shrink-0">
+            <div className="flex items-baseline justify-end gap-1">
+              <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">{arrTime.time}</span>
+              <span className="text-xs font-black text-slate-400 uppercase">{arrTime.period}</span>
+            </div>
+            <p className="text-sm font-bold text-sky-400 mt-1">{flight.arrivalAirport.code}</p>
+            <p className="text-xs text-slate-300 truncate max-w-[120px]">{flight.arrivalAirport.city}</p>
             {flight.arrivalAirport.terminal && (
               <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                 {flight.arrivalAirport.terminal}
@@ -161,9 +183,9 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         </div>
 
         {/* 3. Fare & Booking Button */}
-        <div className="lg:col-span-4 flex flex-row lg:flex-col items-center lg:items-end justify-between gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-800">
-          <div className="text-left lg:text-right">
-            <div className="flex items-baseline gap-1.5 lg:justify-end">
+        <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-4 md:w-52 shrink-0 md:pl-6 md:border-l md:border-slate-800">
+          <div className="text-left md:text-right">
+            <div className="flex items-baseline gap-1.5 md:justify-end">
               <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 ₹{totalPrice.toLocaleString('en-IN')}
               </span>
@@ -174,7 +196,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-[11px]">
-              <span className="text-slate-400">Taxes & fees included</span>
+              <span className="text-slate-400">Taxes included</span>
               <span>•</span>
               <span
                 className={`font-bold flex items-center gap-1 ${
@@ -191,7 +213,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
             type="button"
             onClick={handleSelectFlight}
             disabled={!isBookable}
-            className={`w-full sm:w-auto px-6 py-3 rounded-2xl font-black text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+            className={`w-full md:w-auto px-6 py-3 rounded-2xl font-black text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
               isBookable
                 ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98]'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
@@ -224,4 +246,5 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     </div>
   );
 };
+
 

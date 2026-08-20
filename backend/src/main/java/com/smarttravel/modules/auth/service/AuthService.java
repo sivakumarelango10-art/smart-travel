@@ -1,8 +1,11 @@
 package com.smarttravel.modules.auth.service;
 
 import com.smarttravel.modules.auth.dto.AuthResponse;
+import com.smarttravel.modules.auth.dto.ChangePasswordRequest;
+import com.smarttravel.modules.auth.dto.DeleteAccountRequest;
 import com.smarttravel.modules.auth.dto.LoginRequest;
 import com.smarttravel.modules.auth.dto.RegisterRequest;
+import com.smarttravel.modules.auth.dto.UpdateProfileRequest;
 import com.smarttravel.modules.auth.dto.UserResponse;
 
 /**
@@ -32,4 +35,27 @@ public interface AuthService {
      * @return UserResponse with complete profile details
      */
     UserResponse getCurrentUser();
+
+    /**
+     * Updates the authenticated user's profile and travel preferences.
+     *
+     * @param request Profile update payload
+     * @return UserResponse with updated profile details
+     */
+    UserResponse updateProfile(UpdateProfileRequest request);
+
+    /**
+     * Changes the authenticated user's password after verifying current credentials.
+     *
+     * @param request Password change payload
+     */
+    void changePassword(ChangePasswordRequest request);
+
+    /**
+     * Permanently deactivates and deletes the authenticated user's account,
+     * anonymizing PII and revoking access.
+     *
+     * @param request Optional deletion reason and verification
+     */
+    void deleteAccount(DeleteAccountRequest request);
 }

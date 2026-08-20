@@ -221,9 +221,9 @@ export const FlightSearchPage: React.FC = () => {
       </section>
 
       {/* 2. MAIN RESULTS LAYOUT */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Left Filter Sidebar (Desktop) */}
-        <aside className="hidden lg:block lg:col-span-4">
+        <aside className="hidden xl:block xl:col-span-3">
           <FlightFilters
             availableAirlines={availableAirlines}
             selectedAirlines={selectedAirlines}
@@ -242,7 +242,7 @@ export const FlightSearchPage: React.FC = () => {
         </aside>
 
         {/* Right Flight List Column */}
-        <main className="lg:col-span-8 space-y-4">
+        <main className="xl:col-span-9 space-y-4">
           {/* Header Controls Bar */}
           <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -263,7 +263,7 @@ export const FlightSearchPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="lg:hidden px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-2 border border-slate-700 shadow-sm"
+              className="xl:hidden px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-2 border border-slate-700 shadow-sm"
             >
               <SlidersHorizontal className="w-4 h-4 text-sky-400" />
               <span>Filters ({selectedAirlines.length + (nonStopOnly ? 1 : 0)})</span>
@@ -272,7 +272,7 @@ export const FlightSearchPage: React.FC = () => {
 
           {/* Mobile Filter Drawer */}
           {showMobileFilters && (
-            <div className="lg:hidden animate-slide-up">
+            <div className="xl:hidden animate-slide-up">
               <FlightFilters
                 availableAirlines={availableAirlines}
                 selectedAirlines={selectedAirlines}

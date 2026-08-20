@@ -16,12 +16,22 @@ public class LoginRequest {
     @Schema(description = "User password", example = "Travel2026!Secure", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
+    @Schema(description = "Extend session expiration for trusted devices (Remember Me)", example = "true")
+    private Boolean rememberMe = false;
+
     public LoginRequest() {
     }
 
     public LoginRequest(String email, String password) {
         this.email = email;
         this.password = password;
+        this.rememberMe = false;
+    }
+
+    public LoginRequest(String email, String password, Boolean rememberMe) {
+        this.email = email;
+        this.password = password;
+        this.rememberMe = rememberMe != null ? rememberMe : false;
     }
 
     public static Builder builder() {
@@ -31,6 +41,7 @@ public class LoginRequest {
     public static class Builder {
         private String email;
         private String password;
+        private Boolean rememberMe = false;
 
         public Builder email(String email) {
             this.email = email;
@@ -42,8 +53,13 @@ public class LoginRequest {
             return this;
         }
 
+        public Builder rememberMe(Boolean rememberMe) {
+            this.rememberMe = rememberMe;
+            return this;
+        }
+
         public LoginRequest build() {
-            return new LoginRequest(email, password);
+            return new LoginRequest(email, password, rememberMe);
         }
     }
 
@@ -61,5 +77,17 @@ public class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Boolean getRememberMe() {
+        return rememberMe;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe != null && rememberMe;
+    }
+
+    public void setRememberMe(Boolean rememberMe) {
+        this.rememberMe = rememberMe;
     }
 }

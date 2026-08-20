@@ -46,18 +46,25 @@ public class JwtTokenProvider {
                 userPrincipal.getEmail(),
                 userPrincipal.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList())
+                        .collect(Collectors.toList()),
+                false
         );
     }
 
     public String generateTokenFromUserIdAndEmail(String userId, String email, List<String> roles) {
+        return generateTokenFromUserIdAndEmail(userId, email, roles, false);
+    }
+
+    public String generateTokenFromUserIdAndEmail(String userId, String email, List<String> roles, boolean rememberMe) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        long expirationMs = getJwtExpirationMs(rememberMe);
+        Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(userId)
                 .claim("email", email)
                 .claim("roles", roles)
+                .claim("rememberMe", rememberMe)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -104,6 +111,14 @@ public class JwtTokenProvider {
     }
 
     public long getJwtExpirationMs() {
+        return jwtExpirationMs;
+    }
+
+    public long getJwtExpirationMs(boolean rememberMe) {
+        if (rememberMe) {
+            // Extended session: 30 days
+            return 30L * 24 * 60 * 60 * 1000L;
+        }
         return jwtExpirationMs;
     }
 }

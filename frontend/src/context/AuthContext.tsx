@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, LoginRequest, RegisterRequest } from '../types/api';
+import {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+  DeleteAccountRequest
+} from '../types/api';
 import { authService } from '../services/authService';
 
 interface AuthContextType {
@@ -11,6 +18,9 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
+  updateProfile: (data: UpdateProfileRequest) => Promise<User>;
+  changePassword: (data: ChangePasswordRequest) => Promise<void>;
+  deleteAccount: (data?: DeleteAccountRequest) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.success && res.data) {
           setUser(res.data);
         }
-      } catch (err) {
+      } catch {
         // Token invalid/expired, clear state
         authService.logout();
         setUser(null);
@@ -51,6 +61,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.login(credentials);
     if (res.success && res.data?.user) {
       setUser(res.data.user);
+      // Also fetch full profile details
+      try {
+        const profRes = await authService.getProfile();
+        if (profRes.success && profRes.data) {
+          setUser(profRes.data);
+        }
+      } catch {
+        // Fallback to basic user summary from login
+      }
     }
   };
 
@@ -60,6 +79,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Auto-login after registration
       await login({ email: data.email, password: data.password });
     }
+  };
+
+  const updateProfile = async (data: UpdateProfileRequest): Promise<User> => {
+    const res = await authService.updateProfile(data);
+    if (res.success && res.data) {
+      setUser(res.data);
+      return res.data;
+    }
+    throw new Error(res.message || 'Failed to update profile');
+  };
+
+  const changePassword = async (data: ChangePasswordRequest): Promise<void> => {
+    const res = await authService.changePassword(data);
+    if (!res.success) {
+      throw new Error(res.message || 'Failed to change password');
+    }
+  };
+
+  const deleteAccount = async (data?: DeleteAccountRequest): Promise<void> => {
+    await authService.deleteAccount(data);
+    setUser(null);
   };
 
   const logout = () => {
@@ -80,6 +120,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshProfile,
+        updateProfile,
+        changePassword,
+        deleteAccount,
       }}
     >
       {children}
@@ -94,3 +137,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

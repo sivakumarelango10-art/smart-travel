@@ -18,7 +18,8 @@ import {
   ChevronDown,
   Shield,
   Menu,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { APP_NAME } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
@@ -295,6 +296,15 @@ export const Navbar: React.FC = () => {
                       </div>
 
                       <Link
+                        to="/account"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"
+                      >
+                        <User className="w-4 h-4 text-sky-400" />
+                        <span>My Account</span>
+                      </Link>
+
+                      <Link
                         to="/my-bookings"
                         onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800/80 transition"
@@ -363,6 +373,7 @@ export const Navbar: React.FC = () => {
           <div className="lg:hidden mt-3 pt-3 border-t border-slate-800/80 space-y-2 pb-2 animate-fade-in">
             <Link
               to="/flights"
+              onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
             >
               <Plane className="w-4 h-4 text-sky-400" />
@@ -370,13 +381,25 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {isAuthenticated && (
-              <Link
-                to="/my-bookings"
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
-              >
-                <BookmarkCheck className="w-4 h-4 text-indigo-400" />
-                <span>My Bookings</span>
-              </Link>
+              <>
+                <Link
+                  to="/account"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
+                >
+                  <User className="w-4 h-4 text-sky-400" />
+                  <span>My Account</span>
+                </Link>
+
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
+                >
+                  <BookmarkCheck className="w-4 h-4 text-indigo-400" />
+                  <span>My Bookings</span>
+                </Link>
+              </>
             )}
 
             {isAuthenticated && isAdmin && (

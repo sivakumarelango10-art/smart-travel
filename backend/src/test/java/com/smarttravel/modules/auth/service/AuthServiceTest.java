@@ -33,9 +33,11 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -157,12 +159,13 @@ class AuthServiceTest {
         LoginRequest request = LoginRequest.builder()
                 .email("ALICE@SmartTravel.com")
                 .password("Travel2026!Secure")
+                .rememberMe(false)
                 .build();
 
         when(userRepository.findByNormalizedEmail("alice@smarttravel.com")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("Travel2026!Secure", sampleUser.getPasswordHash())).thenReturn(true);
-        when(jwtTokenProvider.getJwtExpirationMs()).thenReturn(86400000L);
-        when(jwtTokenProvider.generateTokenFromUserIdAndEmail(eq("user-123"), eq("alice@smarttravel.com"), any()))
+        when(jwtTokenProvider.getJwtExpirationMs(false)).thenReturn(86400000L);
+        when(jwtTokenProvider.generateTokenFromUserIdAndEmail(eq("user-123"), eq("alice@smarttravel.com"), any(), eq(false)))
                 .thenReturn("mocked.jwt.token");
         when(userRepository.save(any(User.class))).thenReturn(sampleUser);
 
@@ -181,6 +184,29 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("4b. Remember Me login returns 30-day extended JWT access token")
+    void testRememberMeLogin() {
+        LoginRequest request = LoginRequest.builder()
+                .email("alice@smarttravel.com")
+                .password("Travel2026!Secure")
+                .rememberMe(true)
+                .build();
+
+        when(userRepository.findByNormalizedEmail("alice@smarttravel.com")).thenReturn(Optional.of(sampleUser));
+        when(passwordEncoder.matches("Travel2026!Secure", sampleUser.getPasswordHash())).thenReturn(true);
+        when(jwtTokenProvider.getJwtExpirationMs(true)).thenReturn(2592000000L);
+        when(jwtTokenProvider.generateTokenFromUserIdAndEmail(eq("user-123"), eq("alice@smarttravel.com"), any(), eq(true)))
+                .thenReturn("mocked.extended.jwt.token");
+        when(userRepository.save(any(User.class))).thenReturn(sampleUser);
+
+        AuthResponse response = authService.login(request);
+
+        assertNotNull(response);
+        assertEquals("mocked.extended.jwt.token", response.getAccessToken());
+        assertEquals(2592000000L, response.getExpiresIn());
+    }
+
+    @Test
     @DisplayName("5. Login with wrong password throws UnauthorizedException")
     void testLoginWithWrongPassword() {
         LoginRequest request = LoginRequest.builder()
@@ -193,7 +219,7 @@ class AuthServiceTest {
 
         UnauthorizedException ex = assertThrows(UnauthorizedException.class, () -> authService.login(request));
         assertEquals("Invalid email or password", ex.getMessage());
-        verify(jwtTokenProvider, never()).generateTokenFromUserIdAndEmail(anyString(), anyString(), any());
+        verify(jwtTokenProvider, never()).generateTokenFromUserIdAndEmail(anyString(), anyString(), any(), anyBoolean());
     }
 
     @Test
@@ -266,6 +292,92 @@ class AuthServiceTest {
         assertEquals("Alice Wonderland", profile.getFullName());
         assertEquals("alice@smarttravel.com", profile.getEmail());
         assertEquals("+919876543210", profile.getPhoneNumber());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("10. Update profile saves updated preferences and name")
+    void testUpdateProfile() {
+        UserPrincipal principal = UserPrincipal.create(sampleUser);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(userRepository.findById("user-123")).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.smarttravel.modules.user.model.UserPreferences prefs = new com.smarttravel.modules.user.model.UserPreferences();
+        prefs.setPreferredSeatType("WINDOW");
+        prefs.setPreferredClass("BUSINESS");
+        prefs.setCity("Mumbai");
+
+        com.smarttravel.modules.auth.dto.UpdateProfileRequest updateReq = com.smarttravel.modules.auth.dto.UpdateProfileRequest.builder()
+                .fullName("Alice In Wonderland")
+                .phoneNumber("+91 99999 88888")
+                .preferences(prefs)
+                .build();
+
+        UserResponse updated = authService.updateProfile(updateReq);
+
+        assertNotNull(updated);
+        assertEquals("Alice In Wonderland", updated.getFullName());
+        assertEquals("+91 99999 88888", updated.getPhoneNumber());
+        assertEquals("WINDOW", updated.getPreferences().getPreferredSeatType());
+        assertEquals("BUSINESS", updated.getPreferences().getPreferredClass());
+        assertEquals("Mumbai", updated.getPreferences().getCity());
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("11. Change password verifies old password and updates password hash")
+    void testChangePassword() {
+        UserPrincipal principal = UserPrincipal.create(sampleUser);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(userRepository.findById("user-123")).thenReturn(Optional.of(sampleUser));
+        when(passwordEncoder.matches("Travel2026!Old", sampleUser.getPasswordHash())).thenReturn(true);
+        when(passwordEncoder.encode("Travel2026!NewSecure")).thenReturn("$2a$12$newHashedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(sampleUser);
+
+        com.smarttravel.modules.auth.dto.ChangePasswordRequest changeReq = com.smarttravel.modules.auth.dto.ChangePasswordRequest.builder()
+                .currentPassword("Travel2026!Old")
+                .newPassword("Travel2026!NewSecure")
+                .confirmPassword("Travel2026!NewSecure")
+                .build();
+
+        authService.changePassword(changeReq);
+
+        assertEquals("$2a$12$newHashedPassword", sampleUser.getPasswordHash());
+        verify(userRepository).save(sampleUser);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("12. Delete account deactivates user and anonymizes personal data")
+    void testDeleteAccount() {
+        UserPrincipal principal = UserPrincipal.create(sampleUser);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null, principal.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(userRepository.findById("user-123")).thenReturn(Optional.of(sampleUser));
+        when(userRepository.save(any(User.class))).thenReturn(sampleUser);
+
+        com.smarttravel.modules.auth.dto.DeleteAccountRequest deleteReq = new com.smarttravel.modules.auth.dto.DeleteAccountRequest(null, "No longer needed");
+        authService.deleteAccount(deleteReq);
+
+        assertEquals(AccountStatus.DELETED, sampleUser.getAccountStatus());
+        assertFalse(sampleUser.isActive());
+        assertEquals("Deleted User", sampleUser.getFullName());
+        assertNull(sampleUser.getPhoneNumber());
 
         SecurityContextHolder.clearContext();
     }

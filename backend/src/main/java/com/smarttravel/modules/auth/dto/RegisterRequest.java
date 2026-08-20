@@ -32,6 +32,9 @@ public class RegisterRequest {
     @Schema(description = "Strong password", example = "Travel2026!Secure", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
+    @Schema(description = "Password confirmation", example = "Travel2026!Secure")
+    private String confirmPassword;
+
     @Schema(description = "Contact phone number", example = "+919876543210")
     private String phoneNumber;
 
@@ -45,6 +48,16 @@ public class RegisterRequest {
         this.fullName = fullName;
         this.email = email;
         this.password = password;
+        this.confirmPassword = password;
+        this.phoneNumber = phoneNumber;
+        this.phone = phoneNumber;
+    }
+
+    public RegisterRequest(String fullName, String email, String password, String confirmPassword, String phoneNumber) {
+        this.fullName = fullName;
+        this.email = email;
+        this.password = password;
+        this.confirmPassword = confirmPassword;
         this.phoneNumber = phoneNumber;
         this.phone = phoneNumber;
     }
@@ -69,6 +82,7 @@ public class RegisterRequest {
         private String lastName;
         private String email;
         private String password;
+        private String confirmPassword;
         private String phoneNumber;
         private String phone;
 
@@ -97,6 +111,11 @@ public class RegisterRequest {
             return this;
         }
 
+        public Builder confirmPassword(String confirmPassword) {
+            this.confirmPassword = confirmPassword;
+            return this;
+        }
+
         public Builder phoneNumber(String phoneNumber) {
             this.phoneNumber = phoneNumber;
             this.phone = phoneNumber;
@@ -110,7 +129,9 @@ public class RegisterRequest {
         }
 
         public RegisterRequest build() {
-            return new RegisterRequest(firstName, lastName, email, password, phone, fullName, phoneNumber);
+            RegisterRequest req = new RegisterRequest(firstName, lastName, email, password, phone, fullName, phoneNumber);
+            req.setConfirmPassword(confirmPassword != null ? confirmPassword : password);
+            return req;
         }
     }
 
@@ -160,6 +181,14 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
     }
 
     public String getPhoneNumber() {

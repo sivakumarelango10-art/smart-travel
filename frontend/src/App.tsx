@@ -13,6 +13,7 @@ const FlightSearchPage = lazy(() => import('./pages/FlightSearchPage').then((m) 
 const BookingPage = lazy(() => import('./pages/BookingPage').then((m) => ({ default: m.BookingPage })));
 const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage').then((m) => ({ default: m.BookingConfirmationPage })));
 const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage').then((m) => ({ default: m.MyBookingsPage })));
+const MyAccountPage = lazy(() => import('./pages/MyAccountPage').then((m) => ({ default: m.MyAccountPage })));
 const TicketPage = lazy(() => import('./pages/TicketPage').then((m) => ({ default: m.TicketPage })));
 const CheckInPage = lazy(() => import('./pages/CheckInPage').then((m) => ({ default: m.CheckInPage })));
 const BoardingPassPage = lazy(() => import('./pages/BoardingPassPage').then((m) => ({ default: m.BoardingPassPage })));
@@ -65,6 +66,22 @@ export default function App() {
                   element={
                     <ProtectedRoute>
                       <MyBookingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="account"
+                  element={
+                    <ProtectedRoute>
+                      <MyAccountPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="profile"
+                  element={
+                    <ProtectedRoute>
+                      <MyAccountPage />
                     </ProtectedRoute>
                   }
                 />

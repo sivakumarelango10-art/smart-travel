@@ -236,16 +236,18 @@ export const MyBookingsPage: React.FC = () => {
                 {/* Timings & Route */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center text-center sm:text-left">
                   <div>
-                    <p className="text-2xl font-black text-white">
-                      {new Date(b.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <p className="text-2xl font-black text-white whitespace-nowrap">
+                      {new Date(b.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </p>
-                    <p className="text-sm font-bold text-sky-400 mt-0.5">{b.departureAirport.code}</p>
+                    <p className="text-sm font-bold text-sky-400 mt-1">{b.departureAirport.code}</p>
                     <p className="text-xs text-slate-300">{b.departureAirport.city}</p>
-                    <p className="text-[11px] text-slate-500 mt-1">{new Date(b.departureTime).toLocaleDateString()}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{new Date(b.departureTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   </div>
 
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-slate-400 font-bold">{b.durationMinutes} mins</span>
+                  <div className="flex flex-col items-center px-2">
+                    <span className="text-xs text-slate-400 font-bold">
+                      {Math.floor(b.durationMinutes / 60)}h {b.durationMinutes % 60 > 0 ? `${b.durationMinutes % 60}m` : '00m'}
+                    </span>
                     <div className="w-full flex items-center my-2">
                       <div className="h-0.5 w-full bg-slate-700/80 relative">
                         <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-sky-400 flex items-center justify-center">
@@ -253,16 +255,18 @@ export const MyBookingsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-semibold">{b.cabinClass.replace('_', ' ')}</span>
+                    <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      {b.cabinClass.replace('_', ' ')}
+                    </span>
                   </div>
 
                   <div className="text-left sm:text-right">
-                    <p className="text-2xl font-black text-white">
-                      {new Date(b.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <p className="text-2xl font-black text-white whitespace-nowrap">
+                      {new Date(b.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </p>
-                    <p className="text-sm font-bold text-sky-400 mt-0.5">{b.arrivalAirport.code}</p>
+                    <p className="text-sm font-bold text-sky-400 mt-1">{b.arrivalAirport.code}</p>
                     <p className="text-xs text-slate-300">{b.arrivalAirport.city}</p>
-                    <p className="text-[11px] text-slate-500 mt-1">{new Date(b.arrivalTime).toLocaleDateString()}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{new Date(b.arrivalTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   </div>
                 </div>
 

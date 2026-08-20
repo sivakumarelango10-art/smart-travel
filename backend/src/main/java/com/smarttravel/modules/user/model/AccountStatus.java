@@ -6,5 +6,6 @@ package com.smarttravel.modules.user.model;
 public enum AccountStatus {
     ACTIVE,
     INACTIVE,
-    SUSPENDED
+    SUSPENDED,
+    DELETED
 }

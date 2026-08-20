@@ -49,7 +49,7 @@ apiClient.interceptors.request.use(
       return config;
     }
 
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     if (token && token.trim() !== '' && token !== 'null' && token !== 'undefined' && config.headers) {
       config.headers.Authorization = `Bearer ${token.trim()}`;
     } else if (config.headers) {
@@ -72,6 +72,9 @@ apiClient.interceptors.response.use(
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+        sessionStorage.removeItem(USER_KEY);
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
       return Promise.reject(error.response.data);
