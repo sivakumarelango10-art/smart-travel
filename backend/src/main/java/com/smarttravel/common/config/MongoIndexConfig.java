@@ -7,11 +7,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.index.IndexInfo;
+
+import java.util.List;
 
 /**
  * Enterprise MongoDB Index Initializer.
  * Programmatically ensures all high-traffic compound indexes exist on application startup,
  * guaranteeing sub-50ms query execution across search, booking, payment, and analytics paths.
+ *
+ * <p>Key design contract for unique indexes (e.g. ticketNumber, bookingReference, bookingId):</p>
+ * <ul>
+ *   <li>Required constraint: unique index on the respective field.</li>
+ *   <li>MongoDB may have auto-created indexes (e.g. "ticketNumber_1") before auto-index-creation was disabled.</li>
+ *   <li>Attempting to ensureIndex with a different name on an already-indexed field raises
+ *       MongoCommandException error 85 (IndexOptionsConflict).</li>
+ *   <li>We detect functionally-equivalent existing indexes first and skip creation when found.</li>
+ * </ul>
  */
 @Configuration
 public class MongoIndexConfig {
@@ -54,15 +66,11 @@ public class MongoIndexConfig {
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_booking_user_status_date"));
-            bookingOps.ensureIndex(new Index().on("bookingReference", Sort.Direction.ASC).unique()
-                    .named("idx_booking_reference_unique"));
+            ensureUniqueIndexSafely("bookings", "bookingReference", "idx_booking_reference_unique");
 
             // 3. Tickets collection indexes
-            var ticketOps = mongoTemplate.indexOps("tickets");
-            ticketOps.ensureIndex(new Index().on("bookingId", Sort.Direction.ASC)
-                    .named("idx_ticket_booking_id"));
-            ticketOps.ensureIndex(new Index().on("ticketNumber", Sort.Direction.ASC).unique()
-                    .named("idx_ticket_number_unique"));
+            ensureUniqueIndexSafely("tickets", "bookingId", "idx_ticket_booking_id");
+            ensureTicketNumberUniqueIndex();
 
             // 4. Hotels collection compound indexes
             var hotelOps = mongoTemplate.indexOps("hotels");
@@ -118,5 +126,72 @@ public class MongoIndexConfig {
         } catch (Exception ex) {
             log.warn("MongoDB index initialization warning (continuing startup): {}", ex.getMessage());
         }
+    }
+
+    /**
+     * Ensures a unique index exists on the specified field in the collection.
+     * Checks existing indexes to detect equivalent unique indexes (even if named differently),
+     * avoiding MongoDB error 85 (IndexOptionsConflict).
+     *
+     * @param collectionName MongoDB collection name
+     * @param fieldName document field name to index
+     * @param preferredIndexName default name to assign if index does not yet exist
+     */
+    public void ensureUniqueIndexSafely(String collectionName, String fieldName, String preferredIndexName) {
+        if (!mongoTemplate.collectionExists(collectionName)) {
+            mongoTemplate.createCollection(collectionName);
+        }
+        List<IndexInfo> existing = mongoTemplate.indexOps(collectionName).getIndexInfo();
+        for (IndexInfo info : existing) {
+            boolean coversField = info.getIndexFields().stream()
+                    .anyMatch(f -> fieldName.equals(f.getKey()));
+            if (coversField && info.isUnique()) {
+                log.info("MongoDB unique indexes successfully verified for {} collection "
+                        + "(existing index '{}' covers {{{}:1}, unique:true} — skipping creation).",
+                        collectionName, info.getName(), fieldName);
+                return;
+            }
+        }
+        mongoTemplate.indexOps(collectionName).ensureIndex(
+                new Index().on(fieldName, Sort.Direction.ASC).unique()
+                        .named(preferredIndexName));
+        log.info("MongoDB unique index '{}' on '{}.{}' created successfully.",
+                preferredIndexName, collectionName, fieldName);
+    }
+
+    /**
+     * Ensures the unique index on {@code ticketNumber} in the {@code tickets} collection.
+     *
+     * <p>Before calling {@code ensureIndex}, inspects existing indexes to detect a functionally
+     * equivalent index — same key pattern ({@code ticketNumber: 1}) with {@code unique: true} —
+     * that may already exist under a different name (e.g. {@code ticketNumber_1} created by
+     * Spring Data's auto-index-creation when it was still enabled). If such an index is found,
+     * the unique constraint is already enforced and no creation is attempted, avoiding
+     * {@code MongoCommandException} error 85 (IndexOptionsConflict).</p>
+     */
+    public void ensureTicketNumberUniqueIndex() {
+        ensureUniqueIndexSafely("tickets", "ticketNumber", "idx_ticket_number_unique");
+    }
+
+    /**
+     * Checks whether any unique index covering the {@code ticketNumber} field exists
+     * on the {@code tickets} collection, regardless of index name.
+     *
+     * @return {@code true} if a unique ticketNumber index is present
+     */
+    public boolean isUniqueTicketNumberIndexValid() {
+        try {
+            List<IndexInfo> existing = mongoTemplate.indexOps("tickets").getIndexInfo();
+            for (IndexInfo info : existing) {
+                boolean coversTicketNumber = info.getIndexFields().stream()
+                        .anyMatch(f -> "ticketNumber".equals(f.getKey()));
+                if (coversTicketNumber && info.isUnique()) {
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            log.debug("Could not inspect ticket index info: {}", ex.getMessage());
+        }
+        return false;
     }
 }
