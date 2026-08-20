@@ -145,6 +145,16 @@ public class PaymentOrderResponse {
         this.razorpayKeyId = razorpayKeyId;
     }
 
+    public String getKeyId() {
+        return razorpayKeyId;
+    }
+
+    public void setKeyId(String keyId) {
+        if (this.razorpayKeyId == null || this.razorpayKeyId.isBlank()) {
+            this.razorpayKeyId = keyId;
+        }
+    }
+
     public Long getAmount() {
         return amount;
     }

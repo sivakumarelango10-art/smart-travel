@@ -69,8 +69,9 @@ public class PaymentServiceImpl implements PaymentService {
         String bookingId = request.getBookingId();
         log.info("Initiating payment order creation for booking ID: {} (user: {})", bookingId, userId);
 
-        // 1. Fetch booking and enforce ownership
+        // 1. Fetch booking and enforce ownership (support lookup by either MongoDB ID or PNR Reference)
         Booking booking = bookingRepository.findById(bookingId)
+                .or(() -> bookingRepository.findByBookingReference(bookingId.toUpperCase()))
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", bookingId));
 
         if (!booking.getUserId().equals(userId)) {

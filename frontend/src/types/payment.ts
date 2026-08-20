@@ -6,8 +6,12 @@ export interface PaymentOrder {
   paymentId: string;
   razorpayOrderId: string;
   amount: number;
+  amountInRupees?: number;
   currency: string;
   keyId?: string;
+  razorpayKeyId?: string;
+  bookingId?: string;
+  bookingReference?: string;
   status: PaymentStatus;
 }
 

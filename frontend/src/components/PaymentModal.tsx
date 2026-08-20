@@ -16,6 +16,21 @@ interface PaymentModalProps {
   onClose: () => void;
 }
 
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   booking,
   onPaymentSuccess,
@@ -47,20 +62,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Initialize Payment Order
+  // Preload Razorpay Checkout Script and Initialize Payment Order
   useEffect(() => {
+    loadRazorpayScript();
+
     const initOrder = async () => {
       try {
         setLoading(true);
+        setError(null);
+        const targetBookingId = booking.id || booking.bookingReference;
         const res = await paymentService.createPaymentOrder({
-          bookingId: booking.id,
+          bookingId: targetBookingId,
           notes: `Booking for PNR ${booking.bookingReference}`,
         });
         if (res.success && res.data) {
           setOrder(res.data);
         }
       } catch (err: any) {
-        setError(err?.message || 'Failed to initialize payment gateway order');
+        const errorMsg =
+          err?.message ||
+          (err?.status === 401
+            ? 'Your session has expired. Please sign in again.'
+            : err?.status === 404
+            ? 'Booking details could not be found.'
+            : err?.status === 409
+            ? 'Payment has already been initiated or booking expired.'
+            : 'Unable to communicate with SmartTravel payment services. Please verify your connection or try again.');
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -69,23 +97,56 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   }, [booking.id, booking.bookingReference]);
 
   const handlePayNow = async () => {
-    if (!order) return;
     setLoading(true);
     setError(null);
 
+    let activeOrder = order;
+    if (!activeOrder) {
+      try {
+        const targetBookingId = booking.id || booking.bookingReference;
+        const res = await paymentService.createPaymentOrder({
+          bookingId: targetBookingId,
+          notes: `Booking for PNR ${booking.bookingReference}`,
+        });
+        if (res.success && res.data) {
+          activeOrder = res.data;
+          setOrder(activeOrder);
+        } else {
+          throw new Error(res.message || 'Failed to initialize payment gateway order');
+        }
+      } catch (err: any) {
+        const errorMsg =
+          err?.message ||
+          (err?.status === 401
+            ? 'Your session has expired. Please sign in again.'
+            : 'Unable to communicate with SmartTravel backend services. Please verify your connection or try again.');
+        setError(errorMsg);
+        setLoading(false);
+        return;
+      }
+    }
+
+    await loadRazorpayScript();
+
+    const publicRazorpayKey =
+      activeOrder.keyId ||
+      activeOrder.razorpayKeyId ||
+      (import.meta as any).env.VITE_RAZORPAY_KEY_ID ||
+      '';
+
     // If live Razorpay is available in window and valid key is present
-    if ((window as any).Razorpay && order.keyId && !order.keyId.startsWith('rzp_test_mock')) {
+    if ((window as any).Razorpay && publicRazorpayKey && !publicRazorpayKey.startsWith('rzp_test_mock')) {
       const options = {
-        key: order.keyId,
-        amount: order.amount,
-        currency: order.currency,
+        key: publicRazorpayKey,
+        amount: activeOrder.amount,
+        currency: activeOrder.currency || 'INR',
         name: 'SmartTravel Platform',
         description: `Flight Booking PNR: ${booking.bookingReference}`,
-        order_id: order.razorpayOrderId,
+        order_id: activeOrder.razorpayOrderId,
         handler: async (response: any) => {
           try {
             await paymentService.verifyPayment({
-              razorpayOrderId: response.razorpay_order_id || order.razorpayOrderId,
+              razorpayOrderId: response.razorpay_order_id || activeOrder!.razorpayOrderId,
               razorpayPaymentId: response.razorpay_payment_id || `pay_${Date.now()}`,
               razorpaySignature: response.razorpay_signature || `sim_sig_${Date.now()}`,
             });
@@ -118,7 +179,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         const mockPaymentId = 'pay_' + Math.random().toString(36).substring(2, 14);
         const mockSignature = 'sim_sig_' + Math.random().toString(36).substring(2, 18);
         await paymentService.verifyPayment({
-          razorpayOrderId: order.razorpayOrderId,
+          razorpayOrderId: activeOrder.razorpayOrderId,
           razorpayPaymentId: mockPaymentId,
           razorpaySignature: mockSignature,
         });
@@ -127,7 +188,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       } catch (err: any) {
         // Fallback to simulated webhook if verify was unavailable
         try {
-          await paymentService.simulateWebhookPayment(order.razorpayOrderId, order.amount);
+          await paymentService.simulateWebhookPayment(activeOrder.razorpayOrderId, activeOrder.amount);
           setPaymentSuccess(true);
           setTimeout(() => onPaymentSuccess(), 1200);
         } catch (webhookErr: any) {
