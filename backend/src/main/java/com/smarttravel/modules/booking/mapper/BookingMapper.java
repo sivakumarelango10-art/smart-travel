@@ -8,6 +8,7 @@ import com.smarttravel.modules.flight.dto.AirportDto;
 import com.smarttravel.modules.flight.model.AirportInfo;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
