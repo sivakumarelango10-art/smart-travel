@@ -1,7 +1,6 @@
 package com.smarttravel.modules.recommendation.service;
 
 import com.smarttravel.modules.recommendation.dto.RecommendationItem;
-import com.smarttravel.modules.recommendation.model.UserActivity;
 import com.smarttravel.modules.recommendation.model.UserActivityType;
 
 import java.util.List;

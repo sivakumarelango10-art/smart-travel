@@ -2,7 +2,6 @@ package com.smarttravel.modules.pricing.controller;
 
 import com.smarttravel.common.response.ApiResponse;
 import com.smarttravel.modules.flight.model.CabinClass;
-import com.smarttravel.modules.pricing.dto.DynamicPriceBreakdown;
 import com.smarttravel.modules.pricing.model.PriceFreeze;
 import com.smarttravel.modules.pricing.service.PriceFreezeService;
 import io.swagger.v3.oas.annotations.Operation;

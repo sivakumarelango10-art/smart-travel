@@ -1,6 +1,5 @@
 package com.smarttravel.modules.pricing.service;
 
-import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.CabinInventory;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.pricing.dto.DynamicPriceBreakdown;

@@ -1,6 +1,5 @@
 package com.smarttravel.modules.notification.service;
 
-import com.smarttravel.modules.notification.model.Notification;
 import jakarta.annotation.PostConstruct;
 import org.bson.Document;
 import org.bson.types.ObjectId;

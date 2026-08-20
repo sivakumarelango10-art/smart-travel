@@ -1,6 +1,5 @@
 package com.smarttravel.modules.review;
 
-import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewStatus;

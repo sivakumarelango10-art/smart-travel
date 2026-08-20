@@ -60,9 +60,6 @@ public class NotificationIdempotencyAndIndexIntegrationTest {
     @DisplayName("TEST 2: Duplicate idempotencyKey records can be detected")
     void test2_DuplicateIdempotencyKeyRecordsCanBeDetected() {
         String testKey = "test_detect_dup_" + System.currentTimeMillis();
-        Document doc1 = new Document("userId", "u1").append("flightId", "f1").append("idempotencyKey", testKey).append("status", "PENDING").append("createdAt", Instant.now());
-        Document doc2 = new Document("userId", "u1").append("flightId", "f1").append("idempotencyKey", testKey).append("status", "SENT").append("createdAt", Instant.now());
-
         // Use direct BSON insert to simulate raw existing duplicate records
         try {
             // Verify detection query structure
@@ -83,7 +80,6 @@ public class NotificationIdempotencyAndIndexIntegrationTest {
     void test3_ConfirmedDuplicateRecordsSafelyDeduplicated() {
         String testKey = "test_dedup_" + System.currentTimeMillis();
         Document doc1 = new Document("userId", "usr_dedup").append("flightId", "fl_dedup").append("idempotencyKey", testKey).append("status", "PENDING").append("createdAt", Instant.now().minusSeconds(120));
-        Document doc2 = new Document("userId", "usr_dedup").append("flightId", "fl_dedup").append("idempotencyKey", testKey).append("status", "SENT").append("providerMessageId", "msg_test_3").append("sentAt", Instant.now().minusSeconds(60)).append("createdAt", Instant.now().minusSeconds(60));
 
         mongoTemplate.getCollection("notifications").insertOne(doc1);
         // Deduplication run

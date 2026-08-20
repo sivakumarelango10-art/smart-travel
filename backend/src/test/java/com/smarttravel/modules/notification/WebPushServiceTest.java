@@ -1,10 +1,8 @@
 package com.smarttravel.modules.notification;
 
-import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.modules.flight.tracking.model.TrackedFlight;
 import com.smarttravel.modules.flight.tracking.repository.TrackedFlightRepository;
 import com.smarttravel.modules.notification.dto.PushSubscriptionRequest;
-import com.smarttravel.modules.notification.dto.WebPushPayload;
 import com.smarttravel.modules.notification.model.PushSubscription;
 import com.smarttravel.modules.notification.repository.PushSubscriptionRepository;
 import com.smarttravel.modules.notification.service.WebPushService;
@@ -20,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

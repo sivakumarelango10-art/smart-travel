@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 /**
@@ -46,7 +44,6 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
         }
 
         // Fetch recent user interactions across the platform (last 30 days)
-        Instant since = Instant.now().minus(30, ChronoUnit.DAYS);
         List<UserActivity> allActivities = activityRepository.findAll(); // In-memory projection
 
         // Build User -> (Item -> Weight) profile matrix

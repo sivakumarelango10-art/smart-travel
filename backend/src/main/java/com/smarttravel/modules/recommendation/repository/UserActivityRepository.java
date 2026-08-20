@@ -2,8 +2,6 @@ package com.smarttravel.modules.recommendation.repository;
 
 import com.smarttravel.modules.recommendation.model.UserActivity;
 import com.smarttravel.modules.recommendation.model.UserActivityType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.time.Instant;

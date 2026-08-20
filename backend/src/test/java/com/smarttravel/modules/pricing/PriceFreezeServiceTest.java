@@ -1,7 +1,6 @@
 package com.smarttravel.modules.pricing;
 
 import com.smarttravel.common.exception.ConflictException;
-import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.CabinInventory;
 import com.smarttravel.modules.flight.model.Flight;

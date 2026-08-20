@@ -16,7 +16,6 @@ import com.smarttravel.modules.notification.provider.WhatsAppNotificationProvide
 import com.smarttravel.modules.notification.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

@@ -24,7 +24,6 @@ import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Seeds demo hotels, default pricing rules, and initial system admin on application startup.

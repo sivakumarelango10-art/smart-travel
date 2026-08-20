@@ -4,7 +4,6 @@ import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;
 import com.smarttravel.modules.booking.dto.PassengerDto;
-import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
 import com.smarttravel.modules.booking.repository.BookingRepository;
 import com.smarttravel.modules.booking.service.BookingService;

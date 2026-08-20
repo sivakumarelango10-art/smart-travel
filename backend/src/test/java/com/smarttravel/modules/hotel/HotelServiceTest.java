@@ -1,7 +1,6 @@
 package com.smarttravel.modules.hotel;
 
 import com.smarttravel.common.exception.BadRequestException;
-import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.hotel.model.Hotel;
 import com.smarttravel.modules.hotel.model.HotelAddress;
 import com.smarttravel.modules.hotel.model.RoomCategory;
@@ -25,7 +24,6 @@ import org.springframework.data.mongodb.core.query.Update;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -1,7 +1,6 @@
 package com.smarttravel.modules.pricing.service;
 
 import com.smarttravel.modules.flight.model.CabinClass;
-import com.smarttravel.modules.pricing.dto.DynamicPriceBreakdown;
 import com.smarttravel.modules.pricing.model.PriceFreeze;
 
 import java.util.List;

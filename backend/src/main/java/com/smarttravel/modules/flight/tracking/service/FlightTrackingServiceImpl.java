@@ -1,6 +1,5 @@
 package com.smarttravel.modules.flight.tracking.service;
 
-import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.repository.FlightRepository;
