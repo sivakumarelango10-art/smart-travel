@@ -97,8 +97,20 @@ public class BoardingPassPdfServiceImpl implements BoardingPassPdfService {
 
                 PdfPCell logoCell = new PdfPCell();
                 logoCell.setBorder(Rectangle.NO_BORDER);
-                logoCell.addElement(new Paragraph("SMARTTRAVEL AIRWAYS", headerTitleFont));
-                logoCell.addElement(new Paragraph("OFFICIAL BOARDING PASS", headerSubtitleFont));
+                try {
+                    java.net.URL logoUrl = getClass().getResource("/static/logo.png");
+                    if (logoUrl != null) {
+                        com.lowagie.text.Image logoImg = com.lowagie.text.Image.getInstance(logoUrl);
+                        logoImg.scaleToFit(140, 50);
+                        logoCell.addElement(logoImg);
+                    } else {
+                        logoCell.addElement(new Paragraph("SMARTTRAVEL AIRWAYS", headerTitleFont));
+                        logoCell.addElement(new Paragraph("OFFICIAL BOARDING PASS", headerSubtitleFont));
+                    }
+                } catch (Exception imgEx) {
+                    logoCell.addElement(new Paragraph("SMARTTRAVEL AIRWAYS", headerTitleFont));
+                    logoCell.addElement(new Paragraph("OFFICIAL BOARDING PASS", headerSubtitleFont));
+                }
                 headerTable.addCell(logoCell);
 
                 PdfPCell metaCell = new PdfPCell();

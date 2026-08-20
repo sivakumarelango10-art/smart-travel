@@ -86,10 +86,20 @@ public class TicketPdfServiceImpl implements TicketPdfService {
 
             PdfPCell logoCell = new PdfPCell();
             logoCell.setBorder(Rectangle.NO_BORDER);
-            Paragraph brandP = new Paragraph("SMARTTRAVEL", headerTitleFont);
-            Paragraph subBrandP = new Paragraph("ELECTRONIC TICKET & PASSENGER RECEIPT", headerSubtitleFont);
-            logoCell.addElement(brandP);
-            logoCell.addElement(subBrandP);
+            try {
+                java.net.URL logoUrl = getClass().getResource("/static/logo.png");
+                if (logoUrl != null) {
+                    com.lowagie.text.Image logoImg = com.lowagie.text.Image.getInstance(logoUrl);
+                    logoImg.scaleToFit(140, 50);
+                    logoCell.addElement(logoImg);
+                } else {
+                    logoCell.addElement(new Paragraph("SMARTTRAVEL", headerTitleFont));
+                    logoCell.addElement(new Paragraph("ELECTRONIC TICKET & PASSENGER RECEIPT", headerSubtitleFont));
+                }
+            } catch (Exception imgEx) {
+                logoCell.addElement(new Paragraph("SMARTTRAVEL", headerTitleFont));
+                logoCell.addElement(new Paragraph("ELECTRONIC TICKET & PASSENGER RECEIPT", headerSubtitleFont));
+            }
             headerTable.addCell(logoCell);
 
             PdfPCell statusCell = new PdfPCell();

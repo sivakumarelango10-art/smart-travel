@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
   Terminal,
-  Plane,
   Lock,
   Headphones,
   Award,
   Zap
 } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '../config/constants';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer: React.FC = () => {
   return (
@@ -63,14 +63,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
         {/* Col 1: Brand Info */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/20">
-              <Plane className="w-5 h-5 text-white transform -rotate-45" />
-            </div>
-            <span className="font-black text-xl text-white tracking-tight">
-              Smart<span className="text-sky-400">Travel</span>
-            </span>
-          </div>
+          <BrandLogo size="lg" withLink={true} />
           <p className="text-xs text-slate-400 leading-relaxed pr-4">
             India's most intuitive and elevated flight booking ecosystem. Experience lightning-fast flight searches, interactive seat selection, instant PNR generation, digital mobile boarding passes, and automated refunds.
           </p>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Mail, AlertCircle, Plane, ShieldCheck, Eye, EyeOff, Check } from 'lucide-react';
+import { LogIn, Lock, Mail, AlertCircle, ShieldCheck, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrandLogo } from '../components/BrandLogo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,10 +41,8 @@ export const LoginPage: React.FC = () => {
       <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 sm:p-9 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500"></div>
 
-        <div className="text-center space-y-2.5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500/20 to-indigo-500/20 border border-sky-500/30 flex items-center justify-center mx-auto shadow-xl shadow-sky-500/15">
-            <Plane className="w-7 h-7 text-sky-400 transform -rotate-45" />
-          </div>
+        <div className="text-center space-y-3">
+          <BrandLogo size="xl" withLink={true} className="mx-auto justify-center" />
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Welcome to SmartTravel</h1>
             <p className="text-xs text-slate-400">Sign in to access your flight bookings & tickets</p>

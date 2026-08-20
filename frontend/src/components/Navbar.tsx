@@ -20,9 +20,9 @@ import {
   X,
   User
 } from 'lucide-react';
-import { APP_NAME } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { BrandLogo } from './BrandLogo';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -87,22 +87,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* LEFT: Brand Logo */}
-          <Link to="/" className="flex items-center gap-3 group shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:scale-105 group-hover:shadow-sky-500/40 transition-all duration-300 border border-sky-400/30">
-              <Plane className="w-5 h-5 text-white transform -rotate-45 group-hover:rotate-0 transition-transform duration-500" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-xl text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-sky-300 bg-clip-text text-transparent">
-                  {APP_NAME}
-                </span>
-                <span className="text-[9px] uppercase font-black px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30 tracking-wider">
-                  PREMIUM
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 tracking-wide -mt-0.5">Explore • Book • Fly</p>
-            </div>
-          </Link>
+          <BrandLogo size="md" showBadge={true} withLink={true} />
 
           {/* CENTER: Navigation Links (Desktop) */}
           <nav className="hidden lg:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AdminToastProvider } from '../components/admin/AdminToast';
-import { APP_NAME } from '../config/constants';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface NavItem {
   label: string;
@@ -72,15 +72,12 @@ export const AdminLayout: React.FC = () => {
   const sidebarContent = (collapsed: boolean, onNavClick?: () => void) => (
     <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className={`flex items-center gap-3 px-4 py-4 border-b border-slate-800 ${collapsed ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 flex-shrink-0">
-          <Shield className="w-4 h-4 text-white" />
-        </div>
+      <div className={`flex items-center gap-3 px-4 py-3.5 border-b border-slate-800 ${collapsed ? 'justify-center' : ''}`}>
+        <BrandLogo size="xs" withLink={false} />
         {!collapsed && (
-          <div>
-            <p className="text-xs font-bold text-white tracking-tight">ADMIN</p>
-            <p className="text-[10px] text-slate-400 -mt-0.5">{APP_NAME}</p>
-          </div>
+          <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 border border-rose-500/30 tracking-wider ml-auto">
+            ADMIN
+          </span>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, User, Lock, Mail, Phone, AlertCircle, ShieldCheck, Check, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrandLogo } from '../components/BrandLogo';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,10 +70,8 @@ export const RegisterPage: React.FC = () => {
       <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 sm:p-9 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500"></div>
 
-        <div className="text-center space-y-2.5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-sky-500/20 border border-indigo-500/30 flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/15">
-            <UserPlus className="w-7 h-7 text-indigo-400" />
-          </div>
+        <div className="text-center space-y-3">
+          <BrandLogo size="xl" withLink={true} className="mx-auto justify-center" />
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Create Your Account</h1>
             <p className="text-xs text-slate-400">Join SmartTravel for seamless flight bookings & e-tickets</p>
