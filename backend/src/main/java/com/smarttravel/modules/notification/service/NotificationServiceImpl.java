@@ -95,9 +95,18 @@ public class NotificationServiceImpl implements NotificationService {
         Notification saved;
         try {
             saved = notificationRepository.save(notification);
-        } catch (DuplicateKeyException ex) {
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
             log.info("Concurrent insert caught by unique index for idempotencyKey: {}", idempotencyKey);
-            return toDto(notificationRepository.findByIdempotencyKey(idempotencyKey).orElse(notification));
+            Optional<Notification> existing = notificationRepository.findByIdempotencyKey(idempotencyKey);
+            if (existing.isEmpty()) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+                existing = notificationRepository.findByIdempotencyKey(idempotencyKey);
+            }
+            return toDto(existing.orElse(notification));
         }
 
         // 3. Dispatch through provider

@@ -19,14 +19,21 @@ public class MongoIndexConfig {
     private static final Logger log = LoggerFactory.getLogger(MongoIndexConfig.class);
 
     private final MongoTemplate mongoTemplate;
+    private final com.smarttravel.modules.notification.service.NotificationIndexInitializer notificationIndexInitializer;
 
-    public MongoIndexConfig(MongoTemplate mongoTemplate) {
+    public MongoIndexConfig(MongoTemplate mongoTemplate,
+                            @org.springframework.beans.factory.annotation.Autowired(required = false)
+                            com.smarttravel.modules.notification.service.NotificationIndexInitializer notificationIndexInitializer) {
         this.mongoTemplate = mongoTemplate;
+        this.notificationIndexInitializer = notificationIndexInitializer;
     }
 
     @PostConstruct
     public void ensureIndexes() {
         log.info("Ensuring high-performance MongoDB compound indexes across collections...");
+        if (notificationIndexInitializer != null) {
+            notificationIndexInitializer.initIndexes();
+        }
         try {
             // 1. Flights collection compound indexes
             var flightOps = mongoTemplate.indexOps("flights");
