@@ -6,7 +6,7 @@ interface PageLoaderProps {
 }
 
 /**
- * Accessible, lightweight page loader with branded logo and pulse animation
+ * Accessible, perfectly centered page loader with prominent brand logo and elegant glow animation
  * used as Suspense fallback for route transitions.
  */
 export const PageLoader: React.FC<PageLoaderProps> = ({ message = 'Loading SmartTravel...' }) => {
@@ -15,18 +15,20 @@ export const PageLoader: React.FC<PageLoaderProps> = ({ message = 'Loading Smart
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="min-h-[50vh] flex flex-col items-center justify-center p-8 text-center animate-fade-in"
+      className="min-h-[calc(100vh-220px)] w-full flex flex-col items-center justify-center p-8 text-center animate-fade-in my-auto"
     >
-      <div className="relative flex items-center justify-center mb-5">
-        <div className="absolute inset-0 rounded-full bg-sky-500/10 blur-xl animate-pulse" />
-        <BrandLogo size="lg" withLink={false} className="animate-pulse" />
+      <div className="relative flex items-center justify-center mb-6">
+        <div className="absolute inset-0 -m-6 rounded-full bg-gradient-to-tr from-sky-500/20 via-indigo-500/15 to-emerald-500/15 blur-2xl animate-pulse" />
+        <BrandLogo size="xl" withLink={false} className="relative z-10 animate-pulse drop-shadow-xl" />
       </div>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-sky-400 animate-bounce [animation-delay:-0.3s]" />
-        <div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce [animation-delay:-0.15s]" />
-        <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" />
+
+      <div className="flex items-center gap-2.5 my-2">
+        <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-bounce [animation-delay:-0.3s] shadow-lg shadow-sky-400/50" />
+        <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-bounce [animation-delay:-0.15s] shadow-lg shadow-indigo-400/50" />
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-bounce shadow-lg shadow-emerald-400/50" />
       </div>
-      <p className="text-xs font-semibold text-slate-400 mt-3 tracking-wide">
+
+      <p className="text-sm font-semibold text-slate-300 mt-2 tracking-wide">
         {message}
       </p>
       <span className="sr-only">Loading page content, please wait...</span>

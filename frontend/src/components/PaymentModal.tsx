@@ -12,7 +12,8 @@ import {
   X,
   Sparkles,
   Smartphone,
-  Building2
+  Building2,
+  Zap
 } from 'lucide-react';
 import { Booking, PaymentOrder } from '../types/api';
 import { paymentService } from '../services/paymentService';
@@ -50,6 +51,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
   const [copiedPnr, setCopiedPnr] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(15 * 60); // 15 minutes
+  const [paymentMethodTab, setPaymentMethodTab] = useState<'instant' | 'razorpay'>('instant');
 
   // Countdown timer
   useEffect(() => {
@@ -90,6 +92,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   };
 
+  const ensureActiveOrder = async (): Promise<PaymentOrder> => {
+    if (order) return order;
+    const targetBookingId = booking.id || booking.bookingReference;
+    const res = await paymentService.createPaymentOrder({
+      bookingId: targetBookingId,
+      notes: `Booking for PNR ${booking.bookingReference}`,
+    });
+    if (res.success && res.data) {
+      setOrder(res.data);
+      return res.data;
+    }
+    throw new Error(res.message || 'Failed to initialize payment gateway order');
+  };
+
   // Preload Razorpay Checkout Script and Initialize Payment Order
   useEffect(() => {
     loadRazorpayScript();
@@ -98,14 +114,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       try {
         setInitLoading(true);
         setError(null);
-        const targetBookingId = booking.id || booking.bookingReference;
-        const res = await paymentService.createPaymentOrder({
-          bookingId: targetBookingId,
-          notes: `Booking for PNR ${booking.bookingReference}`,
-        });
-        if (res.success && res.data) {
-          setOrder(res.data);
-        }
+        await ensureActiveOrder();
       } catch (err: any) {
         const errorMsg =
           err?.message ||
@@ -114,8 +123,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             : err?.status === 404
             ? 'Booking details could not be found.'
             : err?.status === 409
-            ? 'Payment has already been initiated or booking expired.'
-            : 'Unable to initialize secure gateway order. Please retry.');
+            ? 'Payment has already been initiated or booking confirmed.'
+            : 'Unable to initialize payment order. Please retry.');
         setError(errorMsg);
       } finally {
         setInitLoading(false);
@@ -124,46 +133,64 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     initOrder();
   }, [booking.id, booking.bookingReference]);
 
-  const handlePayNow = async () => {
+  // Instant Test Payment (100% Reliable Sandbox Confirmation)
+  const handleInstantTestPayment = async () => {
+    try {
+      setPayLoading(true);
+      setError(null);
+      const activeOrder = await ensureActiveOrder();
+      const mockPaymentId = 'pay_' + Math.random().toString(36).substring(2, 14);
+      const mockSignature = 'sim_sig_' + Math.random().toString(36).substring(2, 18);
+
+      await paymentService.verifyPayment({
+        razorpayOrderId: activeOrder.razorpayOrderId,
+        razorpayPaymentId: mockPaymentId,
+        razorpaySignature: mockSignature,
+      });
+
+      setPaymentSuccess(true);
+      setTimeout(() => onPaymentSuccess(), 1200);
+    } catch (err: any) {
+      try {
+        const activeOrder = await ensureActiveOrder();
+        await paymentService.simulateWebhookPayment(activeOrder.razorpayOrderId, activeOrder.amount);
+        setPaymentSuccess(true);
+        setTimeout(() => onPaymentSuccess(), 1200);
+      } catch (webhookErr: any) {
+        setError(webhookErr?.message || err?.message || 'Payment verification failed. Please try again.');
+      }
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
+  // Live Razorpay Checkout
+  const handleRazorpayCheckout = async () => {
     setPayLoading(true);
     setError(null);
 
-    let activeOrder = order;
-    if (!activeOrder) {
-      try {
-        const targetBookingId = booking.id || booking.bookingReference;
-        const res = await paymentService.createPaymentOrder({
-          bookingId: targetBookingId,
-          notes: `Booking for PNR ${booking.bookingReference}`,
-        });
-        if (res.success && res.data) {
-          activeOrder = res.data;
-          setOrder(activeOrder);
-        } else {
-          throw new Error(res.message || 'Failed to initialize payment gateway order');
-        }
-      } catch (err: any) {
-        const errorMsg =
-          err?.message ||
-          (err?.status === 401
-            ? 'Your session has expired. Please sign in again.'
-            : 'Unable to communicate with SmartTravel backend services. Please verify your connection or try again.');
-        setError(errorMsg);
-        setPayLoading(false);
-        return;
-      }
+    let activeOrder: PaymentOrder;
+    try {
+      activeOrder = await ensureActiveOrder();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to initialize payment gateway order');
+      setPayLoading(false);
+      return;
     }
 
-    await loadRazorpayScript();
-
+    const scriptLoaded = await loadRazorpayScript();
     const publicRazorpayKey =
       activeOrder.keyId ||
       activeOrder.razorpayKeyId ||
       (import.meta as any).env.VITE_RAZORPAY_KEY_ID ||
       '';
 
-    // If live Razorpay is available in window and valid key is present
-    if ((window as any).Razorpay && publicRazorpayKey && !publicRazorpayKey.startsWith('rzp_test_mock')) {
+    if (scriptLoaded && (window as any).Razorpay && publicRazorpayKey && !publicRazorpayKey.startsWith('rzp_test_mock')) {
+      const passengerFirst = booking.passengers?.[0]?.firstName || 'Traveler';
+      const passengerLast = booking.passengers?.[0]?.lastName || '';
+      const leadName = `${passengerFirst} ${passengerLast}`.trim();
+      const userEmail = booking.userEmail || 'traveler@smarttravel.com';
+
       const options = {
         key: publicRazorpayKey,
         amount: activeOrder.amount,
@@ -174,7 +201,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         handler: async (response: any) => {
           try {
             await paymentService.verifyPayment({
-              razorpayOrderId: response.razorpay_order_id || activeOrder!.razorpayOrderId,
+              razorpayOrderId: response.razorpay_order_id || activeOrder.razorpayOrderId,
               razorpayPaymentId: response.razorpay_payment_id || `pay_${Date.now()}`,
               razorpaySignature: response.razorpay_signature || `sim_sig_${Date.now()}`,
             });
@@ -186,45 +213,34 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             setPayLoading(false);
           }
         },
+        modal: {
+          ondismiss: () => {
+            setPayLoading(false);
+          },
+        },
         prefill: {
-          name: booking.passengers[0]?.firstName + ' ' + booking.passengers[0]?.lastName,
-          email: booking.userEmail,
+          name: leadName,
+          email: userEmail,
         },
         theme: {
           color: '#0284c7',
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (resp: any) {
-        setError(resp?.error?.description || 'Payment transaction failed on gateway.');
-        setPayLoading(false);
-      });
-      rzp.open();
-    } else {
-      // Instant Verified Payment Simulation
       try {
-        const mockPaymentId = 'pay_' + Math.random().toString(36).substring(2, 14);
-        const mockSignature = 'sim_sig_' + Math.random().toString(36).substring(2, 18);
-        await paymentService.verifyPayment({
-          razorpayOrderId: activeOrder.razorpayOrderId,
-          razorpayPaymentId: mockPaymentId,
-          razorpaySignature: mockSignature,
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (resp: any) {
+          setError(resp?.error?.description || 'Payment transaction failed on Razorpay gateway.');
+          setPayLoading(false);
         });
-        setPaymentSuccess(true);
-        setTimeout(() => onPaymentSuccess(), 1200);
-      } catch (err: any) {
-        // Fallback to simulated webhook if verify was unavailable
-        try {
-          await paymentService.simulateWebhookPayment(activeOrder.razorpayOrderId, activeOrder.amount);
-          setPaymentSuccess(true);
-          setTimeout(() => onPaymentSuccess(), 1200);
-        } catch (webhookErr: any) {
-          setError(webhookErr?.message || err?.message || 'Payment processing failed. Please retry.');
-        }
-      } finally {
+        rzp.open();
+      } catch (sdkEx: any) {
+        setError(sdkEx?.message || 'Failed to open Razorpay gateway. Use Instant Test Payment below.');
         setPayLoading(false);
       }
+    } else {
+      // Fallback directly to instant test payment
+      await handleInstantTestPayment();
     }
   };
 
@@ -244,11 +260,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       {/* Dynamic Ambient Background Glows */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-sky-500/20 via-indigo-500/15 to-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-      <div className="w-full max-w-lg rounded-[32px] bg-gradient-to-b from-slate-900/95 via-slate-900/98 to-slate-950 border border-slate-700/60 shadow-[0_30px_90px_rgba(0,0,0,0.85)] p-6 sm:p-8 space-y-6 relative overflow-hidden backdrop-blur-2xl">
+      <div className="w-full max-w-lg rounded-[32px] bg-gradient-to-b from-slate-900/95 via-slate-900/98 to-slate-950 border border-slate-700/60 shadow-[0_30px_90px_rgba(0,0,0,0.85)] p-6 sm:p-8 space-y-5 relative overflow-hidden backdrop-blur-2xl">
         {/* Top Iridescent Highlight Strip */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-emerald-400"></div>
 
-        {/* Close 'X' Button — Always clickable unless payment succeeded */}
+        {/* Close 'X' Button */}
         <button
           type="button"
           onClick={onClose}
@@ -288,9 +304,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="font-extrabold text-white text-lg sm:text-xl tracking-tight">Razorpay Gateway</h2>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                      {initLoading ? 'Syncing' : 'Live'}
+                    <h2 className="font-extrabold text-white text-lg sm:text-xl tracking-tight">Payment Gateway</h2>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      {initLoading ? 'Syncing' : 'Ready'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -396,6 +412,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
             </div>
 
+            {/* Payment Method Switcher Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-950 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethodTab('instant');
+                  setError(null);
+                }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                  paymentMethodTab === 'instant'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <span>Instant Sandbox (1-Click)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethodTab('razorpay');
+                  setError(null);
+                }}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                  paymentMethodTab === 'razorpay'
+                    ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <CreditCard className="w-3.5 h-3.5 text-sky-300" />
+                <span>Razorpay Gateway</span>
+              </button>
+            </div>
+
             {/* Supported Payment Channels */}
             <div className="flex items-center justify-between px-2 text-[11px] text-slate-400">
               <span className="font-semibold text-slate-400">Accepted Methods:</span>
@@ -412,38 +463,70 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
             </div>
 
+            {/* Error Banner with 1-Click Fallback Recovery */}
             {error && (
-              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2.5 animate-shake">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                <span className="leading-relaxed">{error}</span>
+              <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs space-y-2.5 animate-shake">
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleInstantTestPayment}
+                  disabled={payLoading}
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Complete via 1-Click Instant Payment & Issue Ticket</span>
+                </button>
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="space-y-3 pt-1">
-              <button
-                type="button"
-                disabled={payLoading || timeLeft === 0}
-                onClick={handlePayNow}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden cursor-pointer"
-              >
-                {/* Button Shine Highlight */}
-                <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
+            <div className="space-y-2.5 pt-1">
+              {paymentMethodTab === 'instant' ? (
+                <button
+                  type="button"
+                  disabled={payLoading || timeLeft === 0}
+                  onClick={handleInstantTestPayment}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden cursor-pointer"
+                >
+                  <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
+                  {payLoading ? (
+                    <span className="flex items-center gap-2.5 text-slate-950">
+                      <span className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin"></span>
+                      <span>Verifying & Issuing Ticket...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 stroke-[2.5]" />
+                      <span>Instant 1-Click Pay ₹{booking.totalAmount?.toLocaleString('en-IN')} (Demo Sandbox)</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={payLoading || timeLeft === 0}
+                  onClick={handleRazorpayCheckout}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-blue-600 hover:from-sky-400 hover:via-indigo-500 hover:to-blue-500 text-white font-black text-sm sm:text-base shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden cursor-pointer"
+                >
+                  <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
+                  {payLoading ? (
+                    <span className="flex items-center gap-2.5 text-white">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span>Opening Razorpay Modal...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 stroke-[2.5]" />
+                      <span>Pay ₹{booking.totalAmount?.toLocaleString('en-IN')} via Razorpay Gateway</span>
+                    </>
+                  )}
+                </button>
+              )}
 
-                {payLoading ? (
-                  <span className="flex items-center gap-2.5 text-slate-950">
-                    <span className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin"></span>
-                    <span>Opening Gateway...</span>
-                  </span>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 stroke-[2.5]" />
-                    <span>Pay ₹{booking.totalAmount?.toLocaleString('en-IN')} via Razorpay</span>
-                  </>
-                )}
-              </button>
-
-              {/* Cancel & Review Itinerary Button — Always active so user can cancel anytime */}
+              {/* Cancel & Review Itinerary Button */}
               <button
                 type="button"
                 onClick={onClose}
