@@ -64,16 +64,40 @@ export const BookingPage: React.FC = () => {
       setBookingError(null);
       const [flightRes, seatsRes] = await Promise.all([
         flightService.getFlightById(flightId),
-        seatService.getSeatMap(flightId),
+        seatService.getSeatMap(flightId).catch(() => null),
       ]);
 
-      if (flightRes.success && flightRes.data) {
+      if (flightRes && flightRes.data) {
         setFlight(flightRes.data);
+      } else {
+        throw new Error('Flight details could not be found or loaded.');
       }
-      if (seatsRes.success && seatsRes.data) {
-        setSeats(seatsRes.data);
+
+      let seatList: Seat[] = [];
+      if (seatsRes && seatsRes.data) {
+        const raw = seatsRes.data;
+        seatList = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw.seats)
+          ? raw.seats
+          : [];
       }
+
+      // If seat map was empty, try direct seats API as fallback
+      if (seatList.length === 0) {
+        try {
+          const fallbackSeats = await seatService.getSeats(flightId, cabinClass);
+          if (fallbackSeats && Array.isArray(fallbackSeats.data)) {
+            seatList = fallbackSeats.data;
+          }
+        } catch (e) {
+          console.warn('Fallback seat retrieval notice:', e);
+        }
+      }
+
+      setSeats(seatList);
     } catch (err: any) {
+      console.error('Failed to load flight or seat map details:', err);
       setBookingError(err?.message || 'Failed to load flight or seat map details');
     } finally {
       setLoading(false);
@@ -165,11 +189,39 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  if (loading || !flight) {
+  if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-4">
         <div className="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
         <p className="text-sm text-slate-400 font-bold">Loading aircraft cabin & real-time seat inventory...</p>
+      </div>
+    );
+  }
+
+  if (!flight) {
+    return (
+      <div className="py-24 max-w-md mx-auto text-center space-y-4 px-4">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-white">Flight Details Unavailable</h2>
+        <p className="text-sm text-slate-400">
+          {bookingError || 'The requested flight could not be found or has expired.'}
+        </p>
+        <div className="flex justify-center gap-3 pt-2">
+          <button
+            onClick={loadFlightAndSeats}
+            className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-lg shadow-sky-500/25 transition"
+          >
+            Retry Loading
+          </button>
+          <button
+            onClick={() => navigate('/flights')}
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition"
+          >
+            Back to Flight Search
+          </button>
+        </div>
       </div>
     );
   }

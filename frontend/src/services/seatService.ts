@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { ApiResponse, Seat, CabinClass } from '../types/api';
+import { ApiResponse, Seat, CabinClass, SeatMapResponse } from '../types/api';
 
 export const seatService = {
   async getSeats(flightId: string, cabinClass?: CabinClass): Promise<ApiResponse<Seat[]>> {
@@ -9,8 +9,8 @@ export const seatService = {
     return res.data;
   },
 
-  async getSeatMap(flightId: string): Promise<ApiResponse<any>> {
-    const res = await apiClient.get<ApiResponse<any>>(`/v1/flights/${flightId}/seat-map`);
+  async getSeatMap(flightId: string): Promise<ApiResponse<SeatMapResponse>> {
+    const res = await apiClient.get<ApiResponse<SeatMapResponse>>(`/v1/flights/${flightId}/seat-map`);
     return res.data;
   },
 };

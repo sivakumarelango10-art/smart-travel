@@ -32,3 +32,14 @@ export interface SeatHoldResponse {
   holdExpiresAt: string;
   message?: string;
 }
+
+export interface SeatMapResponse {
+  flightId: string;
+  flightNumber: string;
+  aircraftModel: string;
+  totalSeats: number;
+  availableSeatsCount: number;
+  seats: Seat[];
+  cabinSeats?: Record<CabinClass, Seat[]>;
+}
+
