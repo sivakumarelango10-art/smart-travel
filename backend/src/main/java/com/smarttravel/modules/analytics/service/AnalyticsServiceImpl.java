@@ -1,9 +1,11 @@
 package com.smarttravel.modules.analytics.service;
 
+import com.smarttravel.common.config.CacheConfig;
 import com.smarttravel.modules.analytics.dto.*;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -12,15 +14,15 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
-
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 /**
- * Analytics service implementation using MongoDB aggregation pipelines.
+ * Analytics service implementation using MongoDB aggregation pipelines with high-speed Caffeine caching.
  * No findAll() or in-memory iteration of large collections.
  * All revenue calculations use VERIFIED payments as authoritative source.
  */
@@ -29,8 +31,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalyticsServiceImpl.class);
 
-
-
     private final MongoTemplate mongoTemplate;
 
     public AnalyticsServiceImpl(MongoTemplate mongoTemplate) {
@@ -38,10 +38,51 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Unified Fast Dashboard
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_DASHBOARD, key = "#request != null ? #request.toString() : 'default'")
+    public AdminDashboardResponse getDashboard(AnalyticsDateRangeRequest request) {
+        log.debug("Computing unified dashboard analytics dataset concurrently");
+
+        CompletableFuture<OverviewAnalyticsResponse> overviewFuture =
+                CompletableFuture.supplyAsync(this::getOverview);
+        CompletableFuture<RevenueAnalyticsResponse> revenueFuture =
+                CompletableFuture.supplyAsync(() -> getRevenueAnalytics(request));
+        CompletableFuture<BookingAnalyticsResponse> bookingsFuture =
+                CompletableFuture.supplyAsync(() -> getBookingAnalytics(request));
+        CompletableFuture<FlightAnalyticsResponse> flightsFuture =
+                CompletableFuture.supplyAsync(() -> getFlightAnalytics(request));
+        CompletableFuture<SeatAnalyticsResponse> seatsFuture =
+                CompletableFuture.supplyAsync(this::getSeatAnalytics);
+        CompletableFuture<PaymentAnalyticsResponse> paymentsFuture =
+                CompletableFuture.supplyAsync(() -> getPaymentAnalytics(request));
+        CompletableFuture<CustomerAnalyticsResponse> customersFuture =
+                CompletableFuture.supplyAsync(() -> getCustomerAnalytics(request));
+
+        CompletableFuture.allOf(
+                overviewFuture, revenueFuture, bookingsFuture, flightsFuture,
+                seatsFuture, paymentsFuture, customersFuture
+        ).join();
+
+        return AdminDashboardResponse.builder()
+                .overview(overviewFuture.join())
+                .revenue(revenueFuture.join())
+                .bookings(bookingsFuture.join())
+                .flights(flightsFuture.join())
+                .seats(seatsFuture.join())
+                .payments(paymentsFuture.join())
+                .customers(customersFuture.join())
+                .build();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Overview
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_OVERVIEW)
     public OverviewAnalyticsResponse getOverview() {
         log.debug("Computing platform overview analytics");
 
@@ -133,6 +174,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_REVENUE, key = "#request != null ? #request.toString() : 'default'")
     public RevenueAnalyticsResponse getRevenueAnalytics(AnalyticsDateRangeRequest request) {
         DateRange range = resolveDateRange(request);
         log.debug("Revenue analytics: {} to {}", range.from, range.to);
@@ -201,6 +243,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_BOOKINGS, key = "#request != null ? #request.toString() : 'default'")
     public BookingAnalyticsResponse getBookingAnalytics(AnalyticsDateRangeRequest request) {
         DateRange range = resolveDateRange(request);
         log.debug("Booking analytics: {} to {}", range.from, range.to);
@@ -253,6 +296,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_FLIGHTS, key = "#request != null ? #request.toString() : 'default'")
     public FlightAnalyticsResponse getFlightAnalytics(AnalyticsDateRangeRequest request) {
         DateRange range = resolveDateRange(request);
         log.debug("Flight analytics: {} to {}", range.from, range.to);
@@ -314,6 +358,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_SEATS)
     public SeatAnalyticsResponse getSeatAnalytics() {
         log.debug("Computing seat analytics by cabin class");
 
@@ -384,6 +429,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_PAYMENTS, key = "#request != null ? #request.toString() : 'default'")
     public PaymentAnalyticsResponse getPaymentAnalytics(AnalyticsDateRangeRequest request) {
         DateRange range = resolveDateRange(request);
         log.debug("Payment analytics: {} to {}", range.from, range.to);
@@ -434,6 +480,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ANALYTICS_CUSTOMERS, key = "#request != null ? #request.toString() : 'default'")
     public CustomerAnalyticsResponse getCustomerAnalytics(AnalyticsDateRangeRequest request) {
         DateRange range = resolveDateRange(request);
         log.debug("Customer analytics: {} to {}", range.from, range.to);

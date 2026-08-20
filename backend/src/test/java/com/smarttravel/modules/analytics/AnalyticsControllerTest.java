@@ -355,11 +355,26 @@ class AnalyticsControllerTest {
     }
 
     @Test
-    @DisplayName("Admin accessing /revenue with lastMonth period returns 200")
+    @DisplayName("Admin accessing /dashboard returns 200 with all aggregated sections")
     @WithMockUser(roles = "ADMIN")
-    void admin_revenue_lastMonth_returns200() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/analytics/revenue")
-                        .param("period", "lastMonth"))
-                .andExpect(status().isOk());
+    void admin_dashboard_returns200() throws Exception {
+        AdminDashboardResponse sampleDashboard = AdminDashboardResponse.builder()
+                .overview(sampleOverview)
+                .revenue(sampleRevenue)
+                .bookings(sampleBookings)
+                .flights(sampleFlights)
+                .seats(sampleSeats)
+                .payments(samplePayments)
+                .customers(sampleCustomers)
+                .build();
+        when(analyticsService.getDashboard(any())).thenReturn(sampleDashboard);
+
+        mockMvc.perform(get("/api/v1/admin/analytics/dashboard")
+                        .param("period", "last30days"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.overview.totalBookings").value(100))
+                .andExpect(jsonPath("$.data.revenue.grossRevenue").value(100000))
+                .andExpect(jsonPath("$.data.bookings.totalBookings").value(50));
     }
 }

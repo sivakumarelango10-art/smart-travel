@@ -44,35 +44,19 @@ export const AdminDashboardPage: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [flightRankMode, setFlightRankMode] = useState<'revenue' | 'bookings' | 'occupancy'>('revenue');
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (forceFresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const [
-        overviewData,
-        revenueData,
-        bookingsData,
-        flightsData,
-        seatsData,
-        paymentsData,
-        customersData,
-      ] = await Promise.all([
-        analyticsService.getOverview(),
-        analyticsService.getRevenue(period, customFrom, customTo),
-        analyticsService.getBookings(period, customFrom, customTo),
-        analyticsService.getFlights(period, customFrom, customTo),
-        analyticsService.getSeats(),
-        analyticsService.getPayments(period, customFrom, customTo),
-        analyticsService.getCustomers(period, customFrom, customTo),
-      ]);
+      const data = await analyticsService.getDashboard(period, customFrom, customTo, forceFresh);
 
-      setOverview(overviewData);
-      setRevenue(revenueData);
-      setBookings(bookingsData);
-      setFlights(flightsData);
-      setSeats(seatsData);
-      setPayments(paymentsData);
-      setCustomers(customersData);
+      setOverview(data.overview);
+      setRevenue(data.revenue);
+      setBookings(data.bookings);
+      setFlights(data.flights);
+      setSeats(data.seats);
+      setPayments(data.payments);
+      setCustomers(data.customers);
       setLastUpdated(new Date());
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to load analytics dashboard data';
@@ -132,7 +116,7 @@ export const AdminDashboardPage: React.FC = () => {
         <DateRangeSelector
           period={period}
           onPeriodChange={handlePeriodChange}
-          onRefresh={fetchDashboardData}
+          onRefresh={() => fetchDashboardData(true)}
           loading={loading}
           lastUpdated={lastUpdated}
         />
@@ -150,7 +134,7 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData(true)}
             className="px-3 py-1.5 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors"
           >
             Retry

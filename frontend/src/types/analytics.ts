@@ -170,3 +170,14 @@ export interface CustomerAnalytics {
   to?: string;
   generatedAt: string;
 }
+
+export interface AdminDashboardData {
+  overview: OverviewAnalytics;
+  revenue: RevenueAnalytics;
+  bookings: BookingAnalytics;
+  flights: FlightAnalytics;
+  seats: SeatAnalytics;
+  payments: PaymentAnalytics;
+  customers: CustomerAnalytics;
+}
+

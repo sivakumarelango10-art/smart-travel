@@ -22,6 +22,7 @@ import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServic
 @SpringBootApplication(exclude = { UserDetailsServiceAutoConfiguration.class })
 @EnableScheduling
 @EnableAsync
+@org.springframework.cache.annotation.EnableCaching
 public class SmartTravelApplication {
 
     static {

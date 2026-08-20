@@ -34,6 +34,16 @@ public class AnalyticsController {
         this.analyticsService = analyticsService;
     }
 
+    @GetMapping("/dashboard")
+    @Operation(summary = "Unified Admin Analytics Dashboard", description = "Returns full aggregated platform metrics (overview, revenue, bookings, flights, seats, payments, customers) in a single fast response.")
+    public ResponseEntity<ApiResponse<AdminDashboardResponse>> getDashboard(
+            @RequestParam(required = false, defaultValue = "last30days") String period,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        AnalyticsDateRangeRequest request = buildRequest(period, from, to);
+        return ResponseEntity.ok(ApiResponse.success("Dashboard analytics retrieved", analyticsService.getDashboard(request)));
+    }
+
     @GetMapping("/overview")
     @Operation(summary = "Platform Overview KPIs", description = "Returns platform-wide KPI metrics for the admin dashboard.")
     public ResponseEntity<ApiResponse<OverviewAnalyticsResponse>> getOverview() {

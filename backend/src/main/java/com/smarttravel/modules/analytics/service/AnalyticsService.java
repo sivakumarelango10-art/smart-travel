@@ -42,4 +42,9 @@ public interface AnalyticsService {
      * Customer registration and activity metrics for the given date range.
      */
     CustomerAnalyticsResponse getCustomerAnalytics(AnalyticsDateRangeRequest request);
+
+    /**
+     * Unified Dashboard dataset computed concurrently and cached for sub-10ms response times.
+     */
+    AdminDashboardResponse getDashboard(AnalyticsDateRangeRequest request);
 }
