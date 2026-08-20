@@ -5,6 +5,12 @@ import com.smarttravel.modules.hotel.repository.HotelRepository;
 import com.smarttravel.modules.pricing.model.DynamicPricingRule;
 import com.smarttravel.modules.pricing.model.DynamicPricingRuleType;
 import com.smarttravel.modules.pricing.repository.DynamicPricingRuleRepository;
+import com.smarttravel.modules.user.model.AccountStatus;
+import com.smarttravel.modules.user.model.Role;
+import com.smarttravel.modules.user.model.User;
+import com.smarttravel.modules.user.model.UserPreferences;
+import com.smarttravel.modules.user.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -15,12 +21,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Seeds demo hotels and default pricing rules on application startup (if empty).
- * Only runs when the hotels and pricing rules collections are empty.
+ * Seeds demo hotels, default pricing rules, and initial system admin on application startup.
  */
 @Component
 public class HotelAndPricingDataSeeder implements ApplicationRunner {
@@ -29,17 +36,55 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
     private final HotelRepository hotelRepository;
     private final DynamicPricingRuleRepository pricingRuleRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public HotelAndPricingDataSeeder(HotelRepository hotelRepository,
-                                     DynamicPricingRuleRepository pricingRuleRepository) {
+                                     DynamicPricingRuleRepository pricingRuleRepository,
+                                     UserRepository userRepository,
+                                     PasswordEncoder passwordEncoder) {
         this.hotelRepository = hotelRepository;
         this.pricingRuleRepository = pricingRuleRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        seedAdminUser();
         seedHotels();
         seedPricingRules();
+    }
+
+    private void seedAdminUser() {
+        String adminEmail = "admin@smarttravel.com";
+        String normalizedEmail = "admin@smarttravel.com";
+        if (userRepository.findByEmail(adminEmail).isEmpty() && userRepository.findByNormalizedEmail(normalizedEmail).isEmpty()) {
+            log.info("Seeding default Administrator account: {}", adminEmail);
+            Set<Role> roles = new HashSet<>();
+            roles.add(Role.ROLE_USER);
+            roles.add(Role.ROLE_ADMIN);
+
+            User admin = User.builder()
+                    .fullName("SmartTravel Administrator")
+                    .firstName("SmartTravel")
+                    .lastName("Admin")
+                    .email(adminEmail)
+                    .normalizedEmail(normalizedEmail)
+                    .phoneNumber("+919876543210")
+                    .passwordHash(passwordEncoder.encode("Admin@123"))
+                    .roles(roles)
+                    .accountStatus(AccountStatus.ACTIVE)
+                    .active(true)
+                    .emailVerified(true)
+                    .preferences(new UserPreferences())
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build();
+
+            userRepository.save(admin);
+            log.info("Default Administrator account successfully created: {} / Admin@123", adminEmail);
+        }
     }
 
     private void seedHotels() {
