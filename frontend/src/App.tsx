@@ -6,6 +6,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PageLoader } from './components/PageLoader';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded Customer & Public Pages
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
@@ -42,10 +43,11 @@ const AdminSystemPage = lazy(() => import('./pages/admin/AdminSystemPage').then(
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <NotificationProvider>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+      <ErrorBoundary>
+        <AuthProvider>
+          <NotificationProvider>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               {/* Customer & Public Routes */}
               <Route path="/" element={<MainLayout />}>
                 {/* Public Routes */}
@@ -156,6 +158,7 @@ export default function App() {
           </Suspense>
         </NotificationProvider>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    </ErrorBoundary>
+  </BrowserRouter>
+);
 }

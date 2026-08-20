@@ -41,13 +41,16 @@ export interface BoardingPass {
   bookingId: string;
   bookingReference: string;
   ticketNumber: string;
+  eTicketNumber?: string;
   passengerName: string;
   flightNumber: string;
   airline: string;
   departureAirport: AirportInfo;
   arrivalAirport: AirportInfo;
   departureTime: string;
+  arrivalTime?: string;
   boardingTime: string;
+  boardingGroup?: string;
   gate?: string;
   terminal?: string;
   seatNumber: string;
@@ -55,7 +58,8 @@ export interface BoardingPass {
   sequenceNumber?: number;
   qrCode?: string;
   barcode?: string;
-  createdAt: string;
+  createdAt?: string;
+  issuedAt?: string;
 }
 
 export interface CheckInDetails {
