@@ -38,3 +38,8 @@ export * from './booking';
 export * from './payment';
 export * from './ticket';
 export * from './notification';
+export * from './tracking';
+export * from './pricing';
+export * from './hotel';
+export * from './review';
+export * from './recommendation';

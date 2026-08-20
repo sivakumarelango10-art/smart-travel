@@ -17,6 +17,7 @@ import {
   Headphones
 } from 'lucide-react';
 import { FlightSearchWidget } from '../components/FlightSearchWidget';
+import { RecommendationsSection } from '../components/RecommendationsSection';
 import { healthService } from '../services/healthService';
 import { HealthData } from '../types/api';
 
@@ -536,6 +537,11 @@ export const HomePage: React.FC = () => {
           ))}
         </div>
       </section>
+
+      {/* ======================================================== */}
+      {/* 4. PERSONALIZED RECOMMENDATIONS & TRENDING PICKS        */}
+      {/* ======================================================== */}
+      <RecommendationsSection />
 
       {/* ======================================================== */}
       {/* 5. WHY SMARTTRAVEL TRUST & SECURITY SECTION             */}

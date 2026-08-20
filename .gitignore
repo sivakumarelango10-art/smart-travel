@@ -49,3 +49,5 @@ frontend/.env
 scratch/
 tmp/
 *.tmp
+uploads/
+backend/uploads/

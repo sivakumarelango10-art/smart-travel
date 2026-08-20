@@ -10,6 +10,8 @@ import com.smarttravel.modules.flight.simulation.model.FlightSimulationConfig;
 import com.smarttravel.modules.flight.simulation.model.FlightSimulationEvent;
 import com.smarttravel.modules.flight.simulation.random.RandomProvider;
 import com.smarttravel.modules.flight.simulation.repository.FlightSimulationConfigRepository;
+import com.smarttravel.modules.flight.websocket.FlightStatusEvent;
+import com.smarttravel.modules.flight.websocket.FlightStatusWebSocketPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -32,15 +34,37 @@ public class FlightSimulationEngine {
     private final FlightService flightService;
     private final FlightSimulationConfigRepository configRepository;
     private final RandomProvider randomProvider;
+    private final FlightStatusWebSocketPublisher webSocketPublisher;
+    private final com.smarttravel.modules.notification.service.WebPushService webPushService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public FlightSimulationEngine(FlightRepository flightRepository,
+                                  FlightService flightService,
+                                  FlightSimulationConfigRepository configRepository,
+                                  RandomProvider randomProvider,
+                                  @org.springframework.beans.factory.annotation.Autowired(required = false) FlightStatusWebSocketPublisher webSocketPublisher,
+                                  @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.notification.service.WebPushService webPushService) {
+        this.flightRepository = flightRepository;
+        this.flightService = flightService;
+        this.configRepository = configRepository;
+        this.randomProvider = randomProvider;
+        this.webSocketPublisher = webSocketPublisher;
+        this.webPushService = webPushService;
+    }
+
+    public FlightSimulationEngine(FlightRepository flightRepository,
+                                  FlightService flightService,
+                                  FlightSimulationConfigRepository configRepository,
+                                  RandomProvider randomProvider,
+                                  FlightStatusWebSocketPublisher webSocketPublisher) {
+        this(flightRepository, flightService, configRepository, randomProvider, webSocketPublisher, null);
+    }
 
     public FlightSimulationEngine(FlightRepository flightRepository,
                                   FlightService flightService,
                                   FlightSimulationConfigRepository configRepository,
                                   RandomProvider randomProvider) {
-        this.flightRepository = flightRepository;
-        this.flightService = flightService;
-        this.configRepository = configRepository;
-        this.randomProvider = randomProvider;
+        this(flightRepository, flightService, configRepository, randomProvider, null, null);
     }
 
     /**
@@ -173,6 +197,35 @@ public class FlightSimulationEngine {
         configRepository.save(config);
         log.info("Simulation transitioned flight {} from {} to {}",
                 updatedFlight.getFlightNumber(), currentStatus, updatedFlight.getStatus());
+
+        // 7. Publish WebSocket event for real-time client updates
+        FlightStatusEvent wsEvent = FlightStatusEvent.builder()
+                .flightId(updatedFlight.getId())
+                .flightNumber(updatedFlight.getFlightNumber())
+                .previousStatus(currentStatus)
+                .status(updatedFlight.getStatus())
+                .delayMinutes(updatedFlight.getDelayMinutes())
+                .delayReason(updatedFlight.getDelayReason())
+                .scheduledDeparture(updatedFlight.getDepartureTime())
+                .revisedDeparture(updatedFlight.getRevisedDepartureTime())
+                .scheduledArrival(updatedFlight.getArrivalTime())
+                .estimatedArrival(updatedFlight.getEstimatedArrival())
+                .source("SIMULATION:" + config.getId())
+                .build();
+        if (webSocketPublisher != null) {
+            webSocketPublisher.publish(wsEvent);
+        }
+
+        // 8. Trigger Browser Web Push Notifications for critical status updates
+        if (webPushService != null && (updatedFlight.getStatus() == FlightStatus.DELAYED ||
+                updatedFlight.getStatus() == FlightStatus.CANCELLED ||
+                updatedFlight.getStatus() == FlightStatus.BOARDING)) {
+            String title = "Flight " + updatedFlight.getFlightNumber() + " " + updatedFlight.getStatus();
+            String msg = updatedFlight.getStatus() == FlightStatus.DELAYED
+                    ? "Delayed by " + updatedFlight.getDelayMinutes() + " mins: " + updatedFlight.getDelayReason()
+                    : "Status updated to " + updatedFlight.getStatus();
+            webPushService.sendPushForFlight(updatedFlight.getId(), title, msg, "/tracked-flights", updatedFlight.getStatus().name());
+        }
 
         return Optional.of(event);
     }

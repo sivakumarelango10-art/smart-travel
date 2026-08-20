@@ -10,6 +10,9 @@ import { PageLoader } from './components/PageLoader';
 // Lazy-loaded Customer & Public Pages
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
 const FlightSearchPage = lazy(() => import('./pages/FlightSearchPage').then((m) => ({ default: m.FlightSearchPage })));
+const HotelSearchPage = lazy(() => import('./pages/HotelSearchPage').then((m) => ({ default: m.HotelSearchPage })));
+const HotelDetailsPage = lazy(() => import('./pages/HotelDetailsPage').then((m) => ({ default: m.HotelDetailsPage })));
+const TrackedFlightsPage = lazy(() => import('./pages/TrackedFlightsPage').then((m) => ({ default: m.TrackedFlightsPage })));
 const BookingPage = lazy(() => import('./pages/BookingPage').then((m) => ({ default: m.BookingPage })));
 const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage').then((m) => ({ default: m.BookingConfirmationPage })));
 const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage').then((m) => ({ default: m.MyBookingsPage })));
@@ -48,11 +51,21 @@ export default function App() {
                 {/* Public Routes */}
                 <Route index element={<HomePage />} />
                 <Route path="flights" element={<FlightSearchPage />} />
+                <Route path="hotels" element={<HotelSearchPage />} />
+                <Route path="hotels/:hotelId" element={<HotelDetailsPage />} />
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
                 <Route path="book/:flightId" element={<BookingPage />} />
 
                 {/* Protected Customer Routes */}
+                <Route
+                  path="tracked-flights"
+                  element={
+                    <ProtectedRoute>
+                      <TrackedFlightsPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="booking-confirmation/:bookingId"
                   element={

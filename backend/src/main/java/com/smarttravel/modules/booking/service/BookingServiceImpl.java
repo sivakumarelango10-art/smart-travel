@@ -58,6 +58,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingProperties bookingProperties;
     private final com.smarttravel.modules.ticket.service.TicketService ticketService;
     private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
+    private final com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -69,7 +70,8 @@ public class BookingServiceImpl implements BookingService {
                               BookingMapper bookingMapper,
                               BookingProperties bookingProperties,
                               @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
-                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService) {
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService) {
         this.bookingRepository = bookingRepository;
         this.flightRepository = flightRepository;
         this.reservationService = reservationService;
@@ -80,6 +82,7 @@ public class BookingServiceImpl implements BookingService {
         this.bookingProperties = bookingProperties;
         this.ticketService = ticketService;
         this.seatMapService = seatMapService;
+        this.priceFreezeService = priceFreezeService;
     }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -89,7 +92,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null);
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null, null);
     }
 
     @Override
@@ -144,8 +147,33 @@ public class BookingServiceImpl implements BookingService {
             throw new ConflictException("Insufficient seat availability for the selected cabin: " + cabinClass);
         }
 
-        // 4. Calculate itemized price snapshot
-        FareBreakdownDto fareSnapshot = fareCalculationService.calculateFare(basePrice, cabinClass, passengerCount);
+        // 4. Calculate itemized price snapshot (or use active price freeze if provided)
+        FareBreakdownDto fareSnapshot;
+        if (request.getPriceFreezeId() != null && !request.getPriceFreezeId().isBlank() && priceFreezeService != null) {
+            com.smarttravel.modules.pricing.model.PriceFreeze freeze =
+                    priceFreezeService.getFreezeById(request.getPriceFreezeId(), userId);
+            if (freeze.getStatus() != com.smarttravel.modules.pricing.model.PriceFreezeStatus.ACTIVE || freeze.isExpired()) {
+                throw new BadRequestException("The specified price freeze is expired or no longer active");
+            }
+            if (!flight.getId().equals(freeze.getFlightId()) || cabinClass != freeze.getCabinClass()) {
+                throw new BadRequestException("Price freeze does not match the requested flight or cabin class");
+            }
+            BigDecimal totalLocked = freeze.getLockedPricePerPassenger().multiply(BigDecimal.valueOf(passengerCount));
+            BigDecimal baseLocked = freeze.getBasePriceAtFreeze() != null ? freeze.getBasePriceAtFreeze().multiply(BigDecimal.valueOf(passengerCount)) : totalLocked.multiply(new BigDecimal("0.8"));
+            BigDecimal taxLocked = totalLocked.subtract(baseLocked);
+
+            fareSnapshot = FareBreakdownDto.builder()
+                    .baseFare(baseLocked)
+                    .taxes(taxLocked)
+                    .fees(BigDecimal.valueOf(150L * passengerCount))
+                    .totalAmount(totalLocked)
+                    .currency("INR")
+                    .passengerCount(passengerCount)
+                    .build();
+            log.info("Applied locked price freeze {} (Total: ₹{}) for user {}", freeze.getId(), totalLocked, userId);
+        } else {
+            fareSnapshot = fareCalculationService.calculateFare(basePrice, cabinClass, passengerCount);
+        }
 
         // 5. Generate unique PNR reference
         String pnr = generateUniquePnr();
@@ -202,6 +230,15 @@ public class BookingServiceImpl implements BookingService {
         try {
             savedBooking = bookingRepository.save(booking);
             log.info("Booking created successfully with PNR: {} and ID: {}", pnr, savedBooking.getId());
+
+            // Mark price freeze as used if applied
+            if (request.getPriceFreezeId() != null && !request.getPriceFreezeId().isBlank() && priceFreezeService != null) {
+                try {
+                    priceFreezeService.markAsUsed(request.getPriceFreezeId(), savedBooking.getId(), userId);
+                } catch (Exception ex) {
+                    log.warn("Failed to mark price freeze {} as used: {}", request.getPriceFreezeId(), ex.getMessage());
+                }
+            }
         } catch (Exception ex) {
             log.error("Failed to persist booking for flight ID: {}. Executing compensating seat release.", flight.getId(), ex);
             reservationService.releaseSeats(flight.getId(), cabinClass, passengerCount);

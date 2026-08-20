@@ -37,10 +37,11 @@ apiClient.interceptors.request.use(
       url.includes('/auth/refresh-token') ||
       url.includes('/auth/forgot-password') ||
       url.includes('/auth/reset-password') ||
-      (url.includes('/flights') && config.method?.toLowerCase() === 'get') ||
       url.includes('/health');
 
-    if (isPublicAuthEndpoint) {
+    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+
+    if (isPublicAuthEndpoint && !token) {
       if (config.headers) {
         delete config.headers.Authorization;
         delete (config.headers as any)['Authorization'];
@@ -49,7 +50,6 @@ apiClient.interceptors.request.use(
       return config;
     }
 
-    const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     if (token && token.trim() !== '' && token !== 'null' && token !== 'undefined' && config.headers) {
       config.headers.Authorization = `Bearer ${token.trim()}`;
     } else if (config.headers) {

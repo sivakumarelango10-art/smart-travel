@@ -30,6 +30,9 @@ public class BookingCreateRequest {
     @Valid
     private List<PassengerDto> passengers;
 
+    @Schema(description = "Optional active Price Freeze ID to apply locked fare snapshot", example = "66c1e101f1a2b3c4d5e6f703")
+    private String priceFreezeId;
+
     public BookingCreateRequest() {
     }
 
@@ -37,6 +40,13 @@ public class BookingCreateRequest {
         this.flightId = flightId;
         this.cabinClass = cabinClass;
         this.passengers = passengers;
+    }
+
+    public BookingCreateRequest(String flightId, CabinClass cabinClass, List<PassengerDto> passengers, String priceFreezeId) {
+        this.flightId = flightId;
+        this.cabinClass = cabinClass;
+        this.passengers = passengers;
+        this.priceFreezeId = priceFreezeId;
     }
 
     public static Builder builder() {
@@ -47,6 +57,7 @@ public class BookingCreateRequest {
         private String flightId;
         private CabinClass cabinClass;
         private List<PassengerDto> passengers;
+        private String priceFreezeId;
 
         public Builder flightId(String flightId) {
             this.flightId = flightId;
@@ -63,8 +74,13 @@ public class BookingCreateRequest {
             return this;
         }
 
+        public Builder priceFreezeId(String priceFreezeId) {
+            this.priceFreezeId = priceFreezeId;
+            return this;
+        }
+
         public BookingCreateRequest build() {
-            return new BookingCreateRequest(flightId, cabinClass, passengers);
+            return new BookingCreateRequest(flightId, cabinClass, passengers, priceFreezeId);
         }
     }
 
@@ -90,5 +106,13 @@ public class BookingCreateRequest {
 
     public void setPassengers(List<PassengerDto> passengers) {
         this.passengers = passengers;
+    }
+
+    public String getPriceFreezeId() {
+        return priceFreezeId;
+    }
+
+    public void setPriceFreezeId(String priceFreezeId) {
+        this.priceFreezeId = priceFreezeId;
     }
 }

@@ -140,6 +140,26 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/v1/flights/**", "/v1/flights/**", "/api/flights/**", "/flights/**"
                         ).permitAll()
+                        // Public Hotel Search & Catalog (GET only)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/hotels/**", "/api/v1/hotels/**"
+                        ).permitAll()
+                        // Public Reviews (GET only)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/reviews/**", "/api/v1/reviews/**"
+                        ).permitAll()
+                        // Public Recommendations (GET endpoints)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/recommendations/**", "/api/v1/recommendations/**"
+                        ).permitAll()
+                        // Public Pricing (GET endpoints)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/pricing/**", "/api/v1/pricing/**"
+                        ).permitAll()
+                        // Public Web Push public key
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/notifications/push/public-key", "/api/v1/notifications/push/public-key"
+                        ).permitAll()
                         // Razorpay Webhook Callback (Server-to-Server authenticated by HMAC-SHA256 signature)
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook", "/payments/webhook"

@@ -36,7 +36,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class })
+@WebMvcTest(
+        controllers = {
+                HealthController.class,
+                AuthController.class,
+                FlightController.class
+        },
+        excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class }
+)
 @Import({
         SecurityConfig.class,
         RequestIdFilter.class,

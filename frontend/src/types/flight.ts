@@ -1,6 +1,6 @@
 export type CabinClass = 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
 
-export type FlightStatus = 'SCHEDULED' | 'BOARDING' | 'DEPARTED' | 'IN_AIR' | 'LANDED' | 'ARRIVED' | 'DELAYED' | 'CANCELLED' | 'DIVERTED';
+export type FlightStatus = 'SCHEDULED' | 'BOARDING' | 'ON_TIME' | 'DEPARTED' | 'IN_AIR' | 'LANDED' | 'ARRIVED' | 'DELAYED' | 'CANCELLED' | 'DIVERTED';
 
 export interface AirportInfo {
   code: string;

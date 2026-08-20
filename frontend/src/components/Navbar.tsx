@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Plane,
   Building2,
-  Palmtree,
   Compass,
   Tag,
   BookmarkCheck,
@@ -119,21 +118,29 @@ export const Navbar: React.FC = () => {
               <span>Flights</span>
             </Link>
 
-            <div className="relative group px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 cursor-not-allowed flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-500" />
-              <span>Hotels</span>
-              <span className="text-[8px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                Soon
-              </span>
-            </div>
+            <Link
+              to="/hotels"
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                isActive('/hotels')
+                  ? 'text-white bg-gradient-to-r from-sky-500/20 to-indigo-500/20 border border-sky-500/30 shadow-sm text-sky-300'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Stays & Hotels</span>
+            </Link>
 
-            <div className="relative group px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 cursor-not-allowed flex items-center gap-1.5">
-              <Palmtree className="w-3.5 h-3.5 text-slate-500" />
-              <span>Holidays</span>
-              <span className="text-[8px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                Soon
-              </span>
-            </div>
+            <Link
+              to="/tracked-flights"
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                isActive('/tracked-flights')
+                  ? 'text-white bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 border border-cyan-500/30 shadow-sm text-cyan-300'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Tracker</span>
+            </Link>
 
             <a
               href="#destinations"
@@ -378,6 +385,24 @@ export const Navbar: React.FC = () => {
             >
               <Plane className="w-4 h-4 text-sky-400" />
               <span>Search Flights</span>
+            </Link>
+
+            <Link
+              to="/hotels"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
+            >
+              <Building2 className="w-4 h-4 text-indigo-400" />
+              <span>Stays & Hotels</span>
+            </Link>
+
+            <Link
+              to="/tracked-flights"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/80 text-white border border-slate-800"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live Flight Tracker</span>
             </Link>
 
             {isAuthenticated && (

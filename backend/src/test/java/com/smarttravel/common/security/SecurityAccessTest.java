@@ -35,7 +35,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class })
+@WebMvcTest(
+        controllers = {
+                SecurityAccessTest.ProtectedSampleController.class,
+                HealthController.class,
+                AuthController.class,
+                FlightController.class,
+                AdminFlightController.class
+        },
+        excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class }
+)
 @Import({
         SecurityConfig.class,
         RequestIdFilter.class,
@@ -104,6 +113,24 @@ class SecurityAccessTest {
 
     @MockBean
     private com.smarttravel.modules.analytics.service.AnalyticsService analyticsService;
+
+    @MockBean
+    private com.smarttravel.modules.hotel.service.HotelService hotelService;
+
+    @MockBean
+    private com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService;
+
+    @MockBean
+    private com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService;
+
+    @MockBean
+    private com.smarttravel.modules.review.service.ReviewService reviewService;
+
+    @MockBean
+    private com.smarttravel.modules.recommendation.service.RecommendationService recommendationService;
+
+    @MockBean
+    private com.smarttravel.modules.flight.tracking.service.FlightTrackingService flightTrackingService;
 
 
 
