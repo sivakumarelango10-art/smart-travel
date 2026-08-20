@@ -54,6 +54,28 @@ public class CheckInServiceImpl implements CheckInService {
     private final BoardingPassPdfService boardingPassPdfService;
     private final CheckInProperties checkInProperties;
     private final TicketNumberGenerator numberGenerator;
+    private final com.smarttravel.modules.ticket.service.TicketService ticketService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CheckInServiceImpl(CheckInRepository checkInRepository,
+                              BoardingPassRepository boardingPassRepository,
+                              BookingRepository bookingRepository,
+                              TicketRepository ticketRepository,
+                              SeatMapService seatMapService,
+                              BoardingPassPdfService boardingPassPdfService,
+                              CheckInProperties checkInProperties,
+                              TicketNumberGenerator numberGenerator,
+                              @org.springframework.context.annotation.Lazy @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService) {
+        this.checkInRepository = checkInRepository;
+        this.boardingPassRepository = boardingPassRepository;
+        this.bookingRepository = bookingRepository;
+        this.ticketRepository = ticketRepository;
+        this.seatMapService = seatMapService;
+        this.boardingPassPdfService = boardingPassPdfService;
+        this.checkInProperties = checkInProperties;
+        this.numberGenerator = numberGenerator;
+        this.ticketService = ticketService;
+    }
 
     public CheckInServiceImpl(CheckInRepository checkInRepository,
                               BoardingPassRepository boardingPassRepository,
@@ -63,14 +85,7 @@ public class CheckInServiceImpl implements CheckInService {
                               BoardingPassPdfService boardingPassPdfService,
                               CheckInProperties checkInProperties,
                               TicketNumberGenerator numberGenerator) {
-        this.checkInRepository = checkInRepository;
-        this.boardingPassRepository = boardingPassRepository;
-        this.bookingRepository = bookingRepository;
-        this.ticketRepository = ticketRepository;
-        this.seatMapService = seatMapService;
-        this.boardingPassPdfService = boardingPassPdfService;
-        this.checkInProperties = checkInProperties;
-        this.numberGenerator = numberGenerator;
+        this(checkInRepository, boardingPassRepository, bookingRepository, ticketRepository, seatMapService, boardingPassPdfService, checkInProperties, numberGenerator, null);
     }
 
     @Override
@@ -85,9 +100,24 @@ public class CheckInServiceImpl implements CheckInService {
             throw new ConflictException("Check-in is not permitted for booking in status: " + booking.getStatus());
         }
 
-        // 3. Validate issued Ticket exists
+        // 3. Validate issued Ticket exists (auto-issue if booking is CONFIRMED and ticket is missing)
         Ticket ticket = ticketRepository.findFirstByBookingId(booking.getId())
-                .orElseThrow(() -> new ConflictException("Cannot check in: E-Ticket has not been issued for this booking."));
+                .orElseGet(() -> {
+                    if (ticketService != null && booking.getStatus() == BookingStatus.CONFIRMED) {
+                        try {
+                            log.info("Auto-issuing missing E-Ticket for confirmed booking ID: {}", booking.getId());
+                            ticketService.issueTicket(booking.getId());
+                            return ticketRepository.findFirstByBookingId(booking.getId()).orElse(null);
+                        } catch (Exception ex) {
+                            log.warn("Failed to auto-issue ticket for booking ID: {}", booking.getId(), ex);
+                        }
+                    }
+                    return null;
+                });
+
+        if (ticket == null) {
+            throw new ConflictException("Cannot check in: E-Ticket has not been issued for this booking.");
+        }
 
         // 4. Validate Check-in Window
         validateCheckInWindow(booking.getDepartureTime());

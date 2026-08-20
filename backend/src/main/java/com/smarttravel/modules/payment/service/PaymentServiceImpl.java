@@ -47,6 +47,29 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingStateMachine bookingStateMachine;
     private final PaymentMapper paymentMapper;
     private final RazorpayProperties razorpayProperties;
+    private final com.smarttravel.modules.ticket.service.TicketService ticketService;
+    private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              BookingRepository bookingRepository,
+                              RazorpayPaymentGateway razorpayGateway,
+                              PaymentStateMachine paymentStateMachine,
+                              BookingStateMachine bookingStateMachine,
+                              PaymentMapper paymentMapper,
+                              RazorpayProperties razorpayProperties,
+                              @org.springframework.context.annotation.Lazy @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
+                              @org.springframework.context.annotation.Lazy @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.service.SeatMapService seatMapService) {
+        this.paymentRepository = paymentRepository;
+        this.bookingRepository = bookingRepository;
+        this.razorpayGateway = razorpayGateway;
+        this.paymentStateMachine = paymentStateMachine;
+        this.bookingStateMachine = bookingStateMachine;
+        this.paymentMapper = paymentMapper;
+        this.razorpayProperties = razorpayProperties;
+        this.ticketService = ticketService;
+        this.seatMapService = seatMapService;
+    }
 
     public PaymentServiceImpl(PaymentRepository paymentRepository,
                               BookingRepository bookingRepository,
@@ -55,13 +78,7 @@ public class PaymentServiceImpl implements PaymentService {
                               BookingStateMachine bookingStateMachine,
                               PaymentMapper paymentMapper,
                               RazorpayProperties razorpayProperties) {
-        this.paymentRepository = paymentRepository;
-        this.bookingRepository = bookingRepository;
-        this.razorpayGateway = razorpayGateway;
-        this.paymentStateMachine = paymentStateMachine;
-        this.bookingStateMachine = bookingStateMachine;
-        this.paymentMapper = paymentMapper;
-        this.razorpayProperties = razorpayProperties;
+        this(paymentRepository, bookingRepository, razorpayGateway, paymentStateMachine, bookingStateMachine, paymentMapper, razorpayProperties, null, null);
     }
 
     @Override
@@ -214,6 +231,22 @@ public class PaymentServiceImpl implements PaymentService {
             booking.setUpdatedAt(Instant.now());
             bookingRepository.save(booking);
             log.info("Booking ID: {} confirmed following successful payment verification", booking.getId());
+        }
+
+        // 7. Auto-issue E-Ticket and confirm seats upon payment verification
+        if (ticketService != null) {
+            try {
+                ticketService.issueTicket(booking.getId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Ticket issuance error during payment verification for booking ID: {}", booking.getId(), ex);
+            }
+        }
+        if (seatMapService != null) {
+            try {
+                seatMapService.confirmSeats(booking.getId());
+            } catch (Exception ex) {
+                log.warn("Non-fatal: Error confirming seats during payment verification for booking ID: {}", booking.getId(), ex);
+            }
         }
 
         return paymentMapper.toResponse(savedPayment);

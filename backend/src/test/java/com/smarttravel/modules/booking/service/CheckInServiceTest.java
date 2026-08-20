@@ -200,4 +200,38 @@ class CheckInServiceTest {
         assertThatThrownBy(() -> checkInService.performCheckIn("bk-100", null, "user-hacker", false))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    @Test
+    @DisplayName("performCheckIn auto-issues missing ticket for confirmed booking without throwing conflict")
+    void testPerformCheckIn_AutoIssuesMissingTicket() {
+        com.smarttravel.modules.ticket.service.TicketService mockTicketService = org.mockito.Mockito.mock(com.smarttravel.modules.ticket.service.TicketService.class);
+        CheckInService checkInServiceWithTicket = new CheckInServiceImpl(
+                checkInRepository,
+                boardingPassRepository,
+                bookingRepository,
+                ticketRepository,
+                seatMapService,
+                boardingPassPdfService,
+                checkInProperties,
+                numberGenerator,
+                mockTicketService
+        );
+
+        when(bookingRepository.findByIdAndUserId("bk-100", "user-sarah")).thenReturn(Optional.of(sampleBooking));
+        // First lookup fails, after issueTicket it returns sampleTicket
+        when(ticketRepository.findFirstByBookingId("bk-100")).thenReturn(Optional.empty()).thenReturn(Optional.of(sampleTicket));
+        when(checkInRepository.findByBookingId("bk-100")).thenReturn(Optional.empty());
+        when(seatMapService.getSeatsForFlight("fl-100", CabinClass.ECONOMY)).thenReturn(List.of());
+        when(checkInRepository.save(any(CheckIn.class))).thenAnswer(inv -> {
+            CheckIn c = inv.getArgument(0);
+            c.setId("ci-100");
+            return c;
+        });
+
+        CheckInResponse response = checkInServiceWithTicket.performCheckIn("bk-100", null, "user-sarah", false);
+
+        org.mockito.Mockito.verify(mockTicketService, org.mockito.Mockito.times(1)).issueTicket("bk-100");
+        assertThat(response).isNotNull();
+        assertThat(response.getBookingReference()).isEqualTo("ST8K4P2Q");
+    }
 }
