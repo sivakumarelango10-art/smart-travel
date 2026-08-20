@@ -42,9 +42,9 @@ smarttravel:
       fixed-delay-ms: ${BOOKING_EXPIRATION_FIXED_DELAY_MS:60000}
   payment:
     razorpay:
-      enabled: ${RAZORPAY_ENABLED:false}
-      key-id: ${RAZORPAY_KEY_ID:}
-      key-secret: ${RAZORPAY_KEY_SECRET:}
+      enabled: ${RAZORPAY_ENABLED:true}
+      key-id: ${RAZORPAY_KEY_ID:rzp_test_TRufciEcT5Hkyx}
+      key-secret: ${RAZORPAY_KEY_SECRET:p8J2nAdeypF79JlMmeXljM0g}
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 
