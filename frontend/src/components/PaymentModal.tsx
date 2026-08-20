@@ -43,7 +43,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onPaymentSuccess,
   onClose,
 }) => {
-  const [loading, setLoading] = useState<boolean>(false);
+  const [initLoading, setInitLoading] = useState<boolean>(false);
+  const [payLoading, setPayLoading] = useState<boolean>(false);
   const [order, setOrder] = useState<PaymentOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
@@ -63,6 +64,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Escape key handler for intuitive closing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !paymentSuccess) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [paymentSuccess, onClose]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -84,7 +96,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     const initOrder = async () => {
       try {
-        setLoading(true);
+        setInitLoading(true);
         setError(null);
         const targetBookingId = booking.id || booking.bookingReference;
         const res = await paymentService.createPaymentOrder({
@@ -106,14 +118,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             : 'Unable to initialize secure gateway order. Please retry.');
         setError(errorMsg);
       } finally {
-        setLoading(false);
+        setInitLoading(false);
       }
     };
     initOrder();
   }, [booking.id, booking.bookingReference]);
 
   const handlePayNow = async () => {
-    setLoading(true);
+    setPayLoading(true);
     setError(null);
 
     let activeOrder = order;
@@ -137,7 +149,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             ? 'Your session has expired. Please sign in again.'
             : 'Unable to communicate with SmartTravel backend services. Please verify your connection or try again.');
         setError(errorMsg);
-        setLoading(false);
+        setPayLoading(false);
         return;
       }
     }
@@ -171,7 +183,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           } catch (err: any) {
             setError(err?.message || 'Payment captured but verification failed.');
           } finally {
-            setLoading(false);
+            setPayLoading(false);
           }
         },
         prefill: {
@@ -186,7 +198,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (resp: any) {
         setError(resp?.error?.description || 'Payment transaction failed on gateway.');
-        setLoading(false);
+        setPayLoading(false);
       });
       rzp.open();
     } else {
@@ -211,7 +223,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           setError(webhookErr?.message || err?.message || 'Payment processing failed. Please retry.');
         }
       } finally {
-        setLoading(false);
+        setPayLoading(false);
       }
     }
   };
@@ -221,7 +233,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     : 'Lead Traveler';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/85 backdrop-blur-xl animate-fade-in">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !paymentSuccess) {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/85 backdrop-blur-xl animate-fade-in"
+    >
       {/* Dynamic Ambient Background Glows */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-sky-500/20 via-indigo-500/15 to-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
@@ -229,12 +248,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         {/* Top Iridescent Highlight Strip */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-emerald-400"></div>
 
-        {/* Close 'X' Button */}
+        {/* Close 'X' Button — Always clickable unless payment succeeded */}
         <button
           type="button"
           onClick={onClose}
-          disabled={loading || paymentSuccess}
-          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition duration-150 disabled:opacity-30"
+          disabled={paymentSuccess}
+          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition duration-150 disabled:opacity-30 cursor-pointer z-10"
           aria-label="Close Payment Modal"
         >
           <X className="w-4 h-4" />
@@ -271,7 +290,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   <div className="flex items-center gap-2">
                     <h2 className="font-extrabold text-white text-lg sm:text-xl tracking-tight">Razorpay Gateway</h2>
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                      Live
+                      {initLoading ? 'Syncing' : 'Live'}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -327,7 +346,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyPnr}
-                  className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-sky-500/50 px-2.5 py-1.5 rounded-xl transition duration-150 group"
+                  className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-sky-500/50 px-2.5 py-1.5 rounded-xl transition duration-150 group cursor-pointer"
                   title="Click to copy PNR"
                 >
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">PNR:</span>
@@ -404,17 +423,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <div className="space-y-3 pt-1">
               <button
                 type="button"
-                disabled={loading || timeLeft === 0}
+                disabled={payLoading || timeLeft === 0}
                 onClick={handlePayNow}
-                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500 hover:from-emerald-400 hover:via-teal-400 hover:to-sky-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden cursor-pointer"
               >
                 {/* Button Shine Highlight */}
                 <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out"></div>
 
-                {loading ? (
+                {payLoading ? (
                   <span className="flex items-center gap-2.5 text-slate-950">
                     <span className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin"></span>
-                    <span>Connecting Secure Gateway...</span>
+                    <span>Opening Gateway...</span>
                   </span>
                 ) : (
                   <>
@@ -424,11 +443,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 )}
               </button>
 
+              {/* Cancel & Review Itinerary Button — Always active so user can cancel anytime */}
               <button
                 type="button"
-                disabled={loading}
                 onClick={onClose}
-                className="w-full py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold transition border border-slate-700/50"
+                disabled={paymentSuccess}
+                className="w-full py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs sm:text-sm font-bold transition border border-slate-700/70 hover:border-slate-600 shadow-sm cursor-pointer"
               >
                 Cancel & Review Itinerary
               </button>
