@@ -27,5 +27,7 @@ public interface HotelRepository extends MongoRepository<Hotel, String> {
     @Query("{'address.city': {$regex: ?0, $options: 'i'}, 'baseNightlyRate': {$lte: ?1}, 'active': true}")
     Page<Hotel> searchByCityAndMaxPrice(String city, java.math.BigDecimal maxPrice, Pageable pageable);
 
+    java.util.Optional<Hotel> findByName(String name);
+
     long countByActiveTrue();
 }
