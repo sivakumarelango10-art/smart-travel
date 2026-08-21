@@ -24,6 +24,40 @@ export interface TrackedFlight {
   arrivalAirportCity?: string;
 }
 
+export interface FlightStatusSnapshot {
+  flightNumber: string;
+  status: FlightStatus;
+  delayMinutes?: number;
+  delayReason?: string;
+  revisedDepartureTime?: string;
+  revisedArrivalTime?: string;
+  gate?: string;
+  terminal?: string;
+  updatedSource?: string;
+  airline?: string;
+  airlineCode?: string;
+  originCode?: string;
+  originCity?: string;
+  originName?: string;
+  destCode?: string;
+  destCity?: string;
+  destName?: string;
+  scheduledDeparture?: string;
+  scheduledArrival?: string;
+  aircraftModel?: string;
+  altitudeFeet?: number;
+  groundSpeedKmph?: number;
+  progressPercent?: number;
+  baggageCarousel?: string;
+  originLat?: number;
+  originLng?: number;
+  destLat?: number;
+  destLng?: number;
+  currentLat?: number;
+  currentLng?: number;
+  flightId?: string;
+}
+
 export interface FlightStatusEvent {
   eventId?: string;
   flightId: string;
@@ -41,3 +75,5 @@ export interface FlightStatusEvent {
   updatedAt: string;
   source?: string;
 }
+
+

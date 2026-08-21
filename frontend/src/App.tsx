@@ -55,19 +55,12 @@ export default function App() {
                 <Route path="flights" element={<FlightSearchPage />} />
                 <Route path="hotels" element={<HotelSearchPage />} />
                 <Route path="hotels/:hotelId" element={<HotelDetailsPage />} />
+                <Route path="tracked-flights" element={<TrackedFlightsPage />} />
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
                 <Route path="book/:flightId" element={<BookingPage />} />
 
                 {/* Protected Customer Routes */}
-                <Route
-                  path="tracked-flights"
-                  element={
-                    <ProtectedRoute>
-                      <TrackedFlightsPage />
-                    </ProtectedRoute>
-                  }
-                />
                 <Route
                   path="booking-confirmation/:bookingId"
                   element={

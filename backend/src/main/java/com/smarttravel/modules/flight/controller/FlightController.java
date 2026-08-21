@@ -77,4 +77,11 @@ public class FlightController {
         var snapshot = flightService.getLiveFlightStatus(flightNumber);
         return ResponseEntity.ok(ApiResponse.success("Live flight status retrieved successfully", snapshot));
     }
+
+    @GetMapping("/live/popular")
+    @Operation(summary = "Get Popular Live Tracked Flights", description = "Returns real-time fleet snapshots for popular flights across active domestic & international routes.")
+    public ResponseEntity<ApiResponse<java.util.List<com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot>>> getPopularLiveFlights() {
+        var popular = flightService.getPopularLiveFlights();
+        return ResponseEntity.ok(ApiResponse.success("Popular live flights retrieved successfully", popular));
+    }
 }

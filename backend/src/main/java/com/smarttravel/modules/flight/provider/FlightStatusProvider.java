@@ -35,6 +35,45 @@ public interface FlightStatusProvider {
             Instant revisedArrivalTime,
             String gate,
             String terminal,
-            String updatedSource
-    ) {}
+            String updatedSource,
+            String airline,
+            String airlineCode,
+            String originCode,
+            String originCity,
+            String originName,
+            String destCode,
+            String destCity,
+            String destName,
+            Instant scheduledDeparture,
+            Instant scheduledArrival,
+            String aircraftModel,
+            Integer altitudeFeet,
+            Integer groundSpeedKmph,
+            Double progressPercent,
+            String baggageCarousel,
+            Double originLat,
+            Double originLng,
+            Double destLat,
+            Double destLng,
+            Double currentLat,
+            Double currentLng,
+            String flightId
+    ) {
+        public FlightStatusSnapshot(
+                String flightNumber,
+                FlightStatus status,
+                Integer delayMinutes,
+                String delayReason,
+                Instant revisedDepartureTime,
+                Instant revisedArrivalTime,
+                String gate,
+                String terminal,
+                String updatedSource
+        ) {
+            this(flightNumber, status, delayMinutes, delayReason, revisedDepartureTime, revisedArrivalTime,
+                    gate, terminal, updatedSource, null, null, null, null, null,
+                    null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null, null, null, null);
+        }
+    }
 }
