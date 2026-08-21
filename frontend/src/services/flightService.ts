@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { ApiResponse, Flight, FlightSearchParams, FlightSearchResponse, AirportInfo } from '../types/api';
+import { ApiResponse, Flight, FlightSearchParams, FlightSearchResponse, AirportInfo, LiveFlightStatusSnapshot } from '../types/api';
 
 export const POPULAR_AIRPORTS: AirportInfo[] = [
   { code: 'DEL', name: 'Indira Gandhi International Airport', city: 'New Delhi', country: 'India', terminal: 'T3' },
@@ -29,6 +29,11 @@ export const flightService = {
 
   async getFlightById(flightId: string): Promise<ApiResponse<Flight>> {
     const res = await apiClient.get<ApiResponse<Flight>>(`/v1/flights/${flightId}`);
+    return res.data;
+  },
+
+  async getLiveFlightStatus(flightNumber: string): Promise<ApiResponse<LiveFlightStatusSnapshot>> {
+    const res = await apiClient.get<ApiResponse<LiveFlightStatusSnapshot>>(`/v1/flights/live/${flightNumber}`);
     return res.data;
   },
 

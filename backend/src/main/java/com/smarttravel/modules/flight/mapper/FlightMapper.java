@@ -223,6 +223,7 @@ public final class FlightMapper {
                 .active(flight.isActive())
                 .createdAt(flight.getCreatedAt())
                 .updatedAt(flight.getUpdatedAt())
+                .dataSource("SIMULATED")
                 .build();
     }
 

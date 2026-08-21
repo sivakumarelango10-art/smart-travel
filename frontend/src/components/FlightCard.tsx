@@ -156,9 +156,20 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               Instant E-Ticket & Pass
             </span>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2.5 ml-auto">
+            {flight.dataSource === 'LIVE' && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Live Feed
+              </span>
+            )}
+            {flight.dataSource === 'CACHED' && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-medium">
+                Cached
+              </span>
+            )}
             <span className="font-semibold text-slate-400">
-              Cabin: <strong className="text-sky-400 font-bold uppercase">{selectedCabin}</strong>
+              Cabin: <strong className="text-blue-400 font-bold uppercase">{selectedCabin}</strong>
             </span>
           </div>
         </div>

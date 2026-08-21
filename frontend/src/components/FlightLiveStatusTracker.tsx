@@ -15,6 +15,9 @@ interface FlightLiveStatusTrackerProps {
   estimatedArrival?: string;
   departureAirportCode?: string;
   arrivalAirportCode?: string;
+  dataSource?: 'LIVE' | 'CACHED' | 'SIMULATED' | string;
+  gate?: string;
+  terminal?: string;
 }
 
 export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = ({
@@ -29,12 +32,18 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
   estimatedArrival,
   departureAirportCode,
   arrivalAirportCode,
+  dataSource = 'SIMULATED',
+  gate,
+  terminal,
 }) => {
   const [currentStatus, setCurrentStatus] = useState<FlightStatus>(initialStatus);
   const [delayMinutes, setDelayMinutes] = useState<number | undefined>(initialDelayMinutes);
   const [delayReason, setDelayReason] = useState<string | undefined>(initialDelayReason);
   const [revisedDep, setRevisedDep] = useState<string | undefined>(revisedDeparture);
   const [estArr, setEstArr] = useState<string | undefined>(estimatedArrival);
+  const [currentGate, setCurrentGate] = useState<string | undefined>(gate);
+  const [currentTerminal, setCurrentTerminal] = useState<string | undefined>(terminal);
+  const [currentSource, setCurrentSource] = useState<string>(dataSource);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const handleStatusUpdate = (event: FlightStatusEvent) => {
@@ -43,6 +52,9 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
     setDelayReason(event.delayReason);
     if (event.revisedDeparture) setRevisedDep(event.revisedDeparture);
     if (event.estimatedArrival) setEstArr(event.estimatedArrival);
+    if (event.gate) setCurrentGate(event.gate);
+    if (event.terminal) setCurrentTerminal(event.terminal);
+    if (event.source) setCurrentSource(event.source === 'AVIATIONSTACK' ? 'LIVE' : event.source);
     setLastUpdated(new Date(event.updatedAt || new Date()));
   };
 
@@ -124,13 +136,31 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-slate-500 flex items-center gap-1">
-              {isConnected ? (
-                <span className="text-emerald-400 font-medium">Live updates active</span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                {isConnected ? (
+                  <span className="text-emerald-400 font-medium">Live sync active</span>
+                ) : (
+                  <span>Reconnecting...</span>
+                )}
+              </span>
+
+              {/* Data Provenance Badge */}
+              {currentSource === 'LIVE' ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Data (Aviationstack)
+                </span>
+              ) : currentSource === 'CACHED' ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[9px] font-medium">
+                  Cached
+                </span>
               ) : (
-                <span>Reconnecting...</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-medium">
+                  Simulation Engine
+                </span>
               )}
-            </span>
+            </div>
           </div>
         </div>
 
@@ -148,7 +178,7 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
         </div>
       )}
 
-      {/* Flight Timing Details */}
+      {/* Flight Timing & Gate Details */}
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
         <div className="p-2.5 bg-slate-800/40 rounded-xl border border-slate-800">
           <span className="text-[11px] text-slate-400 block mb-0.5">Departure</span>
@@ -160,6 +190,11 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
           {revisedDep && currentStatus === 'DELAYED' && (
             <span className="block text-[11px] text-rose-400 font-medium mt-0.5">
               Revised: {new Date(revisedDep).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {currentTerminal && (
+            <span className="block text-[10px] text-slate-400 mt-1 font-mono">
+              Terminal: {currentTerminal}
             </span>
           )}
         </div>
@@ -178,11 +213,17 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
               Est: {new Date(estArr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
+          {currentGate && (
+            <span className="block text-[10px] text-slate-400 mt-1 font-mono">
+              Gate: {currentGate}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="mt-2.5 text-[10px] text-slate-500 text-right">
-        Last updated: {lastUpdated.toLocaleTimeString()}
+      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
+        <span>Source: {currentSource}</span>
+        <span>Last sync: {lastUpdated.toLocaleTimeString()}</span>
       </div>
     </div>
   );

@@ -42,15 +42,35 @@ public class FlightServiceImpl implements FlightService {
     private final FlightStatusHistoryRepository flightStatusHistoryRepository;
     private final FlightStateMachine flightStateMachine;
     private final FareCalculationService fareCalculationService;
+    private final com.smarttravel.modules.flight.provider.FlightDataProviderRegistry providerRegistry;
+    private final com.smarttravel.modules.flight.provider.aviationstack.AviationstackClient aviationstackClient;
+    private final com.smarttravel.modules.flight.provider.aviationstack.AviationstackDataNormalizer normalizer;
+    private final com.smarttravel.modules.flight.config.AviationstackProperties aviationstackProperties;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public FlightServiceImpl(FlightRepository flightRepository,
+                             FlightStatusHistoryRepository flightStatusHistoryRepository,
+                             FlightStateMachine flightStateMachine,
+                             FareCalculationService fareCalculationService,
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.FlightDataProviderRegistry providerRegistry,
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.aviationstack.AviationstackClient aviationstackClient,
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.aviationstack.AviationstackDataNormalizer normalizer,
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.config.AviationstackProperties aviationstackProperties) {
+        this.flightRepository = flightRepository;
+        this.flightStatusHistoryRepository = flightStatusHistoryRepository;
+        this.flightStateMachine = flightStateMachine;
+        this.fareCalculationService = fareCalculationService;
+        this.providerRegistry = providerRegistry;
+        this.aviationstackClient = aviationstackClient;
+        this.normalizer = normalizer;
+        this.aviationstackProperties = aviationstackProperties;
+    }
 
     public FlightServiceImpl(FlightRepository flightRepository,
                              FlightStatusHistoryRepository flightStatusHistoryRepository,
                              FlightStateMachine flightStateMachine,
                              FareCalculationService fareCalculationService) {
-        this.flightRepository = flightRepository;
-        this.flightStatusHistoryRepository = flightStatusHistoryRepository;
-        this.flightStateMachine = flightStateMachine;
-        this.fareCalculationService = fareCalculationService;
+        this(flightRepository, flightStatusHistoryRepository, flightStateMachine, fareCalculationService, null, null, null, null);
     }
 
     @Override
@@ -248,5 +268,39 @@ public class FlightServiceImpl implements FlightService {
                 .toList();
 
         return PageResponse.of(flightResponses, flightPage);
+    }
+
+    @Override
+    public com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot getLiveFlightStatus(String flightNumber) {
+        String normalizedFlightNumber = flightNumber != null ? flightNumber.toUpperCase().trim() : "";
+        log.info("Fetching live operational status for flight: {}", normalizedFlightNumber);
+
+        if (providerRegistry != null) {
+            com.smarttravel.modules.flight.provider.FlightStatusProvider provider = providerRegistry.getActiveProvider();
+            var snapshotOpt = provider.fetchLatestStatus(normalizedFlightNumber, null);
+            if (snapshotOpt.isPresent()) {
+                return snapshotOpt.get();
+            }
+        }
+
+        // Fallback to local MongoDB lookup
+        return flightRepository.findByFlightNumber(normalizedFlightNumber).map(f -> {
+            String term = (f.getDepartureAirport() != null && f.getDepartureAirport().getTerminal() != null)
+                    ? f.getDepartureAirport().getTerminal()
+                    : "T3";
+            String gate = "Gate " + ((Math.abs(f.getFlightNumber().hashCode()) % 15) + 1);
+
+            return new com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot(
+                    f.getFlightNumber(),
+                    f.getStatus(),
+                    f.getDelayMinutes(),
+                    f.getDelayReason(),
+                    f.getRevisedDepartureTime(),
+                    f.getEstimatedArrival(),
+                    gate,
+                    term,
+                    "SMARTTRAVEL_LOCAL_DB"
+            );
+        }).orElseThrow(() -> new ResourceNotFoundException("Flight", "flightNumber", flightNumber));
     }
 }

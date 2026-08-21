@@ -57,6 +57,21 @@ export interface Flight {
   revisedArrivalTime?: string;
   cancellationReason?: string;
   createdAt?: string;
+  dataSource?: 'LIVE' | 'CACHED' | 'SIMULATED' | string;
+  gate?: string;
+  terminal?: string;
+}
+
+export interface LiveFlightStatusSnapshot {
+  flightNumber: string;
+  status: FlightStatus;
+  delayMinutes?: number;
+  delayReason?: string;
+  revisedDepartureTime?: string;
+  revisedArrivalTime?: string;
+  gate?: string;
+  terminal?: string;
+  updatedSource?: string;
 }
 
 export interface FlightSearchParams {

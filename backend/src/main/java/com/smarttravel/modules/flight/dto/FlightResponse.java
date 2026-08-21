@@ -86,6 +86,15 @@ public class FlightResponse {
     @Schema(description = "Last update timestamp", example = "2026-08-18T10:00:00Z")
     private Instant updatedAt;
 
+    @Schema(description = "Data provenance source", example = "LIVE")
+    private String dataSource;
+
+    @Schema(description = "Departure gate", example = "Gate 12")
+    private String gate;
+
+    @Schema(description = "Departure terminal", example = "T3")
+    private String terminal;
+
     public FlightResponse() {
     }
 
@@ -282,12 +291,35 @@ public class FlightResponse {
             return this;
         }
 
+        private String dataSource;
+        private String gate;
+        private String terminal;
+
+        public Builder dataSource(String dataSource) {
+            this.dataSource = dataSource;
+            return this;
+        }
+
+        public Builder gate(String gate) {
+            this.gate = gate;
+            return this;
+        }
+
+        public Builder terminal(String terminal) {
+            this.terminal = terminal;
+            return this;
+        }
+
         public FlightResponse build() {
-            return new FlightResponse(id, flightNumber, airline, airlineCode, departureAirport,
+            FlightResponse resp = new FlightResponse(id, flightNumber, airline, airlineCode, departureAirport,
                     arrivalAirport, departureTime, arrivalTime, durationMinutes, aircraftModel,
                     basePrice, totalSeats, availableSeats, cabinClasses, cabinInventories, selectedCabin, status,
                     delayMinutes, delayReason, revisedDepartureTime, estimatedArrival, lastStatusUpdated,
                     active, createdAt, updatedAt);
+            resp.setDataSource(dataSource);
+            resp.setGate(gate);
+            resp.setTerminal(terminal);
+            return resp;
         }
     }
 
@@ -489,5 +521,29 @@ public class FlightResponse {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public String getGate() {
+        return gate;
+    }
+
+    public void setGate(String gate) {
+        this.gate = gate;
+    }
+
+    public String getTerminal() {
+        return terminal;
+    }
+
+    public void setTerminal(String terminal) {
+        this.terminal = terminal;
     }
 }

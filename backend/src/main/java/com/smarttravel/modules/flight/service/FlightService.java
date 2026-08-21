@@ -24,4 +24,6 @@ public interface FlightService {
     FlightResponse getFlightByFlightNumber(String flightNumber);
 
     PageResponse<FlightResponse> searchFlights(FlightSearchCriteria criteria);
+
+    com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot getLiveFlightStatus(String flightNumber);
 }

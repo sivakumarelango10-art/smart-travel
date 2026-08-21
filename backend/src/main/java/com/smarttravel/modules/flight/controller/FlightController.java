@@ -64,4 +64,17 @@ public class FlightController {
         FlightResponse response = flightService.getFlightByFlightNumber(flightNumber);
         return ResponseEntity.ok(ApiResponse.success("Flight retrieved successfully", response));
     }
+
+    @GetMapping({"/live/{flightNumber}", "/{flightNumber}/live"})
+    @Operation(summary = "Get Live Real-time Flight Status", description = "Retrieves live operational status snapshot (e.g. DELAYED, ON_TIME, BOARDING, ARRIVED) with terminal, gate, and data provenance from active provider (Aviationstack or internal simulation).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Live status snapshot retrieved"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Flight not found")
+    })
+    public ResponseEntity<ApiResponse<com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot>> getLiveFlightStatus(
+            @Parameter(description = "IATA/ICAO Flight number", example = "AI-101")
+            @PathVariable String flightNumber) {
+        var snapshot = flightService.getLiveFlightStatus(flightNumber);
+        return ResponseEntity.ok(ApiResponse.success("Live flight status retrieved successfully", snapshot));
+    }
 }

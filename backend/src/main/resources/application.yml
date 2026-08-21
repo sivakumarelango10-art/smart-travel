@@ -32,6 +32,16 @@ app:
 
 smarttravel:
   flight:
+    aviationstack:
+      api-key: ${AVIATIONSTACK_API_KEY:}
+      base-url: ${AVIATIONSTACK_BASE_URL:https://api.aviationstack.com}
+      provider: ${FLIGHT_DATA_PROVIDER:MOCK}
+      search-cache-seconds: ${AVIATIONSTACK_SEARCH_CACHE_SECONDS:180}
+      flight-cache-seconds: ${AVIATIONSTACK_FLIGHT_CACHE_SECONDS:60}
+      monthly-request-limit: ${AVIATIONSTACK_MONTHLY_REQUEST_LIMIT:100}
+      connect-timeout-ms: 5000
+      read-timeout-ms: 5000
+      enabled: ${AVIATIONSTACK_ENABLED:true}
     simulation:
       enabled: ${FLIGHT_SIMULATION_ENABLED:false}
       interval-ms: ${FLIGHT_SIMULATION_INTERVAL_MS:5000}

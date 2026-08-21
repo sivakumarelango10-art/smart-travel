@@ -17,6 +17,8 @@ public interface TrackedFlightRepository extends MongoRepository<TrackedFlight, 
 
     List<TrackedFlight> findByFlightIdAndActiveTrue(String flightId);
 
+    List<TrackedFlight> findByActiveTrue();
+
     boolean existsByUserIdAndFlightId(String userId, String flightId);
 
     void deleteByUserIdAndFlightId(String userId, String flightId);
