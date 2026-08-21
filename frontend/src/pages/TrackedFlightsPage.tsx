@@ -88,11 +88,11 @@ export const TrackedFlightsPage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-slate-800">
           <div>
-            <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-1">
-              <Radio className="w-4 h-4 animate-pulse" />
+            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
+              <Radio className="w-4 h-4 text-emerald-400" />
               <span>Real-Time Flight Tracker</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-white">Live Tracked Flights</h1>
+            <h1 className="text-3xl font-bold text-white">Live Tracked Flights</h1>
             <p className="text-sm text-slate-400 mt-1">
               Receive instant WebSocket & Web Push updates on departures, arrivals, delays, and schedule changes.
             </p>
@@ -102,14 +102,14 @@ export const TrackedFlightsPage: React.FC = () => {
             <button
               onClick={fetchTracked}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-sm font-medium text-slate-300 rounded-xl transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-sm font-medium text-slate-300 rounded-lg transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
             <Link
               to="/flights"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
             >
               <Search className="w-4 h-4" />
               Find More Flights
@@ -118,9 +118,9 @@ export const TrackedFlightsPage: React.FC = () => {
         </div>
 
         {/* Browser Web Push Notification Banner */}
-        <div className="mt-6 p-4 bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-6 p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pushSubscribed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}`}>
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${pushSubscribed ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'}`}>
               {pushSubscribed ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
             </div>
             <div>
@@ -145,10 +145,10 @@ export const TrackedFlightsPage: React.FC = () => {
             <button
               onClick={handleTogglePush}
               disabled={pushLoading}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-md ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
                 pushSubscribed
                   ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                  : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
               {pushLoading
@@ -168,7 +168,7 @@ export const TrackedFlightsPage: React.FC = () => {
         )}
 
         {error && (
-          <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-2xl text-sm flex items-center gap-2">
+          <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl text-sm flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
             {error}
           </div>
@@ -178,12 +178,12 @@ export const TrackedFlightsPage: React.FC = () => {
         <div className="mt-8 space-y-6">
           {loading ? (
             <div className="py-20 text-center text-slate-500">
-              <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               Loading your live flight trackers...
             </div>
           ) : trackedFlights.length === 0 ? (
-            <div className="py-16 text-center bg-slate-900/40 border border-slate-800/80 rounded-2xl p-8">
-              <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto text-slate-500 mb-3">
+            <div className="py-16 text-center bg-slate-900 border border-slate-800 rounded-xl p-8">
+              <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center mx-auto text-slate-500 mb-3">
                 <Plane className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-white">No Flights Currently Tracked</h3>
@@ -192,7 +192,7 @@ export const TrackedFlightsPage: React.FC = () => {
               </p>
               <Link
                 to="/flights"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg"
               >
                 Search Flights
                 <ArrowRight className="w-4 h-4" />
@@ -231,7 +231,7 @@ export const TrackedFlightsPage: React.FC = () => {
 
                     <Link
                       to={`/book/${tf.flightId}`}
-                      className="flex items-center gap-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                      className="flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
                     >
                       Book This Flight
                       <ArrowRight className="w-3.5 h-3.5" />

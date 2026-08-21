@@ -95,11 +95,11 @@ export const MyBookingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center font-black">
+          <div className="w-12 h-12 rounded-xl bg-slate-800 text-blue-400 border border-slate-700 flex items-center justify-center">
             <BookmarkCheck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">My Flight Bookings</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">My Flight Bookings</h1>
             <p className="text-xs text-slate-400 mt-0.5">Manage upcoming itineraries, boarding passes, and refund claims</p>
           </div>
         </div>
@@ -107,15 +107,15 @@ export const MyBookingsPage: React.FC = () => {
         <button
           onClick={fetchBookings}
           disabled={loading}
-          className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-2 border border-slate-700 transition shadow-sm"
+          className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-sky-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-400' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
         {[
           { id: 'ALL', label: 'All Trips', count: bookings.length },
           {
@@ -137,15 +137,15 @@ export const MyBookingsPage: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
               activeTab === tab.id
-                ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
+                ? 'bg-blue-600 text-white'
                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
             }`}
           >
             <span>{tab.label}</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                 activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
@@ -163,22 +163,22 @@ export const MyBookingsPage: React.FC = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-3 shadow-xl">
+        <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-3 shadow-lg">
           <p className="text-xs text-rose-400 font-semibold">{error}</p>
           <button
             onClick={fetchBookings}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold transition"
+            className="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-200 text-xs font-semibold transition"
           >
             Retry
           </button>
         </div>
       ) : filteredBookings.length === 0 ? (
-        <div className="p-12 sm:p-16 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-4 shadow-xl">
-          <div className="w-16 h-16 rounded-3xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center mx-auto shadow-lg">
-            <Plane className="w-8 h-8 transform -rotate-45" />
+        <div className="p-12 sm:p-16 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-4 shadow-lg">
+          <div className="w-14 h-14 rounded-2xl bg-slate-800 text-slate-400 border border-slate-700 flex items-center justify-center mx-auto">
+            <Plane className="w-7 h-7 transform -rotate-45" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-extrabold text-white text-lg">No Bookings Found</h3>
+            <h3 className="font-bold text-white text-lg">No Bookings Found</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               You don't have any reservations under "{activeTab.toLowerCase()}". Ready to plan your next journey?
             </p>
@@ -186,7 +186,7 @@ export const MyBookingsPage: React.FC = () => {
           <div className="pt-2">
             <Link
               to="/flights"
-              className="inline-block px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-xs shadow-xl shadow-sky-500/25 transition-all"
+              className="inline-block px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition"
             >
               Book a Flight
             </Link>
@@ -315,7 +315,7 @@ export const MyBookingsPage: React.FC = () => {
                     {isConfirmed && (
                       <Link
                         to={`/check-in/${b.id}`}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 shadow-lg shadow-sky-500/20 transition"
+                        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition"
                       >
                         <span>Online Check-In</span>
                         <ArrowRight className="w-4 h-4" />
@@ -325,7 +325,7 @@ export const MyBookingsPage: React.FC = () => {
                     {isCheckedIn && (
                       <Link
                         to={`/boarding-pass/${b.id}`}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black flex items-center gap-1.5 shadow-lg shadow-indigo-500/20 transition"
+                        className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 transition"
                       >
                         <span>Boarding Pass</span>
                         <ArrowRight className="w-4 h-4" />

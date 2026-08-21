@@ -77,8 +77,8 @@ export const HotelDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 py-24 text-center text-slate-400">
-        <div className="w-10 h-10 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-sm font-semibold">Retrieving luxury property showcase...</p>
+        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-sm font-semibold">Retrieving property details...</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export const HotelDetailsPage: React.FC = () => {
         <div>
           <Link
             to="/hotels"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to All Hotels
@@ -127,32 +127,32 @@ export const HotelDetailsPage: React.FC = () => {
 
         {/* 1. HERO PHOTO GALLERY SHOWCASE */}
         <section className="space-y-3">
-          <div className="relative h-80 sm:h-[450px] rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900">
+          <div className="relative h-80 sm:h-[450px] rounded-2xl overflow-hidden border border-slate-800 shadow-xl bg-slate-900">
             <ImageWithFallback
               src={photos[activePhotoIndex] || photos[0]}
               alt={`${hotel.name} featured photo`}
               containerClassName="w-full h-full"
-              className="w-full h-full object-cover transition-all duration-500"
+              className="w-full h-full object-cover transition-all duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent p-6 sm:p-8 flex flex-col justify-between pointer-events-none">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-amber-500/20 backdrop-blur-md shadow-lg pointer-events-auto">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-md pointer-events-auto">
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
                   {hotel.starRating}-Star Luxury Property
                 </span>
                 {hotel.nearestAirportCode && (
-                  <span className="text-xs font-mono text-cyan-300 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-cyan-500/30 backdrop-blur-md shadow-lg pointer-events-auto">
+                  <span className="text-xs font-mono text-slate-200 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-700 shadow-md pointer-events-auto">
                     Near {hotel.nearestAirportCode} Airport
                   </span>
                 )}
               </div>
 
               <div>
-                <h1 className="text-3xl sm:text-5xl font-black text-white drop-shadow-lg tracking-tight">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white drop-shadow-lg tracking-tight">
                   {hotel.name}
                 </h1>
-                <div className="flex items-center gap-2 text-sm text-slate-200 mt-2 drop-shadow">
-                  <MapPin className="w-4 h-4 text-cyan-400 shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-slate-200 mt-2">
+                  <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
                   <span>
                     {hotel.address?.line1}, {hotel.address?.city}, {hotel.address?.state}, {hotel.address?.country}
                   </span>
@@ -169,9 +169,9 @@ export const HotelDetailsPage: React.FC = () => {
                   key={idx}
                   type="button"
                   onClick={() => setActivePhotoIndex(idx)}
-                  className={`relative w-24 h-16 sm:w-32 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ${
+                  className={`relative w-24 h-16 sm:w-32 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition duration-150 ${
                     activePhotoIndex === idx
-                      ? 'border-cyan-400 scale-105 shadow-lg shadow-cyan-500/20'
+                      ? 'border-blue-500 scale-105'
                       : 'border-slate-800 opacity-60 hover:opacity-100'
                   }`}
                 >
@@ -213,7 +213,7 @@ export const HotelDetailsPage: React.FC = () => {
 
               <div className="mt-4 pt-3 border-t border-slate-800 text-left">
                 <span className="text-[10px] text-slate-500 block">Starting Nightly Rate</span>
-                <span className="text-2xl font-black text-cyan-400">
+                <span className="text-2xl font-bold text-white">
                   ₹{hotel.baseNightlyRate?.toLocaleString()}
                 </span>
                 <span className="text-xs text-slate-400"> / night</span>
@@ -222,17 +222,17 @@ export const HotelDetailsPage: React.FC = () => {
           </div>
 
           {/* Amenities Grid */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80">
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">
+          <div className="mt-8 pt-6 border-t border-slate-800">
+            <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
               Included Amenities & Perks
             </h3>
             <div className="flex flex-wrap gap-2">
               {hotel.amenities?.map((amenity) => (
                 <span
                   key={amenity}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs font-medium text-slate-200"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium text-slate-200"
                 >
-                  <Check className="w-3.5 h-3.5 text-cyan-400" />
+                  <Check className="w-3.5 h-3.5 text-blue-400" />
                   {amenity}
                 </span>
               ))}
@@ -252,8 +252,8 @@ export const HotelDetailsPage: React.FC = () => {
         <section>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-                <BedDouble className="w-6 h-6 text-cyan-400" />
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <BedDouble className="w-6 h-6 text-blue-400" />
                 Select Your Room Category
               </h2>
               <p className="text-xs text-slate-400 mt-1">
@@ -270,9 +270,9 @@ export const HotelDetailsPage: React.FC = () => {
               return (
                 <div
                   key={room.id}
-                  className={`rounded-2xl border flex flex-col justify-between overflow-hidden transition-all duration-200 ${
+                  className={`rounded-xl border flex flex-col justify-between overflow-hidden transition duration-200 ${
                     isAvailable
-                      ? 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 shadow-xl'
+                      ? 'bg-slate-900 hover:bg-slate-900/90 border-slate-800 hover:border-slate-700 shadow-md'
                       : 'bg-slate-950/40 border-slate-900 opacity-60'
                   }`}
                 >
@@ -280,11 +280,11 @@ export const HotelDetailsPage: React.FC = () => {
                     {/* Room Category Header */}
                     <div className="p-5 border-b border-slate-800 bg-slate-950/40">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                           {room.category}
                         </span>
                         <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          className={`text-xs font-medium px-2 py-0.5 rounded ${
                             isAvailable
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
@@ -298,7 +298,7 @@ export const HotelDetailsPage: React.FC = () => {
                     </div>
 
                     {/* Room Specs */}
-                    <div className="p-5 space-y-3 text-xs border-b border-slate-800/60">
+                    <div className="p-5 space-y-3 text-xs border-b border-slate-800">
                       <div className="grid grid-cols-2 gap-2 text-slate-300">
                         <div className="flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5 text-slate-500" />
@@ -315,7 +315,7 @@ export const HotelDetailsPage: React.FC = () => {
                           </div>
                         )}
                         {room.breakfastIncluded && (
-                          <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                          <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
                             <Coffee className="w-3.5 h-3.5" />
                             <span>Free Breakfast</span>
                           </div>
@@ -327,7 +327,7 @@ export const HotelDetailsPage: React.FC = () => {
                         {room.amenities?.map((a) => (
                           <span
                             key={a}
-                            className="text-[10px] font-medium text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded"
+                            className="text-[10px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded"
                           >
                             {a}
                           </span>
@@ -340,7 +340,7 @@ export const HotelDetailsPage: React.FC = () => {
                   <div className="p-5 bg-slate-950/60 flex items-center justify-between gap-4">
                     <div>
                       <div className="text-[10px] text-slate-500">Nightly Rate</div>
-                      <div className="text-xl font-black text-cyan-400">
+                      <div className="text-xl font-bold text-white">
                         ₹{room.totalNightlyRate ? room.totalNightlyRate.toLocaleString() : room.nightlyRate?.toLocaleString()}
                       </div>
                       <div className="text-[10px] text-slate-500">incl. ₹{room.taxAmount?.toLocaleString() || 0} taxes</div>
@@ -350,9 +350,9 @@ export const HotelDetailsPage: React.FC = () => {
                       type="button"
                       disabled={!isAvailable || isHoldingThis}
                       onClick={() => handleHoldRoom(room.id)}
-                      className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-lg ${
+                      className={`px-4 py-2.5 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition ${
                         isAvailable
-                          ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-500/20 active:scale-95'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                       }`}
                     >

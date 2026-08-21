@@ -289,14 +289,14 @@ export const HomePage: React.FC = () => {
 
         {/* Hero Top Badges & Destination Tag */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-white/15 text-sky-300 text-xs font-bold tracking-wide backdrop-blur-xl shadow-lg">
-            <Sparkles className="w-4 h-4 text-sky-400" />
-            <span>High-Precision Real-Time Flight Engine</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-200 text-xs font-medium tracking-wide backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Real-Time Flight Search & Live Tracking</span>
           </div>
 
           {/* Current Destination Pill */}
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-white/15 backdrop-blur-xl text-xs font-bold text-white shadow-lg">
-            <MapPin className="w-3.5 h-3.5 text-accent-500" />
+          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 backdrop-blur-md text-xs font-medium text-slate-200">
+            <MapPin className="w-3.5 h-3.5 text-amber-500" />
             <span>Featured: {currentHero.name}, {currentHero.country}</span>
           </div>
         </div>
@@ -304,13 +304,13 @@ export const HomePage: React.FC = () => {
         {/* Hero Main Content */}
         <div className="relative z-10 my-auto py-8 text-center space-y-6 max-w-4xl mx-auto">
           <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] drop-shadow-lg">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
               Explore the World with{' '}
-              <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-accent-400 bg-clip-text text-transparent">
+              <span className="text-blue-400">
                 SmartTravel
               </span>
             </h1>
-            <p className="text-slate-200 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-md">
+            <p className="text-slate-300 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto font-normal leading-relaxed">
               {currentHero.tagline}
             </p>
           </div>
@@ -322,15 +322,15 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Hero Bottom Carousel Controls */}
-        <div className="relative z-10 flex items-center justify-between pt-4 border-t border-white/10">
+        <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-800/80">
           <div className="flex items-center gap-2">
             {HERO_DESTINATIONS.map((d, i) => (
               <button
                 key={d.name}
                 type="button"
                 onClick={() => setCurrentHeroIdx(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === currentHeroIdx ? 'w-8 bg-sky-400 shadow-md shadow-sky-400/50' : 'w-2 bg-white/30 hover:bg-white/60'
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  i === currentHeroIdx ? 'w-6 bg-white' : 'w-2 bg-slate-600 hover:bg-slate-400'
                 }`}
                 aria-label={`Go to slide ${d.name}`}
               />
@@ -345,7 +345,7 @@ export const HomePage: React.FC = () => {
                   (prev) => (prev - 1 + HERO_DESTINATIONS.length) % HERO_DESTINATIONS.length
                 )
               }
-              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/15 text-white transition backdrop-blur-md shadow-md"
+              className="p-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-white transition backdrop-blur-md"
               aria-label="Previous destination"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -353,7 +353,7 @@ export const HomePage: React.FC = () => {
             <button
               type="button"
               onClick={() => setCurrentHeroIdx((prev) => (prev + 1) % HERO_DESTINATIONS.length)}
-              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/15 text-white transition backdrop-blur-md shadow-md"
+              className="p-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-white transition backdrop-blur-md"
               aria-label="Next destination"
             >
               <ChevronRight className="w-4 h-4" />

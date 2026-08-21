@@ -45,11 +45,11 @@ export const RecommendationsSection: React.FC = () => {
         {/* Section Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-1">
               <Sparkles className="w-4 h-4" />
-              <span>Smart Travel Intelligence</span>
+              <span>Smart Travel Recommendations</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">
               {isAuthenticated ? 'Handpicked For You' : 'Trending Destinations & Top Deals'}
             </h2>
             <p className="text-sm text-slate-400 mt-1">
@@ -60,12 +60,12 @@ export const RecommendationsSection: React.FC = () => {
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center p-1 bg-slate-900/80 border border-slate-800 rounded-xl">
+          <div className="flex items-center p-1 bg-slate-900 border border-slate-800 rounded-lg">
             <button
               onClick={() => setFilter('ALL')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
                 filter === 'ALL'
-                  ? 'bg-cyan-500/20 text-cyan-400 shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -73,9 +73,9 @@ export const RecommendationsSection: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('FLIGHTS')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
                 filter === 'FLIGHTS'
-                  ? 'bg-cyan-500/20 text-cyan-400 shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -84,9 +84,9 @@ export const RecommendationsSection: React.FC = () => {
             </button>
             <button
               onClick={() => setFilter('HOTELS')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition flex items-center gap-1.5 ${
                 filter === 'HOTELS'
-                  ? 'bg-cyan-500/20 text-cyan-400 shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -102,7 +102,7 @@ export const RecommendationsSection: React.FC = () => {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-64 bg-slate-900/60 border border-slate-800 rounded-2xl animate-pulse p-4 flex flex-col justify-between"
+                className="h-64 bg-slate-900 border border-slate-800 rounded-xl animate-pulse p-4 flex flex-col justify-between"
               >
                 <div className="h-6 bg-slate-800 rounded w-1/2" />
                 <div className="space-y-2">
@@ -126,31 +126,31 @@ export const RecommendationsSection: React.FC = () => {
               return (
                 <div
                   key={item.id}
-                  className="group relative bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-cyan-500/5 backdrop-blur-md"
+                  className="group relative bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 flex flex-col justify-between transition duration-200"
                 >
                   <div>
                     {/* Top Row: Type & Reason Badge */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700/50">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
                         {isFlight ? (
-                          <Plane className="w-3 h-3 text-cyan-400" />
+                          <Plane className="w-3 h-3 text-blue-400" />
                         ) : isHotel ? (
-                          <HotelIcon className="w-3 h-3 text-indigo-400" />
+                          <HotelIcon className="w-3 h-3 text-blue-400" />
                         ) : (
-                          <Compass className="w-3 h-3 text-amber-400" />
+                          <Compass className="w-3 h-3 text-blue-400" />
                         )}
                         {item.type}
                       </span>
 
                       {item.reasonLabel && (
-                        <span className="text-[10px] font-medium text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20 truncate max-w-[140px]">
+                        <span className="text-[10px] font-medium text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 truncate max-w-[140px]">
                           {item.reasonLabel}
                         </span>
                       )}
                     </div>
 
                     {/* Title & Subtitle */}
-                    <h3 className="font-bold text-white text-base group-hover:text-cyan-300 transition-colors line-clamp-1">
+                    <h3 className="font-bold text-white text-base transition-colors line-clamp-1">
                       {item.title}
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 line-clamp-1">
@@ -173,7 +173,7 @@ export const RecommendationsSection: React.FC = () => {
                         <AirlineLogo airline={item.airline} size="xs" />
                         <span className="font-medium text-slate-300">{item.airline}</span>
                         {item.fromCode && item.toCode && (
-                          <span className="text-[11px] font-mono text-cyan-400/80 ml-auto bg-cyan-500/10 px-1.5 py-0.5 rounded">
+                          <span className="text-[11px] font-mono text-slate-400 ml-auto bg-slate-800 px-1.5 py-0.5 rounded">
                             {item.fromCode} → {item.toCode}
                           </span>
                         )}
@@ -182,17 +182,17 @@ export const RecommendationsSection: React.FC = () => {
                   </div>
 
                   {/* Price & Action */}
-                  <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                  <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
                     <div>
                       <span className="text-[10px] text-slate-500 block">Starting from</span>
-                      <span className="text-base font-extrabold text-white">
+                      <span className="text-base font-bold text-white">
                         {item.priceLabel || (item.price ? `₹${item.price.toLocaleString()}` : 'Check Price')}
                       </span>
                     </div>
 
                     <Link
                       to={linkTo}
-                      className="p-2 bg-slate-800 group-hover:bg-cyan-500 group-hover:text-slate-950 text-slate-300 rounded-xl transition-all shadow-sm"
+                      className="p-2 bg-slate-800 group-hover:bg-blue-600 group-hover:text-white text-slate-300 rounded-lg transition"
                       aria-label={`Explore ${item.title}`}
                     >
                       <ArrowRight className="w-4 h-4" />

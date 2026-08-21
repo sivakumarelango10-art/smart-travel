@@ -95,42 +95,42 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
 
   return (
     <div className={`w-full ${compact ? '' : 'max-w-5xl mx-auto'}`}>
-      {/* Quick Travel Module Tabs (Only on full hero widget) */}
+        {/* Quick Travel Module Tabs (Only on full hero widget) */}
       {!compact && (
         <div className="flex items-center justify-center sm:justify-start gap-2 mb-3 overflow-x-auto pb-1 px-1">
-          <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-500/30 shrink-0">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-medium text-xs shadow-sm shrink-0">
             <Plane className="w-4 h-4" />
             <span>Flights</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900/80 text-slate-400 hover:text-slate-200 text-xs font-semibold border border-white/5 backdrop-blur-md cursor-not-allowed shrink-0">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-medium border border-slate-800 cursor-not-allowed shrink-0">
             <Building2 className="w-4 h-4 text-slate-500" />
             <span>Hotels</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900/80 text-slate-400 hover:text-slate-200 text-xs font-semibold border border-white/5 backdrop-blur-md cursor-not-allowed shrink-0">
+          <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-medium border border-slate-800 cursor-not-allowed shrink-0">
             <Palmtree className="w-4 h-4 text-slate-500" />
             <span>Holidays</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900/80 text-slate-400 hover:text-slate-200 text-xs font-semibold border border-white/5 backdrop-blur-md cursor-not-allowed shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-medium border border-slate-800 cursor-not-allowed shrink-0">
             <Train className="w-4 h-4 text-slate-500" />
             <span>Trains</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900/80 text-slate-400 hover:text-slate-200 text-xs font-semibold border border-white/5 backdrop-blur-md cursor-not-allowed shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-medium border border-slate-800 cursor-not-allowed shrink-0">
             <Bus className="w-4 h-4 text-slate-500" />
             <span>Buses</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900/80 text-slate-400 hover:text-slate-200 text-xs font-semibold border border-white/5 backdrop-blur-md cursor-not-allowed shrink-0">
+          <div className="hidden lg:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-400 text-xs font-medium border border-slate-800 cursor-not-allowed shrink-0">
             <Car className="w-4 h-4 text-slate-500" />
             <span>Cabs</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-500 font-bold">Soon</span>
           </div>
         </div>
       )}
@@ -138,14 +138,14 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
       {/* Main Search Panel */}
       <form
         onSubmit={handleSubmit}
-        className={`rounded-3xl ${
+        className={`rounded-2xl ${
           compact
-            ? 'bg-slate-900/95 border border-slate-800 p-4 sm:p-5 shadow-xl backdrop-blur-xl'
+            ? 'bg-slate-900 border border-slate-800 p-4 sm:p-5 shadow-lg'
             : 'glass-hero-search p-5 sm:p-7'
         } space-y-5`}
       >
         {/* Top Options Bar (Trip Type, Cabin, Passengers) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
           {/* Trip Type Selector */}
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer group">
@@ -155,9 +155,9 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
                 value="ONE_WAY"
                 checked={tripType === 'ONE_WAY'}
                 onChange={() => setTripType('ONE_WAY')}
-                className="w-4 h-4 text-sky-500 focus:ring-sky-500 focus:ring-offset-0 bg-slate-800 border-slate-700"
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 bg-slate-800 border-slate-700"
               />
-              <span className={`text-xs font-bold transition ${tripType === 'ONE_WAY' ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}>
+              <span className={`text-xs font-medium transition ${tripType === 'ONE_WAY' ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}>
                 One Way
               </span>
             </label>
@@ -169,9 +169,9 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
                 value="ROUND_TRIP"
                 checked={tripType === 'ROUND_TRIP'}
                 onChange={() => setTripType('ROUND_TRIP')}
-                className="w-4 h-4 text-sky-500 focus:ring-sky-500 focus:ring-offset-0 bg-slate-800 border-slate-700"
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 bg-slate-800 border-slate-700"
               />
-              <span className={`text-xs font-bold transition ${tripType === 'ROUND_TRIP' ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}>
+              <span className={`text-xs font-medium transition ${tripType === 'ROUND_TRIP' ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}>
                 Round Trip
               </span>
             </label>
@@ -184,7 +184,7 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
               <select
                 value={cabinClass}
                 onChange={(e) => setCabinClass(e.target.value as CabinClass)}
-                className="bg-slate-900/90 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-2 pr-7 focus:outline-none focus:border-sky-500 transition appearance-none cursor-pointer"
+                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg px-3 py-2 pr-7 focus:outline-none focus:border-blue-500 transition appearance-none cursor-pointer"
               >
                 <option value="ECONOMY">Economy</option>
                 <option value="PREMIUM_ECONOMY">Premium Economy</option>
@@ -195,12 +195,12 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
             </div>
 
             {/* Passengers Count */}
-            <div className="relative flex items-center bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
-              <Users className="w-3.5 h-3.5 text-sky-400 mr-2" />
+            <div className="relative flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-200">
+              <Users className="w-3.5 h-3.5 text-slate-400 mr-2" />
               <select
                 value={passengers}
                 onChange={(e) => setPassengers(parseInt(e.target.value, 10))}
-                className="bg-transparent text-slate-200 focus:outline-none cursor-pointer pr-4 appearance-none font-semibold"
+                className="bg-transparent text-slate-200 focus:outline-none cursor-pointer pr-4 appearance-none font-medium"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                   <option key={num} value={num} className="bg-slate-900">
@@ -214,8 +214,8 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
         </div>
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-            <span>⚠️ {error}</span>
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium flex items-center gap-2 animate-fade-in">
+            <span>{error}</span>
           </div>
         )}
 
@@ -223,22 +223,22 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch">
           {/* FROM AIRPORT */}
           <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3 relative' : 'md:col-span-4 relative'}>
-            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-sky-500/50 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all duration-200 group cursor-pointer relative flex flex-col justify-between">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
-                <span className="flex items-center gap-1.5 uppercase tracking-wider font-bold text-slate-400 group-hover:text-sky-300 transition-colors">
-                  <PlaneTakeoff className="w-3.5 h-3.5 text-sky-400" />
+            <div className="h-full p-3.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all duration-150 group cursor-pointer relative flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 mb-1.5">
+                <span className="flex items-center gap-1.5 uppercase tracking-wider font-semibold text-slate-400 group-hover:text-slate-300 transition-colors">
+                  <PlaneTakeoff className="w-3.5 h-3.5 text-blue-400" />
                   From
                 </span>
-                <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-400 font-black border border-sky-500/25">
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-blue-400 font-bold border border-slate-700">
                   {selectedOriginAirport?.code}
                 </span>
               </div>
 
               <div>
-                <div className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-sky-200 transition-colors truncate">
+                <div className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-slate-100 transition-colors truncate">
                   {selectedOriginAirport?.city}
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                <p className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
                   {selectedOriginAirport?.name}
                 </p>
               </div>
@@ -268,7 +268,7 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
               type="button"
               onClick={handleSwap}
               title="Swap From and To"
-              className="w-10 h-10 rounded-2xl bg-slate-800/90 hover:bg-sky-500 text-sky-400 hover:text-white border border-slate-700/80 hover:border-sky-400 transition-all duration-300 transform hover:rotate-180 hover:scale-105 active:scale-95 shadow-lg shadow-black/40 flex items-center justify-center z-10"
+              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition duration-150 flex items-center justify-center z-10"
             >
               <ArrowLeftRight className="w-4 h-4" />
             </button>
@@ -276,22 +276,22 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
 
           {/* TO AIRPORT */}
           <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3 relative' : 'md:col-span-4 relative'}>
-            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-indigo-500/50 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all duration-200 group cursor-pointer relative flex flex-col justify-between">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mb-1.5">
-                <span className="flex items-center gap-1.5 uppercase tracking-wider font-bold text-slate-400 group-hover:text-indigo-300 transition-colors">
-                  <PlaneLanding className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="h-full p-3.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all duration-150 group cursor-pointer relative flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 mb-1.5">
+                <span className="flex items-center gap-1.5 uppercase tracking-wider font-semibold text-slate-400 group-hover:text-slate-300 transition-colors">
+                  <PlaneLanding className="w-3.5 h-3.5 text-blue-400" />
                   To
                 </span>
-                <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 font-black border border-indigo-500/25">
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-800 text-blue-400 font-bold border border-slate-700">
                   {selectedDestAirport?.code}
                 </span>
               </div>
 
               <div>
-                <div className="text-xl sm:text-2xl font-black text-white tracking-tight group-hover:text-indigo-200 transition-colors truncate">
+                <div className="text-xl sm:text-2xl font-bold text-white tracking-tight group-hover:text-slate-100 transition-colors truncate">
                   {selectedDestAirport?.city}
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                <p className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
                   {selectedDestAirport?.name}
                 </p>
               </div>
@@ -317,17 +317,17 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
 
           {/* DEPARTURE DATE */}
           <div className={tripType === 'ROUND_TRIP' ? 'md:col-span-3' : 'md:col-span-3'}>
-            <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-sky-500/50 focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all duration-200 relative flex flex-col justify-between cursor-pointer group">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1.5">
-                <Calendar className="w-3.5 h-3.5 text-sky-400" />
-                <span className="uppercase tracking-wider font-bold group-hover:text-sky-300 transition-colors">Departure</span>
+            <div className="h-full p-3.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500/30 transition-all duration-150 relative flex flex-col justify-between cursor-pointer group">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                <span className="uppercase tracking-wider font-semibold group-hover:text-slate-300 transition-colors">Departure</span>
               </div>
 
               <div>
-                <div className="text-base sm:text-lg font-black text-white tracking-tight">
+                <div className="text-base sm:text-lg font-bold text-white tracking-tight">
                   {new Date(departureDate + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                <p className="text-[11px] text-slate-400 font-normal mt-0.5">
                   {new Date(departureDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}
                 </p>
               </div>
@@ -346,17 +346,17 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
           {/* RETURN DATE (If Round Trip) */}
           {tripType === 'ROUND_TRIP' && (
             <div className="md:col-span-2">
-              <div className="h-full p-3.5 rounded-2xl bg-slate-950/80 hover:bg-slate-950/95 border border-slate-800/90 hover:border-emerald-500/50 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all duration-200 relative flex flex-col justify-between cursor-pointer group">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mb-1.5">
+              <div className="h-full p-3.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500/30 transition-all duration-150 relative flex flex-col justify-between cursor-pointer group">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1.5">
                   <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="uppercase tracking-wider font-bold group-hover:text-emerald-300 transition-colors">Return</span>
+                  <span className="uppercase tracking-wider font-semibold group-hover:text-slate-300 transition-colors">Return</span>
                 </div>
 
                 <div>
-                  <div className="text-base sm:text-lg font-black text-white tracking-tight">
+                  <div className="text-base sm:text-lg font-bold text-white tracking-tight">
                     {new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </div>
-                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  <p className="text-[11px] text-slate-400 font-normal mt-0.5">
                     {new Date(returnDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })}
                   </p>
                 </div>
@@ -377,15 +377,15 @@ export const FlightSearchWidget: React.FC<FlightSearchWidgetProps> = ({
         {/* Bottom Search CTA Bar */}
         <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             <span>Real-time flight inventory & seat selection</span>
           </div>
 
           <button
             type="submit"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-sm sm:text-base shadow-xl shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2.5 group"
+            className="w-full sm:w-auto px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition duration-150 flex items-center justify-center gap-2"
           >
-            <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <Search className="w-4 h-4" />
             <span>Search Flights</span>
           </button>
         </div>

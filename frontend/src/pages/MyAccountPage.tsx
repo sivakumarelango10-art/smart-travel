@@ -191,26 +191,24 @@ export const MyAccountPage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto py-8 space-y-8 animate-fade-in pb-16">
       {/* 1. TOP HERO PROFILE BANNER */}
-      <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500"></div>
-
+      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6 sm:p-8 shadow-lg relative">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-blue-600 flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-xl shadow-sky-500/25 border-2 border-white/20 shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-2xl sm:text-3xl shrink-0">
               {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
 
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   {user?.fullName || 'Traveler Account'}
                 </h1>
                 {isAdmin ? (
-                  <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-black uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 text-[10px] font-bold uppercase tracking-wider">
                     ADMINISTRATOR
                   </span>
                 ) : (
-                  <span className="px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30 text-[10px] font-black uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded bg-slate-800 text-blue-400 border border-slate-700 text-[10px] font-bold uppercase tracking-wider">
                     VERIFIED TRAVELER
                   </span>
                 )}
@@ -234,16 +232,16 @@ export const MyAccountPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <Link
               to="/my-bookings"
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold transition flex items-center gap-2 shadow-sm"
+              className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold transition flex items-center gap-2"
             >
-              <BookmarkCheck className="w-4 h-4 text-indigo-400" />
+              <BookmarkCheck className="w-4 h-4 text-blue-400" />
               <span>My Bookings</span>
             </Link>
 
             <button
               type="button"
               onClick={logout}
-              className="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition"
+              className="px-4 py-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold transition"
             >
               Sign Out
             </button>
@@ -252,13 +250,13 @@ export const MyAccountPage: React.FC = () => {
       </div>
 
       {/* 2. NAVIGATION TABS */}
-      <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('PROFILE')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
             activeTab === 'PROFILE'
-              ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
+              ? 'bg-blue-600 text-white'
               : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
           }`}
         >
@@ -269,9 +267,9 @@ export const MyAccountPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('PREFERENCES')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
             activeTab === 'PREFERENCES'
-              ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
+              ? 'bg-blue-600 text-white'
               : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
           }`}
         >
@@ -282,9 +280,9 @@ export const MyAccountPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('SECURITY')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
             activeTab === 'SECURITY'
-              ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25'
+              ? 'bg-blue-600 text-white'
               : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
           }`}
         >
@@ -295,9 +293,9 @@ export const MyAccountPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('DANGER')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
             activeTab === 'DANGER'
-              ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25'
+              ? 'bg-rose-600 text-white'
               : 'bg-slate-900 text-rose-400 hover:bg-rose-500/10 border border-slate-800'
           }`}
         >
@@ -470,7 +468,7 @@ export const MyAccountPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={profileSaving}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-xs shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {profileSaving ? (
                   <>
@@ -492,10 +490,10 @@ export const MyAccountPage: React.FC = () => {
       {/* 4. TAB CONTENT: FLIGHT PREFERENCES */}
       {activeTab === 'PREFERENCES' && (
         <form onSubmit={handleSaveProfile} className="space-y-6 animate-fade-in">
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6 backdrop-blur-xl">
+          <div className="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-4">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Plane className="w-5 h-5 text-sky-400" />
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Plane className="w-5 h-5 text-blue-400" />
                 <span>Flight & In-Flight Preferences</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">Customize your default flight bookings and seat selections</p>
@@ -507,7 +505,7 @@ export const MyAccountPage: React.FC = () => {
                 <select
                   value={preferredClass}
                   onChange={(e) => setPreferredClass(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition font-medium"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium"
                 >
                   <option value="ECONOMY">Economy Class</option>
                   <option value="PREMIUM_ECONOMY">Premium Economy</option>
@@ -521,7 +519,7 @@ export const MyAccountPage: React.FC = () => {
                 <select
                   value={preferredSeatType}
                   onChange={(e) => setPreferredSeatType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition font-medium"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium"
                 >
                   <option value="WINDOW">Window Seat</option>
                   <option value="AISLE">Aisle Seat</option>
@@ -535,7 +533,7 @@ export const MyAccountPage: React.FC = () => {
                 <select
                   value={dietaryPreference}
                   onChange={(e) => setDietaryPreference(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-sky-500 transition font-medium"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium"
                 >
                   <option value="VEGETARIAN">Vegetarian (Hindu / Asian)</option>
                   <option value="NON_VEG">Standard Non-Vegetarian</option>
@@ -553,7 +551,7 @@ export const MyAccountPage: React.FC = () => {
                   maxLength={3}
                   value={homeAirport}
                   onChange={(e) => setHomeAirport(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition font-mono font-bold uppercase"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition font-mono font-bold uppercase"
                 />
               </div>
 
@@ -564,7 +562,7 @@ export const MyAccountPage: React.FC = () => {
                   placeholder="L1234567"
                   value={passportNumber}
                   onChange={(e) => setPassportNumber(e.target.value.toUpperCase())}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition font-mono"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition font-mono"
                 />
               </div>
             </div>
@@ -573,7 +571,7 @@ export const MyAccountPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={profileSaving}
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-xs shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {profileSaving ? (
                   <>
@@ -595,10 +593,10 @@ export const MyAccountPage: React.FC = () => {
       {/* 5. TAB CONTENT: SECURITY & PASSWORD */}
       {activeTab === 'SECURITY' && (
         <form onSubmit={handleChangePassword} className="space-y-6 animate-fade-in">
-          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6 backdrop-blur-xl">
+          <div className="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-4">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-blue-400" />
                 <span>Security & Password Management</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">Ensure your account uses a strong password with at least 8 characters</p>
@@ -615,7 +613,7 @@ export const MyAccountPage: React.FC = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition font-medium"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition font-medium"
                   />
                   <button
                     type="button"
@@ -637,7 +635,7 @@ export const MyAccountPage: React.FC = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition font-medium"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition font-medium"
                   />
                   <button
                     type="button"
@@ -659,7 +657,7 @@ export const MyAccountPage: React.FC = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition font-medium"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-11 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition font-medium"
                   />
                   <button
                     type="button"
@@ -675,7 +673,7 @@ export const MyAccountPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={passwordSaving}
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black text-xs shadow-xl shadow-indigo-500/25 transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {passwordSaving ? (
                     <>

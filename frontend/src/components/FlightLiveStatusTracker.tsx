@@ -57,51 +57,51 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
       case 'ON_TIME':
       case 'SCHEDULED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             ON TIME
           </span>
         );
       case 'BOARDING':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium rounded-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             BOARDING
           </span>
         );
       case 'DEPARTED':
       case 'IN_AIR':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold rounded-full">
-            <Plane className="w-3.5 h-3.5 text-blue-400 animate-bounce" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-md">
+            <Plane className="w-3.5 h-3.5 text-blue-400" />
             IN FLIGHT
           </span>
         );
       case 'ARRIVED':
       case 'LANDED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold rounded-full">
-            <CheckCircle2 className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium rounded-md">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             ARRIVED
           </span>
         );
       case 'DELAYED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold rounded-full">
-            <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium rounded-md">
+            <AlertTriangle className="w-3.5 h-3.5" />
             DELAYED {delayMinutes ? `(+${delayMinutes}m)` : ''}
           </span>
         );
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-semibold rounded-full">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium rounded-md">
             <ShieldAlert className="w-3.5 h-3.5" />
             CANCELLED
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-slate-300 text-xs font-semibold rounded-full">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-800 text-slate-300 text-xs font-medium rounded-md">
             {status}
           </span>
         );
@@ -109,11 +109,11 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
   };
 
   return (
-    <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl backdrop-blur-md">
+    <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400">
-            <Radio className={`w-4 h-4 ${isConnected ? 'animate-pulse text-emerald-400' : 'text-slate-500'}`} />
+          <div className="p-1.5 bg-slate-800 rounded-md text-blue-400">
+            <Radio className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : 'text-slate-500'}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -126,9 +126,9 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
             </div>
             <span className="text-[10px] text-slate-500 flex items-center gap-1">
               {isConnected ? (
-                <span className="text-emerald-400 font-medium">● Live WebSocket Connected</span>
+                <span className="text-emerald-400 font-medium">Live updates active</span>
               ) : (
-                <span>○ Reconnecting...</span>
+                <span>Reconnecting...</span>
               )}
             </span>
           </div>

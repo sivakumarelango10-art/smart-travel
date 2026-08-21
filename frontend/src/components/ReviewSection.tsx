@@ -311,7 +311,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
               }
               setShowModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/20 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
           >
             <MessageSquarePlus className="w-4 h-4" />
             Write a Review
@@ -387,7 +387,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                       <div
                         key={idx}
                         onClick={() => setActivePhotoUrl(photoUrl)}
-                        className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-700 cursor-pointer hover:border-cyan-400 transition-all hover:scale-105 group"
+                        className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-700 cursor-pointer hover:border-slate-500 transition-all hover:scale-105 group"
                       >
                         <img
                           src={photoUrl}
@@ -443,7 +443,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                       onClick={() => handleHelpful(rev.id)}
                       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors ${
                         rev.helpfulVoters?.includes(user?.id || '')
-                          ? 'bg-cyan-500/20 text-cyan-400 font-medium'
+                          ? 'bg-blue-500/10 text-blue-400 font-medium'
                           : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -477,7 +477,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
 
                 {/* Threaded Replies Section */}
                 {isRepliesExpanded && (
-                  <div className="mt-4 pt-3 border-t border-slate-800/60 pl-4 border-l-2 border-cyan-500/30 space-y-3">
+                  <div className="mt-4 pt-3 border-t border-slate-800 pl-4 border-l-2 border-blue-500/30 space-y-3">
                     {replies.length > 0 ? (
                       replies.map((reply) => {
                         const isOwnReply = user?.id && reply.userId === user.id;
@@ -490,7 +490,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2">
-                                <CornerDownRight className="w-3 h-3 text-cyan-400" />
+                                <CornerDownRight className="w-3 h-3 text-blue-400" />
                                 <span className="font-semibold text-slate-200">
                                   {reply.userName || 'Traveler'}
                                 </span>
@@ -506,7 +506,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                                       setEditingReplyId(reply.id);
                                       setEditReplyText(reply.content);
                                     }}
-                                    className="text-slate-500 hover:text-cyan-400 transition-colors"
+                                    className="text-slate-500 hover:text-blue-400 transition-colors"
                                     title="Edit reply"
                                   >
                                     <Edit2 className="w-3 h-3" />
@@ -528,7 +528,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                                   type="text"
                                   value={editReplyText}
                                   onChange={(e) => setEditReplyText(e.target.value)}
-                                  className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-cyan-500"
+                                  className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-blue-500"
                                 />
                                 <div className="flex justify-end gap-2">
                                   <button
@@ -539,7 +539,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                                   </button>
                                   <button
                                     onClick={() => handleEditReply(rev.id, reply.id)}
-                                    className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-medium"
+                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
                                   >
                                     Save
                                   </button>
@@ -576,7 +576,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                               handleAddReply(rev.id);
                             }
                           }}
-                          className="flex-1 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                          className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                         />
                         <button
                           onClick={() => handleAddReply(rev.id)}
@@ -585,7 +585,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                             !replyInputMap[rev.id] ||
                             replyInputMap[rev.id].trim().length < 2
                           }
-                          className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-40 text-white text-xs font-semibold rounded-xl transition-all shadow-md flex items-center gap-1"
+                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1"
                         >
                           <Send className="w-3 h-3" />
                           Reply
@@ -680,7 +680,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   placeholder="e.g. Exceptional service and smooth flight"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -692,7 +692,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   placeholder="Describe your flight or stay in detail (minimum 20 characters)..."
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -703,7 +703,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 rounded-xl text-xs font-medium text-slate-300 transition-colors">
-                    <Camera className="w-4 h-4 text-cyan-400" />
+                    <Camera className="w-4 h-4 text-blue-400" />
                     <span>Choose Photos</span>
                     <input
                       type="file"
@@ -744,7 +744,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
                 >
                   {submitting ? 'Submitting...' : 'Submit Review'}
                 </button>

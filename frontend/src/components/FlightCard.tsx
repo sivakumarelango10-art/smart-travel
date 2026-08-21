@@ -200,18 +200,18 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 
             {/* Duration Graphic */}
             <div className="flex-1 flex flex-col items-center px-2 max-w-[150px]">
-              <span className="text-xs text-slate-400 font-semibold flex items-center gap-1 whitespace-nowrap">
+              <span className="text-xs text-slate-400 font-medium flex items-center gap-1 whitespace-nowrap">
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
                 {formatDuration(flight.durationMinutes)}
               </span>
               <div className="w-full flex items-center my-2">
                 <div className="h-0.5 w-full bg-slate-700/80 relative">
-                  <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-sky-400 flex items-center justify-center shadow-sm shadow-sky-400/50">
-                    <Plane className="w-2 h-2 text-slate-950 transform rotate-45" />
+                  <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                    <Plane className="w-2 h-2 text-white transform rotate-45" />
                   </div>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap">
+              <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-wide px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 whitespace-nowrap">
                 {!flight.stops || flight.stops === 0 ? 'Non-Stop' : flight.stops === 1 ? '1 Stop' : `${flight.stops} Stops`}
               </span>
             </div>
@@ -222,10 +222,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                 <span className="text-2xl font-black text-white tracking-tight leading-none">{arrTime.time}</span>
                 <span className="text-xs font-bold text-slate-400 uppercase">{arrTime.period}</span>
               </div>
-              <p className="text-xs font-extrabold text-sky-400 uppercase tracking-wide mt-1.5">{flight.arrivalAirport.code}</p>
-              <p className="text-xs text-slate-300 font-medium truncate max-w-[110px]">{flight.arrivalAirport.city}</p>
+              <p className="text-xs font-bold text-slate-200 uppercase tracking-wide mt-1.5">{flight.arrivalAirport.code}</p>
+              <p className="text-xs text-slate-400 font-normal truncate max-w-[110px]">{flight.arrivalAirport.city}</p>
               {flight.arrivalAirport.terminal && (
-                <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700">
+                <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
                   {flight.arrivalAirport.terminal}
                 </span>
               )}
@@ -233,14 +233,14 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </div>
 
           {/* 3. Fare & Booking Button */}
-          <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 lg:min-w-[210px] shrink-0 lg:pl-6 lg:border-l lg:border-slate-800/80">
+          <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 lg:min-w-[210px] shrink-0 lg:pl-6 lg:border-l lg:border-slate-800">
             <div className="text-left lg:text-right">
               <div className="flex items-baseline gap-1.5 lg:justify-end">
-                <span className="text-2xl font-black text-white tracking-tight">
+                <span className="text-2xl font-bold text-white tracking-tight">
                   ₹{totalPrice.toLocaleString('en-IN')}
                 </span>
                 {passengerCount > 1 && (
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-slate-400 font-normal">
                     (₹{pricePerPax.toLocaleString('en-IN')}/pax)
                   </span>
                 )}
@@ -249,8 +249,8 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                 <span>Taxes incl.</span>
                 <span className="text-slate-600">•</span>
                 <span
-                  className={`font-semibold flex items-center gap-1 ${
-                    availableSeats < 10 ? 'text-amber-400' : 'text-slate-300'
+                  className={`font-medium flex items-center gap-1 ${
+                    availableSeats < 10 ? 'text-amber-400' : 'text-slate-400'
                   }`}
                 >
                   {availableSeats < 10 && <Flame className="w-3 h-3 text-amber-400" />}
@@ -263,9 +263,9 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               type="button"
               onClick={handleSelectFlight}
               disabled={!isBookable}
-              className={`w-full sm:w-auto lg:w-40 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md cursor-pointer whitespace-nowrap ${
+              className={`w-full sm:w-auto lg:w-36 px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isBookable
-                  ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98]'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
               }`}
             >
@@ -276,23 +276,23 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         </div>
 
         {/* Feature Action Bar (Price History, Freeze Price, Live Tracking, Fare Breakdown) */}
-        <div className="px-5 sm:px-6 py-2.5 bg-slate-950/60 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="px-5 sm:px-6 py-2 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => setShowPriceHistory(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition duration-150"
             >
-              <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
               <span>Price Trend</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowPriceFreeze(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-indigo-300 border border-slate-700/60 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition duration-150"
             >
-              <Lock className="w-3.5 h-3.5 text-indigo-400" />
+              <Lock className="w-3.5 h-3.5 text-blue-400" />
               <span>Freeze Fare</span>
             </button>
 
@@ -300,18 +300,18 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               type="button"
               onClick={handleTrackFlight}
               disabled={trackingLoading}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition duration-150 ${
                 isTracked
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-medium'
-                  : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-700/60'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
               }`}
             >
-              <Radio className={`w-3.5 h-3.5 ${isTracked ? 'animate-pulse text-emerald-400' : 'text-slate-400'}`} />
+              <Radio className={`w-3.5 h-3.5 ${isTracked ? 'text-emerald-400' : 'text-slate-400'}`} />
               <span>{isTracked ? 'Tracking Live' : 'Track Status'}</span>
             </button>
 
             {trackMessage && (
-              <span className="text-[11px] text-cyan-400 animate-fade-in">{trackMessage}</span>
+              <span className="text-[11px] text-blue-400 animate-fade-in">{trackMessage}</span>
             )}
           </div>
 

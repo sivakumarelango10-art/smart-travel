@@ -60,11 +60,11 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-150">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-              <TrendingUp className="w-5 h-5 text-indigo-400" />
+            <div className="p-2 bg-slate-800 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Price History & Trends</h3>
+              <h3 className="text-base font-semibold text-white">Price History & Trends</h3>
               <p className="text-xs text-slate-400">{flightNumber} · {cabinClass}</p>
             </div>
           </div>
@@ -78,7 +78,7 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
 
         {loading ? (
           <div className="py-16 text-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             Loading price trend data...
           </div>
         ) : history.length === 0 ? (
@@ -93,7 +93,7 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
             <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
               <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
                 <span>Fare Trend</span>
-                <span className="font-semibold text-cyan-400">
+                <span className="font-semibold text-blue-400">
                   Latest: ₹{history[history.length - 1]?.finalPrice.toLocaleString()}
                 </span>
               </div>
@@ -127,21 +127,13 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
 
                 {/* Trend Line */}
                 {pathD && (
-                  <>
-                    <path
-                      d={pathD}
-                      fill="none"
-                      stroke="url(#trendGradient)"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-                    <defs>
-                      <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#06b6d4" />
-                        <stop offset="100%" stopColor="#6366f1" />
-                      </linearGradient>
-                    </defs>
-                  </>
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 )}
 
                 {/* Data Points */}
@@ -150,8 +142,8 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
                     key={i}
                     cx={p.x}
                     cy={p.y}
-                    r="4"
-                    className="fill-cyan-400 stroke-slate-900 stroke-2 hover:scale-125 transition-transform cursor-pointer"
+                    r="3.5"
+                    className="fill-blue-500 stroke-slate-900 stroke-2 hover:scale-125 transition-transform cursor-pointer"
                   >
                     <title>₹{p.price.toLocaleString()} ({p.reason || 'Normal'})</title>
                   </circle>
