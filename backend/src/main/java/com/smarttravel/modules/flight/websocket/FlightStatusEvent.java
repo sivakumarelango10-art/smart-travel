@@ -12,6 +12,7 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FlightStatusEvent {
 
+    private String eventId;
     private String flightId;
     private String flightNumber;
     private FlightStatus previousStatus;
@@ -28,6 +29,7 @@ public class FlightStatusEvent {
     private String source;
 
     public FlightStatusEvent() {
+        this.eventId = java.util.UUID.randomUUID().toString();
         this.updatedAt = Instant.now();
         this.source = "SIMULATION";
     }
@@ -37,6 +39,7 @@ public class FlightStatusEvent {
     }
 
     public static class Builder {
+        private String eventId = java.util.UUID.randomUUID().toString();
         private String flightId;
         private String flightNumber;
         private FlightStatus previousStatus;
@@ -52,6 +55,7 @@ public class FlightStatusEvent {
         private Instant updatedAt = Instant.now();
         private String source = "SIMULATION";
 
+        public Builder eventId(String eventId) { this.eventId = eventId; return this; }
         public Builder flightId(String flightId) { this.flightId = flightId; return this; }
         public Builder flightNumber(String flightNumber) { this.flightNumber = flightNumber; return this; }
         public Builder previousStatus(FlightStatus previousStatus) { this.previousStatus = previousStatus; return this; }
@@ -69,6 +73,7 @@ public class FlightStatusEvent {
 
         public FlightStatusEvent build() {
             FlightStatusEvent e = new FlightStatusEvent();
+            e.eventId = eventId;
             e.flightId = flightId;
             e.flightNumber = flightNumber;
             e.previousStatus = previousStatus;
@@ -87,6 +92,8 @@ public class FlightStatusEvent {
         }
     }
 
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
     public String getFlightId() { return flightId; }
     public void setFlightId(String flightId) { this.flightId = flightId; }
     public String getFlightNumber() { return flightNumber; }

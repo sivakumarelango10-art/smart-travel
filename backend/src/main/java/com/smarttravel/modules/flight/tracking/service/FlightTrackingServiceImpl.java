@@ -66,8 +66,33 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
                 .lastKnownEta(flight.getEstimatedArrival())
                 .build();
 
-        TrackedFlight saved = trackedFlightRepository.save(tracked);
-        log.info("User {} is now tracking flight {} ({})", userId, flight.getFlightNumber(), flightId);
+        TrackedFlight saved;
+        try {
+            saved = trackedFlightRepository.save(tracked);
+            log.info("User {} is now tracking flight {} ({})", userId, flight.getFlightNumber(), flightId);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            log.info("Concurrent insert caught by unique index for user {} and flight {}. Fetching existing record.", userId, flightId);
+            Optional<TrackedFlight> raced = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+            if (raced.isEmpty()) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+                raced = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+            }
+            TrackedFlight tf = raced.orElse(tracked);
+            if (!tf.isActive()) {
+                tf.setActive(true);
+                tf.setLastKnownStatus(flight.getStatus());
+                tf.setLastKnownEta(flight.getEstimatedArrival());
+                try {
+                    tf = trackedFlightRepository.save(tf);
+                } catch (Exception ignored) {
+                }
+            }
+            return toResponse(tf, flight);
+        }
 
         return toResponse(saved, flight);
     }

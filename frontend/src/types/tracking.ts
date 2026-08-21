@@ -25,6 +25,7 @@ export interface TrackedFlight {
 }
 
 export interface FlightStatusEvent {
+  eventId?: string;
   flightId: string;
   flightNumber: string;
   previousStatus?: FlightStatus;

@@ -200,6 +200,7 @@ public class FlightSimulationEngine {
 
         // 7. Publish WebSocket event for real-time client updates
         FlightStatusEvent wsEvent = FlightStatusEvent.builder()
+                .eventId(event.getEventId())
                 .flightId(updatedFlight.getId())
                 .flightNumber(updatedFlight.getFlightNumber())
                 .previousStatus(currentStatus)

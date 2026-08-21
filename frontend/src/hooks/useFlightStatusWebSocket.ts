@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-import { API_BASE_URL, WS_BASE_URL } from '../config/constants';
+import { useEffect, useRef, useState } from 'react';
 import { FlightStatusEvent } from '../types/api';
+import { flightStatusWebSocketManager } from '../services/flightStatusWebSocketManager';
 
 interface UseFlightStatusWebSocketProps {
   flightId?: string;
@@ -10,91 +8,58 @@ interface UseFlightStatusWebSocketProps {
   enabled?: boolean;
 }
 
+/**
+ * React hook for consuming live flight status updates.
+ * Leverages the singleton FlightStatusWebSocketManager to multiplex multiple
+ * flight subscriptions over a single shared STOMP/WebSocket connection.
+ */
 export function useFlightStatusWebSocket({
   flightId,
   onStatusUpdate,
   enabled = true,
 }: UseFlightStatusWebSocketProps) {
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(flightStatusWebSocketManager.isConnected());
   const [latestEvent, setLatestEvent] = useState<FlightStatusEvent | null>(null);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const clientRef = useRef<Client | null>(null);
-  const onStatusUpdateRef = useRef(onStatusUpdate);
+  const [connectionError, setConnectionError] = useState<string | null>(
+    flightStatusWebSocketManager.getConnectionError()
+  );
 
+  const onStatusUpdateRef = useRef(onStatusUpdate);
   useEffect(() => {
     onStatusUpdateRef.current = onStatusUpdate;
   }, [onStatusUpdate]);
 
-  const getWsUrl = useCallback(() => {
-    if (WS_BASE_URL) return `${WS_BASE_URL}/ws`;
-    if (API_BASE_URL && API_BASE_URL !== '/api') {
-      return `${API_BASE_URL}/ws`;
-    }
-    // Default localhost or relative URL
-    return 'http://localhost:8080/ws';
+  // Listen to shared connection state changes
+  useEffect(() => {
+    const unsubConnection = flightStatusWebSocketManager.addConnectionListener((connected, error) => {
+      setIsConnected(connected);
+      setConnectionError(error);
+    });
+
+    return () => {
+      unsubConnection();
+    };
   }, []);
 
+  // Subscribe to specific flight topic updates
   useEffect(() => {
     if (!enabled || !flightId) {
-      if (clientRef.current) {
-        clientRef.current.deactivate();
-        clientRef.current = null;
-        setIsConnected(false);
-      }
       return;
     }
 
-    const wsUrl = getWsUrl();
+    const handleUpdate = (event: FlightStatusEvent) => {
+      setLatestEvent(event);
+      if (onStatusUpdateRef.current) {
+        onStatusUpdateRef.current(event);
+      }
+    };
 
-    const stompClient = new Client({
-      webSocketFactory: () => new SockJS(wsUrl) as any,
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      debug: () => {
-        // quiet debug in production
-      },
-      onConnect: () => {
-        setIsConnected(true);
-        setConnectionError(null);
-
-        // Subscribe to flight status topic
-        const topic = `/topic/flight-status/${flightId}`;
-        stompClient.subscribe(topic, (message: IMessage) => {
-          try {
-            const event: FlightStatusEvent = JSON.parse(message.body);
-            setLatestEvent(event);
-            if (onStatusUpdateRef.current) {
-              onStatusUpdateRef.current(event);
-            }
-          } catch (err) {
-            console.error('Failed to parse flight status WebSocket message', err);
-          }
-        });
-      },
-      onDisconnect: () => {
-        setIsConnected(false);
-      },
-      onStompError: (frame) => {
-        console.warn('STOMP error:', frame.headers['message']);
-        setConnectionError(frame.headers['message'] || 'WebSocket STOMP error');
-      },
-      onWebSocketError: (event) => {
-        console.warn('WebSocket connection warning:', event);
-      },
-    });
-
-    stompClient.activate();
-    clientRef.current = stompClient;
+    const unsubscribe = flightStatusWebSocketManager.subscribe(flightId, handleUpdate);
 
     return () => {
-      if (stompClient.active) {
-        stompClient.deactivate();
-      }
-      clientRef.current = null;
-      setIsConnected(false);
+      unsubscribe();
     };
-  }, [flightId, enabled, getWsUrl]);
+  }, [flightId, enabled]);
 
   return {
     isConnected,
