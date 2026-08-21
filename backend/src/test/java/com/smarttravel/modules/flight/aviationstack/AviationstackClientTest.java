@@ -85,4 +85,19 @@ class AviationstackClientTest {
     void testApiKeyMaskingSecurity() {
         assertFalse(client.toString().contains(properties.getApiKey()), "Client string representation must not contain API key");
     }
+
+    @Test
+    @DisplayName("5. Verifies synthetic/test flight numbers are skipped without querying external API")
+    void testSyntheticFlightNumberSkipped() {
+        assertFalse(client.isRealIataFlightNumber("CC-101-817F7B"));
+        assertFalse(client.isRealIataFlightNumber("TEST-101"));
+        assertFalse(client.isRealIataFlightNumber("SEC-12-1787292725607"));
+        assertTrue(client.isRealIataFlightNumber("AI-101"));
+        assertTrue(client.isRealIataFlightNumber("6E204"));
+        assertTrue(client.isRealIataFlightNumber("LH6396"));
+
+        Optional<AviationstackFlightResponse> res = client.getFlightStatus("CC-101-817F7B");
+        assertTrue(res.isEmpty());
+        verify(quotaGuard, never()).recordRequest();
+    }
 }

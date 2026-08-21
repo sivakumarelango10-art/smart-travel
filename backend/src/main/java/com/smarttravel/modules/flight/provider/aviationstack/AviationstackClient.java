@@ -136,6 +136,10 @@ public class AviationstackClient {
         }
 
         String normalizedFlightNumber = flightNumber.trim().toUpperCase();
+        if (!isRealIataFlightNumber(normalizedFlightNumber)) {
+            log.debug("Skipping Aviationstack lookup for synthetic/test flight number: {}", normalizedFlightNumber);
+            return Optional.empty();
+        }
 
         // 1. Check Cache Hit
         Optional<AviationstackCacheManager.CachedResponse<AviationstackFlightResponse>> cached = cacheManager.getCachedFlight(normalizedFlightNumber);
@@ -145,7 +149,7 @@ public class AviationstackClient {
 
         // 2. Check Monthly Quota Guard
         if (!quotaGuard.isQuotaAvailable()) {
-            log.warn("Aviationstack single flight status rejected: Monthly quota reached for flight {}.", normalizedFlightNumber);
+            log.debug("Aviationstack single flight status skipped: Monthly quota limit reached for flight {}.", normalizedFlightNumber);
             return Optional.empty();
         }
 
@@ -178,7 +182,7 @@ public class AviationstackClient {
                 // If flight_iata returned no rows, try flight_number query
                 if (result != null && result.getData().isEmpty() && normalizedFlightNumber.contains("-")) {
                     String[] parts = normalizedFlightNumber.split("-");
-                    if (parts.length == 2) {
+                    if (parts.length == 2 && parts[1].matches("^[0-9]+$")) {
                         String flightNumOnly = parts[1];
                         UriComponentsBuilder numQuery = UriComponentsBuilder.fromUriString(properties.getBaseUrl())
                                 .path("/v1/flights")
@@ -198,13 +202,13 @@ public class AviationstackClient {
                 handleHttpError(ex.getStatusCode().value(), "Get flight " + normalizedFlightNumber);
                 return null;
             } catch (HttpServerErrorException ex) {
-                log.error("Aviationstack upstream 5xx server error (status: {}) for flight {}", ex.getStatusCode(), normalizedFlightNumber);
+                log.warn("Aviationstack upstream 5xx server status ({}) for flight {}. Falling back.", ex.getStatusCode(), normalizedFlightNumber);
                 return null;
             } catch (ResourceAccessException ex) {
-                log.error("Aviationstack connection timeout or network failure for flight {}: {}", normalizedFlightNumber, ex.getMessage());
+                log.warn("Aviationstack connection timeout for flight {}: {}. Falling back.", normalizedFlightNumber, ex.getMessage());
                 return null;
             } catch (Exception ex) {
-                log.error("Unexpected error querying Aviationstack for flight {}: {}", normalizedFlightNumber, ex.getMessage());
+                log.warn("Error querying Aviationstack for flight {}: {}. Falling back.", normalizedFlightNumber, ex.getMessage());
                 return null;
             }
         });
@@ -217,13 +221,31 @@ public class AviationstackClient {
         return Optional.empty();
     }
 
+    /**
+     * Filters out internal synthetic/test flight numbers (e.g., CC-101-817F7B, TEST-1, SEC-12)
+     * so that only authentic IATA flight numbers query the external API.
+     */
+    public boolean isRealIataFlightNumber(String flightNumber) {
+        if (flightNumber == null || flightNumber.isBlank()) {
+            return false;
+        }
+        String clean = flightNumber.trim().toUpperCase();
+        // Check for test/synthetic prefixes
+        if (clean.startsWith("CC-") || clean.startsWith("TEST-") || clean.startsWith("SEC-") ||
+                clean.startsWith("MOCK-") || clean.startsWith("SIM-") || clean.startsWith("ST-")) {
+            return false;
+        }
+        // Valid IATA: 2-3 alphanumeric airline code + optional hyphen + 1-4 digits (e.g. AI-101, 6E204, LH-6396, BA112)
+        return clean.matches("^[A-Z0-9]{2,3}-?[0-9]{1,4}[A-Z]?$");
+    }
+
     private void handleHttpError(int statusCode, String action) {
         if (statusCode == 401) {
-            log.error("Aviationstack Authentication Failed (401): Invalid or missing API key during {}.", action);
+            log.warn("Aviationstack Authentication (401): Invalid or missing API key during {}. Using local fallback.", action);
         } else if (statusCode == 429) {
-            log.error("Aviationstack Rate Limit or Monthly Quota Exceeded (429) during {}.", action);
+            log.warn("Aviationstack Rate Limit (429) during {}. Using cached/local flight fallback.", action);
         } else {
-            log.error("Aviationstack HTTP Error {} during {}.", statusCode, action);
+            log.warn("Aviationstack HTTP {} during {}. Using local fallback.", statusCode, action);
         }
     }
 
