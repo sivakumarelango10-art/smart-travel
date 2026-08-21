@@ -8,6 +8,7 @@ import { ReviewSection } from '../components/ReviewSection';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { recommendationService } from '../services/recommendationService';
 import { useAuth } from '../context/AuthContext';
+import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 
 export const HotelDetailsPage: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
@@ -102,14 +103,7 @@ export const HotelDetailsPage: React.FC = () => {
     );
   }
 
-  const photos =
-    hotel.imageUrls && hotel.imageUrls.length > 0
-      ? hotel.imageUrls
-      : [
-          'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
-          'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
-          'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
-        ];
+  const photos = resolveHotelPhotos(hotel);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">

@@ -7,6 +7,7 @@ import { StarRating } from '../components/StarRating';
 import { HotelCardSkeleton } from '../components/HotelCardSkeleton';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { recommendationService } from '../services/recommendationService';
+import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 
 export const HotelSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -195,7 +196,7 @@ export const HotelSearchPage: React.FC = () => {
                   {/* Hotel Image Card Banner */}
                   <div className="h-48 relative overflow-hidden">
                     <ImageWithFallback
-                      src={hotel.imageUrls?.[0]}
+                      src={resolveHotelPhotos(hotel)[0]}
                       alt={`${hotel.name} luxury facade`}
                       containerClassName="w-full h-full"
                       className="group-hover:scale-105 transition-transform duration-300"

@@ -87,12 +87,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
     }
 
     private void seedHotels() {
-        if (hotelRepository.count() > 0) {
-            log.debug("Hotels collection non-empty, skipping seed");
-            return;
-        }
-
-        log.info("Seeding demo hotel data with rich imagery...");
+        log.info("Checking and seeding demo hotel data with distinct high-resolution luxury imagery...");
 
         List<Hotel> hotels = List.of(
                 // Delhi Hotels
@@ -100,7 +95,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                         new BigDecimal("15000"),
                         "Janpath, New Delhi, 110001", "Delhi",
                         List.of(
-                                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+                                "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=80",
                                 "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
                                 "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80"
                         ),
@@ -241,8 +236,19 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
                         ))
         );
 
-        hotelRepository.saveAll(hotels);
-        log.info("Seeded {} hotels with rich photo galleries", hotels.size());
+        if (hotelRepository.count() == 0) {
+            hotelRepository.saveAll(hotels);
+            log.info("Seeded {} hotels with rich photo galleries", hotels.size());
+        } else {
+            // Update existing hotels with distinct photo galleries if needed
+            for (Hotel hotel : hotels) {
+                hotelRepository.findByName(hotel.getName()).ifPresent(existing -> {
+                    existing.setImageUrls(hotel.getImageUrls());
+                    hotelRepository.save(existing);
+                });
+            }
+            log.info("Refreshed distinct photo galleries for all existing hotel properties");
+        }
     }
 
     private void seedPricingRules() {
