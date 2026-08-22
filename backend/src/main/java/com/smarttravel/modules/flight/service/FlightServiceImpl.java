@@ -42,35 +42,26 @@ public class FlightServiceImpl implements FlightService {
     private final FlightStatusHistoryRepository flightStatusHistoryRepository;
     private final FlightStateMachine flightStateMachine;
     private final FareCalculationService fareCalculationService;
-    private final com.smarttravel.modules.flight.provider.FlightDataProviderRegistry providerRegistry;
-    private final com.smarttravel.modules.flight.provider.aviationstack.AviationstackClient aviationstackClient;
-    private final com.smarttravel.modules.flight.provider.aviationstack.AviationstackDataNormalizer normalizer;
-    private final com.smarttravel.modules.flight.config.AviationstackProperties aviationstackProperties;
+    private final com.smarttravel.modules.flight.provider.FlightStatusProvider flightStatusProvider;
 
     @org.springframework.beans.factory.annotation.Autowired
     public FlightServiceImpl(FlightRepository flightRepository,
                              FlightStatusHistoryRepository flightStatusHistoryRepository,
                              FlightStateMachine flightStateMachine,
                              FareCalculationService fareCalculationService,
-                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.FlightDataProviderRegistry providerRegistry,
-                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.aviationstack.AviationstackClient aviationstackClient,
-                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.aviationstack.AviationstackDataNormalizer normalizer,
-                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.config.AviationstackProperties aviationstackProperties) {
+                             @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.provider.FlightStatusProvider flightStatusProvider) {
         this.flightRepository = flightRepository;
         this.flightStatusHistoryRepository = flightStatusHistoryRepository;
         this.flightStateMachine = flightStateMachine;
         this.fareCalculationService = fareCalculationService;
-        this.providerRegistry = providerRegistry;
-        this.aviationstackClient = aviationstackClient;
-        this.normalizer = normalizer;
-        this.aviationstackProperties = aviationstackProperties;
+        this.flightStatusProvider = flightStatusProvider;
     }
 
     public FlightServiceImpl(FlightRepository flightRepository,
                              FlightStatusHistoryRepository flightStatusHistoryRepository,
                              FlightStateMachine flightStateMachine,
                              FareCalculationService fareCalculationService) {
-        this(flightRepository, flightStatusHistoryRepository, flightStateMachine, fareCalculationService, null, null, null, null);
+        this(flightRepository, flightStatusHistoryRepository, flightStateMachine, fareCalculationService, null);
     }
 
     @Override
@@ -275,9 +266,8 @@ public class FlightServiceImpl implements FlightService {
         String normalizedFlightNumber = flightNumber != null ? flightNumber.toUpperCase().trim() : "";
         log.info("Fetching live operational status for flight: {}", normalizedFlightNumber);
 
-        if (providerRegistry != null) {
-            com.smarttravel.modules.flight.provider.FlightStatusProvider provider = providerRegistry.getActiveProvider();
-            var snapshotOpt = provider.fetchLatestStatus(normalizedFlightNumber, null);
+        if (flightStatusProvider != null) {
+            var snapshotOpt = flightStatusProvider.fetchLatestStatus(normalizedFlightNumber, null);
             if (snapshotOpt.isPresent()) {
                 com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot snap = snapshotOpt.get();
                 if (snap.originCode() != null) {
@@ -290,10 +280,10 @@ public class FlightServiceImpl implements FlightService {
         // Check local MongoDB flight
         var localFlightOpt = flightRepository.findByFlightNumber(normalizedFlightNumber);
         if (localFlightOpt.isPresent()) {
-            return toRichSnapshot(localFlightOpt.get(), "SMARTTRAVEL_LOCAL_DB");
+            return toRichSnapshot(localFlightOpt.get(), "SIMULATED");
         }
 
-        // If not found in DB or Aviationstack, generate realistic simulated live flight telemetry
+        // If not found in DB, generate realistic simulated live flight telemetry
         return generateSimulatedFlightSnapshot(normalizedFlightNumber);
     }
 

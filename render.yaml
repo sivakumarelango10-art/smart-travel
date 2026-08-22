@@ -60,16 +60,6 @@ services:
       - key: RAZORPAY_CURRENCY
         value: INR
 
-      # Live Flight Telemetry & Aviationstack API Integration
-      - key: AVIATIONSTACK_API_KEY
-        sync: false
-
-      - key: FLIGHT_DATA_PROVIDER
-        value: AVIATIONSTACK
-
-      - key: AVIATIONSTACK_BASE_URL
-        value: https://api.aviationstack.com
-
       # Swagger disabled by default in production
       - key: SWAGGER_UI_ENABLED
         value: "false"

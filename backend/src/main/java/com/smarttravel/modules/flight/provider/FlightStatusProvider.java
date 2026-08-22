@@ -7,7 +7,7 @@ import java.util.Optional;
 
 /**
  * Architectural abstraction for flight status providers.
- * Decouples mock status simulation from future live aviation data providers (e.g. FlightAware, AviationStack).
+ * Powers mock status simulation and live operational telemetry from MongoDB and internal simulation engines.
  */
 public interface FlightStatusProvider {
 

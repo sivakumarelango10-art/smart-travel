@@ -54,7 +54,7 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
     if (event.estimatedArrival) setEstArr(event.estimatedArrival);
     if (event.gate) setCurrentGate(event.gate);
     if (event.terminal) setCurrentTerminal(event.terminal);
-    if (event.source) setCurrentSource(event.source === 'AVIATIONSTACK' ? 'LIVE' : event.source);
+    if (event.source) setCurrentSource(event.source);
     setLastUpdated(new Date(event.updatedAt || new Date()));
   };
 
@@ -146,22 +146,10 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
               </span>
 
               {/* Data Provenance Badge */}
-              {currentSource === 'AVIATIONSTACK' || currentSource === 'LIVE' ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                  LIVE • Aviationstack
-                </span>
-              ) : currentSource === 'CACHED_AVIATIONSTACK' || currentSource === 'CACHED' ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[9px] font-medium">
-                  <span className="w-1 h-1 rounded-full bg-sky-400" />
-                  CACHED • Aviationstack
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-medium">
-                  <span className="w-1 h-1 rounded-full bg-blue-400" />
-                  SIMULATED • SmartTravel
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                LIVE SIMULATION • SmartTravel Engine
+              </span>
             </div>
           </div>
         </div>

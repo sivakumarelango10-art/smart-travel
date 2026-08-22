@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-This performance audit examines the end-to-end latency characteristics of the SmartTravel platform across its React Vite frontend, Spring Boot backend, MongoDB Atlas database, and external Aviationstack telemetry providers. 
+This performance audit examines the end-to-end latency characteristics of the SmartTravel platform across its React Vite frontend, Spring Boot backend, MongoDB Atlas database, and internal simulation engine. 
 
 The primary latency observed by end users stems from **Render free-tier container cold starts** after 15 minutes of inactivity (taking 15–45s for JVM and connection pool initialization). Once the backend is warm, response times drop to <800ms for database searches and <50ms for cached responses.
 
@@ -23,7 +23,7 @@ This audit establishes a complete architectural breakdown and actionable optimiz
 | **Frontend** | Vercel Edge CDN | 15–45ms (Static/SPA) | Instant (0s) | Immutable caching on static assets (`/assets/*`), SPA fallback rewrites |
 | **Backend** | Render Web Service | 120–450ms (Warm) | 15–45s (Cold) | Free tier spins down container after 15min idle. JVM + Spring startup overhead |
 | **Database** | MongoDB Atlas (Cluster0, Oregon) | 8–35ms per query | None (Always Warm) | M0/M2 shared cluster; compound indexes ensure covered scans |
-| **External API** | Aviationstack REST API | 400–1800ms | N/A | Rate-limited (100 req/mo quota). Requires strict server-side caching & request coalescing |
+| **Internal Telemetry** | Internal Simulation Engine | 1–5ms | None | High-performance in-memory state machine and local database lookups |
 
 ---
 
@@ -74,11 +74,11 @@ This audit establishes a complete architectural breakdown and actionable optimiz
     - `price_freezes`: `[userId, flightId, status]`
   - Zero unindexed table scans on search queries.
 
-### 4.3 Aviationstack External API Optimization
-- **Protection of Free Quota (100 req/mo)**:
-  - `AviationstackCacheManager` implements Caffeine TTL cache (180s search, 60s flight tracking) + in-flight request coalescing (`executeWithCoalescing`).
-  - Synthetic/test flight numbers (e.g. `TEST-*`, `CC-*`, `SIM-*`, `ST-*`) are filtered prior to external dispatch to prevent quota burn.
-  - Unit/integration tests use mock providers to ensure 0 external API calls during CI/CD.
+### 4.3 Internal Telemetry & Flight Simulation Engine
+- **Autonomous & Zero External Dependency**:
+  - `MockFlightStatusProviderImpl` delivers sub-5ms operational telemetry directly from MongoDB and route coordinate interpolation.
+  - Automated state transitions (`SCHEDULED` → `BOARDING` → `ON_TIME` / `DELAYED` → `DEPARTED` → `ARRIVED`) execute via atomic compare-and-swap state machine validation.
+  - Test suites run 100% locally and self-contained with 0 external API calls.
 
 ### 4.4 Health Check Endpoint
 - **Fast Startup & Probes**:

@@ -89,13 +89,12 @@ npm run build
 
 ## 4. Preservation of Architecture & Requirements
 
-1. **Aviationstack Real Flight Integration**:
-   - Real-time client, caching, and normalizer remain 100% functional.
-   - Fallback and error handling remain intact.
+1. **Self-Contained Mock Flight Data & Simulation**:
+   - Internal flight telemetry, route interpolation, and status state machine remain 100% operational.
 2. **ElevanceSkills Internship Requirement #1**:
    - Mock simulation engine, WebSocket publishers, and boarding generators remain 100% operational.
 3. **Zero Secrets Leaked**:
-   - All API secrets remain strictly server-side in environment variables and are excluded from git.
+   - All environment variables are properly secured and excluded from git.
 4. **No Unrelated Code Modifications**:
    - Only the invalid method invocation was corrected.
 

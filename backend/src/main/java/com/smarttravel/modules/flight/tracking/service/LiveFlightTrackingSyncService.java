@@ -1,11 +1,9 @@
 package com.smarttravel.modules.flight.tracking.service;
 
-import com.smarttravel.modules.flight.config.AviationstackProperties;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot;
-import com.smarttravel.modules.flight.provider.aviationstack.AviationstackFlightDataProvider;
 import com.smarttravel.modules.flight.repository.FlightRepository;
 import com.smarttravel.modules.flight.tracking.model.TrackedFlight;
 import com.smarttravel.modules.flight.tracking.repository.TrackedFlightRepository;
@@ -24,51 +22,44 @@ import java.util.Optional;
 
 /**
  * Background synchronization service for actively tracked flights.
- * In Aviationstack mode, periodically polls telemetry safely within the free-tier cache and quota rules.
- * Emits WebSocket events and browser push notifications ONLY when meaningful operational changes occur (deduplication).
+ * Periodically syncs tracked flights with MongoDB operational status transitions and simulation updates.
+ * Emits WebSocket events and browser push notifications when meaningful operational changes occur.
  */
 @Service
 public class LiveFlightTrackingSyncService {
 
     private static final Logger log = LoggerFactory.getLogger(LiveFlightTrackingSyncService.class);
 
-    private final AviationstackProperties properties;
     private final TrackedFlightRepository trackedFlightRepository;
     private final FlightRepository flightRepository;
-    private final AviationstackFlightDataProvider aviationstackProvider;
+    private final FlightStatusProvider flightStatusProvider;
     private final FlightStatusWebSocketPublisher webSocketPublisher;
     private final WebPushService webPushService;
 
     @Autowired
-    public LiveFlightTrackingSyncService(AviationstackProperties properties,
-                                        TrackedFlightRepository trackedFlightRepository,
+    public LiveFlightTrackingSyncService(TrackedFlightRepository trackedFlightRepository,
                                         FlightRepository flightRepository,
-                                        AviationstackFlightDataProvider aviationstackProvider,
+                                        FlightStatusProvider flightStatusProvider,
                                         @Autowired(required = false) FlightStatusWebSocketPublisher webSocketPublisher,
                                         @Autowired(required = false) WebPushService webPushService) {
-        this.properties = properties;
         this.trackedFlightRepository = trackedFlightRepository;
         this.flightRepository = flightRepository;
-        this.aviationstackProvider = aviationstackProvider;
+        this.flightStatusProvider = flightStatusProvider;
         this.webSocketPublisher = webSocketPublisher;
         this.webPushService = webPushService;
     }
 
     /**
-     * Periodic sync runner. Runs every 60 seconds (aligned with flight cache TTL).
+     * Periodic sync runner for active tracked flights.
      */
-    @Scheduled(fixedDelayString = "${smarttravel.flight.aviationstack.sync-interval-ms:60000}")
+    @Scheduled(fixedDelayString = "${smarttravel.flight.sync-interval-ms:30000}")
     public void syncTrackedFlights() {
-        if (!properties.isAviationstackMode() || !properties.isEnabled()) {
-            return;
-        }
-
         List<TrackedFlight> activeTracked = trackedFlightRepository.findByActiveTrue();
         if (activeTracked.isEmpty()) {
             return;
         }
 
-        log.debug("Synchronizing {} actively tracked flights with Aviationstack live telemetry", activeTracked.size());
+        log.debug("Synchronizing {} actively tracked flights with database telemetry", activeTracked.size());
         for (TrackedFlight tf : activeTracked) {
             syncSingleFlight(tf);
         }
@@ -80,7 +71,7 @@ public class LiveFlightTrackingSyncService {
         }
 
         try {
-            Optional<FlightStatusSnapshot> snapshotOpt = aviationstackProvider.fetchLatestStatus(tf.getFlightNumber(), null);
+            Optional<FlightStatusSnapshot> snapshotOpt = flightStatusProvider.fetchLatestStatus(tf.getFlightNumber(), null);
             if (snapshotOpt.isEmpty()) {
                 return false;
             }
@@ -91,7 +82,6 @@ public class LiveFlightTrackingSyncService {
 
             boolean statusChanged = oldStatus != newStatus;
             boolean etaChanged = !Objects.equals(tf.getLastKnownEta(), snapshot.revisedArrivalTime());
-            boolean delayChanged = snapshot.delayMinutes() != null && snapshot.delayMinutes() > 0;
 
             if (statusChanged || etaChanged) {
                 log.info("Tracked flight {} status transition detected: {} -> {} (ETA: {})",
@@ -104,27 +94,7 @@ public class LiveFlightTrackingSyncService {
                 }
                 trackedFlightRepository.save(tf);
 
-                // 2. Update local MongoDB flight document if present
-                Optional<Flight> flightOpt = flightRepository.findById(tf.getFlightId());
-                if (flightOpt.isPresent()) {
-                    Flight flight = flightOpt.get();
-                    flight.setStatus(newStatus);
-                    if (snapshot.delayMinutes() != null) {
-                        flight.setDelayMinutes(snapshot.delayMinutes());
-                    }
-                    if (snapshot.delayReason() != null) {
-                        flight.setDelayReason(snapshot.delayReason());
-                    }
-                    if (snapshot.revisedDepartureTime() != null) {
-                        flight.setRevisedDepartureTime(snapshot.revisedDepartureTime());
-                    }
-                    if (snapshot.revisedArrivalTime() != null) {
-                        flight.setEstimatedArrival(snapshot.revisedArrivalTime());
-                    }
-                    flightRepository.save(flight);
-                }
-
-                // 3. Broadcast WebSocket Live Event
+                // 2. Broadcast WebSocket Live Event
                 if (webSocketPublisher != null) {
                     String eventId = String.format("event-%s-%s-%d", tf.getFlightNumber(), newStatus, System.currentTimeMillis());
                     FlightStatusEvent event = FlightStatusEvent.builder()
@@ -139,14 +109,14 @@ public class LiveFlightTrackingSyncService {
                             .estimatedArrival(snapshot.revisedArrivalTime())
                             .gate(snapshot.gate())
                             .terminal(snapshot.terminal())
-                            .source("AVIATIONSTACK")
+                            .source("SIMULATED")
                             .build();
 
                     webSocketPublisher.publish(event);
                 }
 
                 // 4. Send Web Push Notification
-                if (webPushService != null) {
+                if (webPushService != null && tf.getFlightId() != null) {
                     String title = String.format("Flight %s: Status Update", tf.getFlightNumber());
                     String body = buildNotificationBody(tf.getFlightNumber(), newStatus, snapshot);
                     String url = "/tracked-flights";

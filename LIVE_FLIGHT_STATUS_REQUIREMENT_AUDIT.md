@@ -252,7 +252,7 @@ The dedicated test suite for Requirement #1 is implemented across 6 test classes
 
 ## 10. Simulation Verification
 
-- **Mock Provider Abstraction**: `FlightStatusProvider` interface decouples the application from simulation logic, allowing straightforward future replacement with real aviation data feeds (e.g., FlightAware, AviationStack).
+- **Internal Provider Abstraction**: `FlightStatusProvider` interface powers the high-performance internal mock flight telemetry backed directly by MongoDB and internal simulation engines.
 - **Simulation Engine**: `FlightSimulationEngine` executes state machine transitions without bypassing validation rules.
 - **Scheduling**: `FlightSimulationScheduler` automates periodic state advancement for all active simulation configs.
 

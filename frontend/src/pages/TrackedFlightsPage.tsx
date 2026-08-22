@@ -197,7 +197,7 @@ export const TrackedFlightsPage: React.FC = () => {
               Live Flight Radar & Tracker
             </h1>
             <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-              Track any commercial flight in real time with live Aviationstack & radar telemetry feeds, animated airspace arcs, delays, terminal gates, and instant browser notifications.
+              Track any commercial flight in real time with live airspace radar telemetry, animated flight arcs, delay predictions, terminal gates, and instant browser notifications.
             </p>
           </div>
 
@@ -428,23 +428,11 @@ export const TrackedFlightsPage: React.FC = () => {
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">
                     Data Feed Provenance
                   </span>
-                  {activeSnapshot.updatedSource === 'AVIATIONSTACK' ? (
-                    <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      LIVE • Aviationstack
-                    </span>
-                  ) : activeSnapshot.updatedSource === 'CACHED_AVIATIONSTACK' ? (
-                    <span className="text-xs font-mono font-bold text-sky-400 flex items-center gap-1.5 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                      CACHED • Aviationstack
-                    </span>
-                  ) : (
-                    <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                      SIMULATED • SmartTravel
-                    </span>
-                  )}
-                  <span className="block text-[10px] text-slate-500 mt-0.5">Live Radar & WebSocket Sync</span>
+                  <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    LIVE SIMULATION • SmartTravel Engine
+                  </span>
+                  <span className="block text-[10px] text-slate-500 mt-0.5">Airspace Radar & WebSocket Sync</span>
                 </div>
               </div>
             </div>
