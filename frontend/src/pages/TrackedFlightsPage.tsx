@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plane,
   Radio,
@@ -21,22 +21,25 @@ import { flightService } from '../services/flightService';
 import { pushNotificationService } from '../services/pushNotificationService';
 import { FlightLiveStatusTracker } from '../components/FlightLiveStatusTracker';
 import { LiveFlightRadarMap } from '../components/LiveFlightRadarMap';
+import { LiveAirspaceFeed } from '../components/LiveAirspaceFeed';
 import { useAuth } from '../context/AuthContext';
 
 const POPULAR_FLIGHT_SUGGESTIONS = [
-  { code: 'AI-101', route: 'DEL → BOM', airline: 'Air India', status: 'IN_AIR' },
-  { code: '6E-204', route: 'BLR → DEL', airline: 'IndiGo', status: 'ON_TIME' },
-  { code: 'UK-955', route: 'BOM → GOI', airline: 'Vistara', status: 'BOARDING' },
-  { code: 'EK-500', route: 'DXB → BOM', airline: 'Emirates', status: 'IN_AIR' },
-  { code: 'BA-112', route: 'LHR → DEL', airline: 'British Airways', status: 'IN_AIR' },
-  { code: 'SQ-402', route: 'SIN → BOM', airline: 'Singapore Airlines', status: 'ON_TIME' },
+  { code: 'AI-101', route: 'DEL → BOM' },
+  { code: '6E-204', route: 'BLR → DEL' },
+  { code: 'UK-955', route: 'BOM → GOI' },
+  { code: 'EK-500', route: 'DXB → BOM' },
+  { code: 'BA-112', route: 'LHR → DEL' },
+  { code: 'SQ-402', route: 'SIN → BOM' },
 ];
 
 export const TrackedFlightsPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Search & Radar States
-  const [searchQuery, setSearchQuery] = useState('AI-101');
+  const initialFlight = searchParams.get('flight') || 'AI-101';
+  const [searchQuery, setSearchQuery] = useState(initialFlight);
   const [activeSnapshot, setActiveSnapshot] = useState<FlightStatusSnapshot | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -90,12 +93,18 @@ export const TrackedFlightsPage: React.FC = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchLiveStatus(searchQuery);
+    const flightParam = searchParams.get('flight');
+    if (flightParam && flightParam.toUpperCase() !== searchQuery) {
+      setSearchQuery(flightParam.toUpperCase());
+      fetchLiveStatus(flightParam.toUpperCase());
+    } else {
+      fetchLiveStatus(searchQuery);
+    }
     if (isAuthenticated) {
       fetchTracked();
       checkPushStatus();
     }
-  }, [isAuthenticated, fetchTracked, fetchLiveStatus]);
+  }, [isAuthenticated, fetchTracked, fetchLiveStatus, searchParams]);
 
   const checkPushStatus = async () => {
     const subscribed = await pushNotificationService.isSubscribed();
@@ -105,6 +114,14 @@ export const TrackedFlightsPage: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchLiveStatus(searchQuery);
+    setSearchParams({ flight: searchQuery });
+  };
+
+  const handleSelectAirspaceFlight = (code: string) => {
+    setSearchQuery(code);
+    fetchLiveStatus(code);
+    setSearchParams({ flight: code });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleTogglePush = async () => {
@@ -439,7 +456,25 @@ export const TrackedFlightsPage: React.FC = () => {
           </div>
         ) : null}
 
-        {/* 4. BROWSER PUSH NOTIFICATION CONTROLLER */}
+        {/* 4. LIVE AIRSPACE TELEMETRY & FLIGHT RADAR FEED */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                Live Airspace Fleet & Radar Feed
+              </h3>
+            </div>
+            <span className="text-xs text-slate-400 font-mono">Click any flight to lock radar track</span>
+          </div>
+
+          <LiveAirspaceFeed
+            onSelectFlight={handleSelectAirspaceFlight}
+            selectedFlightNumber={activeSnapshot?.flightNumber || searchQuery}
+          />
+        </div>
+
+        {/* 5. BROWSER PUSH NOTIFICATION CONTROLLER */}
         <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-3.5">
             <div

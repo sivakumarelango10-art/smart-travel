@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Lock,
   Radio,
+  Compass,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -319,6 +320,15 @@ export const FlightCard: React.FC<FlightCardProps> = ({
             >
               <Radio className={`w-3.5 h-3.5 ${isTracked ? 'text-emerald-400' : 'text-slate-400'}`} />
               <span>{isTracked ? 'Tracking Live' : 'Track Status'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate(`/tracked-flights?flight=${flight.flightNumber}`)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-slate-700 transition duration-150"
+            >
+              <Compass className="w-3.5 h-3.5 text-sky-400" />
+              <span>Live Radar</span>
             </button>
 
             {trackMessage && (

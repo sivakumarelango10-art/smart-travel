@@ -14,11 +14,13 @@ import {
   MapPin,
   Award,
   CreditCard,
-  Headphones
+  Headphones,
+  Radio
 } from 'lucide-react';
 import { FlightSearchWidget } from '../components/FlightSearchWidget';
 import { RecommendationsSection } from '../components/RecommendationsSection';
 import { OptimizedImage } from '../components/OptimizedImage';
+import { LiveAirspaceFeed } from '../components/LiveAirspaceFeed';
 import { healthService } from '../services/healthService';
 import { HealthData } from '../types/api';
 
@@ -414,7 +416,46 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ======================================================== */}
-      {/* 3. POPULAR & TRENDING DESTINATIONS                      */}
+      {/* 3. LIVE AIRSPACE RADAR & REAL-TIME TELEMETRY FEED       */}
+      {/* ======================================================== */}
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <Radio className="w-4 h-4 text-emerald-400" />
+              <span>Live Airspace Operations</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
+              Real-Time Flight Radar & Telemetry Stream
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              Live commercial flights in transit across Indian and international airspace with active ADS-B telemetry
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/tracked-flights')}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg shadow-sky-500/20"
+          >
+            <span>Open Airspace Radar Map</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <LiveAirspaceFeed
+          compact={false}
+          limit={6}
+          onSelectFlight={(flightNumber) => navigate(`/tracked-flights?flight=${flightNumber}`)}
+        />
+      </section>
+
+      {/* ======================================================== */}
+      {/* 4. POPULAR & TRENDING DESTINATIONS                      */}
       {/* ======================================================== */}
       <section id="destinations" className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
