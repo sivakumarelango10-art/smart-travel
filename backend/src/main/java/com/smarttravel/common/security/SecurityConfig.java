@@ -213,7 +213,7 @@ public class SecurityConfig {
                 "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers",
                 "X-Request-ID", "X-Correlation-ID"
         ));
-        configuration.setExposedHeaders(List.of("Authorization", "Link", "X-Total-Count", "X-Request-ID", "X-Correlation-ID"));
+        configuration.setExposedHeaders(List.of("Authorization", "Link", "X-Total-Count", "X-Request-ID", "X-Correlation-ID", "X-Response-Time", "Server-Timing"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

@@ -428,11 +428,23 @@ export const TrackedFlightsPage: React.FC = () => {
                   <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">
                     Data Feed Provenance
                   </span>
-                  <span className="text-xs font-mono font-bold text-sky-400 flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {activeSnapshot.updatedSource || 'REALTIME_RADAR'}
-                  </span>
-                  <span className="block text-[10px] text-slate-500 mt-0.5">Live WebSocket Sync</span>
+                  {activeSnapshot.updatedSource === 'AVIATIONSTACK' ? (
+                    <span className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      LIVE • Aviationstack
+                    </span>
+                  ) : activeSnapshot.updatedSource === 'CACHED_AVIATIONSTACK' ? (
+                    <span className="text-xs font-mono font-bold text-sky-400 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                      CACHED • Aviationstack
+                    </span>
+                  ) : (
+                    <span className="text-xs font-mono font-bold text-blue-400 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                      SIMULATED • SmartTravel
+                    </span>
+                  )}
+                  <span className="block text-[10px] text-slate-500 mt-0.5">Live Radar & WebSocket Sync</span>
                 </div>
               </div>
             </div>

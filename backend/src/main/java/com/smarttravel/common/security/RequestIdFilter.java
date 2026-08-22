@@ -37,6 +37,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
                                     @org.springframework.lang.NonNull HttpServletResponse response,
                                     @org.springframework.lang.NonNull FilterChain filterChain) throws ServletException, IOException {
         String requestId = extractAndSanitizeRequestId(request);
+        long startTime = System.currentTimeMillis();
 
         MDC.put(MDC_REQUEST_ID_KEY, requestId);
         request.setAttribute(MDC_REQUEST_ID_KEY, requestId);
@@ -45,6 +46,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
+            long durationMs = System.currentTimeMillis() - startTime;
+            response.setHeader("X-Response-Time", durationMs + "ms");
+            response.setHeader("Server-Timing", "app;dur=" + durationMs);
             MDC.remove(MDC_REQUEST_ID_KEY);
         }
     }

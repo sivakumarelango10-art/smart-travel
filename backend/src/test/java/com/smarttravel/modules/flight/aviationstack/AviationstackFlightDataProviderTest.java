@@ -69,11 +69,11 @@ class AviationstackFlightDataProviderTest {
                 Instant.now().plusSeconds(7200),
                 "Gate 4",
                 "T3",
-                "AVIATIONSTACK_LIVE_FEED"
+                "AVIATIONSTACK"
         );
 
         when(aviationstackClient.getFlightStatus("AI-101")).thenReturn(Optional.of(liveResp));
-        when(normalizer.toFlightStatusSnapshot(item, "AI-101")).thenReturn(expectedSnapshot);
+        when(normalizer.toFlightStatusSnapshot(eq(item), eq("AI-101"), anyString())).thenReturn(expectedSnapshot);
 
         Optional<FlightStatusSnapshot> snapshotOpt = provider.fetchLatestStatus("AI-101", null);
 
@@ -82,7 +82,7 @@ class AviationstackFlightDataProviderTest {
         assertEquals("AI-101", snapshot.flightNumber());
         assertEquals(FlightStatus.DEPARTED, snapshot.status());
         assertEquals("Gate 4", snapshot.gate());
-        assertEquals("AVIATIONSTACK_LIVE_FEED", snapshot.updatedSource());
+        assertEquals("AVIATIONSTACK", snapshot.updatedSource());
     }
 
     @Test
@@ -106,7 +106,7 @@ class AviationstackFlightDataProviderTest {
         FlightStatusSnapshot snapshot = snapshotOpt.get();
         assertEquals("AI-999", snapshot.flightNumber());
         assertEquals(FlightStatus.BOARDING, snapshot.status());
-        assertEquals("LOCAL_FALLBACK", snapshot.updatedSource());
+        assertEquals("SIMULATED", snapshot.updatedSource());
         assertEquals("T3", snapshot.terminal());
     }
 }

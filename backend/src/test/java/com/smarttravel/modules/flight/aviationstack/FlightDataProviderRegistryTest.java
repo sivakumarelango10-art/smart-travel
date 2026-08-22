@@ -36,15 +36,30 @@ class FlightDataProviderRegistryTest {
     }
 
     @Test
-    @DisplayName("2. Returns Aviationstack provider when FLIGHT_DATA_PROVIDER is AVIATIONSTACK")
+    @DisplayName("2. Returns Aviationstack provider when FLIGHT_DATA_PROVIDER is AVIATIONSTACK and API key is present")
     void testAviationstackProviderSwitch() {
         AviationstackProperties properties = new AviationstackProperties();
         properties.setProvider("AVIATIONSTACK");
+        properties.setApiKey("test_mock_key");
 
         FlightDataProviderRegistry registry = new FlightDataProviderRegistry(properties, mockProvider, aviationstackProvider);
         FlightStatusProvider active = registry.getActiveProvider();
 
         assertSame(aviationstackProvider, active);
         assertTrue(properties.isAviationstackMode());
+    }
+
+    @Test
+    @DisplayName("3. Falls back to Mock provider when API key is missing or empty even if AVIATIONSTACK mode requested")
+    void testMissingApiKeyFallsBackToMock() {
+        AviationstackProperties properties = new AviationstackProperties();
+        properties.setProvider("AVIATIONSTACK");
+        properties.setApiKey("");
+
+        FlightDataProviderRegistry registry = new FlightDataProviderRegistry(properties, mockProvider, aviationstackProvider);
+        FlightStatusProvider active = registry.getActiveProvider();
+
+        assertSame(mockProvider, active);
+        assertFalse(properties.isAviationstackMode());
     }
 }

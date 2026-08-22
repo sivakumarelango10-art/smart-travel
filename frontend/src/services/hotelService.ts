@@ -1,6 +1,9 @@
 import { apiClient } from './api';
 import { ApiResponse, Hotel, HotelSearchParams, RoomType } from '../types/api';
 
+const hotelSearchCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 3 * 60 * 1000;
+
 export const hotelService = {
   /**
    * Search hotels with pagination and filters.
@@ -11,6 +14,13 @@ export const hotelService = {
     totalPages: number;
     page: number;
   }> {
+    const cacheKey = JSON.stringify(params || {});
+    const cached = hotelSearchCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
     const response = await apiClient.get<
       ApiResponse<{
         content: Hotel[];
@@ -20,12 +30,14 @@ export const hotelService = {
       }>
     >('/v1/hotels', { params });
     const data = response.data.data;
-    return {
+    const result = {
       content: data?.content || [],
       totalElements: data?.totalElements || 0,
       totalPages: data?.totalPages || 0,
       page: data?.number || 0,
     };
+    hotelSearchCache.set(cacheKey, { timestamp: Date.now(), data: result });
+    return result;
   },
 
   /**

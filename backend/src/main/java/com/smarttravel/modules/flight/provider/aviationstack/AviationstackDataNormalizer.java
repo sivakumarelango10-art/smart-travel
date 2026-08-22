@@ -51,10 +51,11 @@ public class AviationstackDataNormalizer {
         };
     }
 
-    /**
-     * Converts a single Aviationstack flight item into a FlightStatusSnapshot.
-     */
     public FlightStatusSnapshot toFlightStatusSnapshot(AviationstackFlightItem item, String fallbackFlightNumber) {
+        return toFlightStatusSnapshot(item, fallbackFlightNumber, "AVIATIONSTACK");
+    }
+
+    public FlightStatusSnapshot toFlightStatusSnapshot(AviationstackFlightItem item, String fallbackFlightNumber, String source) {
         if (item == null) {
             return null;
         }
@@ -80,11 +81,11 @@ public class AviationstackDataNormalizer {
 
         String gate = (item.getDeparture() != null && item.getDeparture().getGate() != null)
                 ? item.getDeparture().getGate()
-                : "Gate " + ((Math.abs(flightNum.hashCode()) % 15) + 1);
+                : "TBD";
 
         String terminal = (item.getDeparture() != null && item.getDeparture().getTerminal() != null)
                 ? item.getDeparture().getTerminal()
-                : "T3";
+                : "T1";
 
         String airlineName = (item.getAirline() != null && item.getAirline().getName() != null)
                 ? item.getAirline().getName() : "Airways";
@@ -111,10 +112,21 @@ public class AviationstackDataNormalizer {
         String aircraft = (item.getAircraft() != null && item.getAircraft().getIata() != null)
                 ? item.getAircraft().getIata() : "Airbus A321neo";
 
-        int altitude = status == FlightStatus.DEPARTED || status == FlightStatus.DIVERTED ? 36000 : 0;
-        int speed = status == FlightStatus.DEPARTED || status == FlightStatus.DIVERTED ? 850 : 0;
+        int altitude = (item.getLive() != null && item.getLive().getAltitude() != null)
+                ? item.getLive().getAltitude().intValue()
+                : (status == FlightStatus.DEPARTED || status == FlightStatus.DIVERTED ? 36000 : 0);
+        int speed = (item.getLive() != null && item.getLive().getSpeedHorizontal() != null)
+                ? item.getLive().getSpeedHorizontal().intValue()
+                : (status == FlightStatus.DEPARTED || status == FlightStatus.DIVERTED ? 850 : 0);
         double progress = status == FlightStatus.ARRIVED ? 100.0 : (status == FlightStatus.DEPARTED ? 62.0 : 0.0);
         String belt = "Belt " + ((Math.abs(flightNum.hashCode()) % 8) + 1);
+
+        Double currentLat = (item.getLive() != null && item.getLive().getLatitude() != null)
+                ? item.getLive().getLatitude() : 23.8229;
+        Double currentLng = (item.getLive() != null && item.getLive().getLongitude() != null)
+                ? item.getLive().getLongitude() : 74.9828;
+
+        String effectiveSource = (source != null && !source.isBlank()) ? source : "AVIATIONSTACK";
 
         return new FlightStatusSnapshot(
                 flightNum,
@@ -125,7 +137,7 @@ public class AviationstackDataNormalizer {
                 estimatedArrival,
                 gate,
                 terminal,
-                "AVIATIONSTACK_LIVE_FEED",
+                effectiveSource,
                 airlineName,
                 airlineCode,
                 originCode,
@@ -145,8 +157,8 @@ public class AviationstackDataNormalizer {
                 77.1000,
                 19.0896,
                 72.8656,
-                23.8229,
-                74.9828,
+                currentLat,
+                currentLng,
                 "avstack_" + flightNum.replace("-", "").toLowerCase()
         );
     }

@@ -20,12 +20,23 @@ export const HotelSearchPage: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [slowMessage, setSlowMessage] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     let isCurrent = true;
     setLoading(true);
+    setSlowMessage(null);
+
+    const stage1Timer = setTimeout(() => {
+      if (isCurrent) setSlowMessage('Connecting to live hotel services…');
+    }, 3500);
+
+    const stage2Timer = setTimeout(() => {
+      if (isCurrent) setSlowMessage('Live hotel services are taking a little longer than usual.');
+    }, 8000);
+
     hotelService.searchHotels({
       city: city.trim() || undefined,
       minStars,
@@ -34,6 +45,9 @@ export const HotelSearchPage: React.FC = () => {
       size: 9,
     }).then((res) => {
       if (isCurrent) {
+        clearTimeout(stage1Timer);
+        clearTimeout(stage2Timer);
+        setSlowMessage(null);
         setHotels(res.content);
         setTotalCount(res.totalElements);
         setTotalPages(res.totalPages);
@@ -49,16 +63,24 @@ export const HotelSearchPage: React.FC = () => {
       }
     }).catch((err) => {
       if (isCurrent) {
+        clearTimeout(stage1Timer);
+        clearTimeout(stage2Timer);
+        setSlowMessage(null);
         console.error('Failed to search hotels', err);
       }
     }).finally(() => {
       if (isCurrent) {
+        clearTimeout(stage1Timer);
+        clearTimeout(stage2Timer);
         setLoading(false);
+        setSlowMessage(null);
       }
     });
 
     return () => {
       isCurrent = false;
+      clearTimeout(stage1Timer);
+      clearTimeout(stage2Timer);
     };
   }, [city, minStars, maxPrice, page]);
 
@@ -163,10 +185,20 @@ export const HotelSearchPage: React.FC = () => {
 
         {/* Hotels Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <HotelCardSkeleton key={i} />
-            ))}
+          <div className="space-y-4">
+            {slowMessage && (
+              <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs flex items-center gap-3 animate-fade-in shadow-lg transition-all">
+                <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
+                <div className="flex-1 font-medium text-sky-200">
+                  {slowMessage}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <HotelCardSkeleton key={i} />
+              ))}
+            </div>
           </div>
         ) : hotels.length === 0 ? (
           <div className="py-20 text-center bg-slate-900/40 border border-slate-800 rounded-2xl p-8">

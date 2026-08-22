@@ -14,9 +14,42 @@ export const POPULAR_AIRPORTS: AirportInfo[] = [
   { code: 'JFK', name: 'John F. Kennedy International Airport', city: 'New York', country: 'United States', terminal: 'T4' },
 ];
 
+export interface CachedSearchResult {
+  timestamp: number;
+  data: ApiResponse<FlightSearchResponse>;
+}
+
+const searchCache = new Map<string, CachedSearchResult>();
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+
 export const flightService = {
-  async searchFlights(params: FlightSearchParams): Promise<ApiResponse<FlightSearchResponse>> {
-    const res = await apiClient.get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', { params });
+  getCachedSearch(params: FlightSearchParams): CachedSearchResult | null {
+    const cacheKey = JSON.stringify(params);
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached;
+    }
+    return null;
+  },
+
+  async searchFlights(
+    params: FlightSearchParams,
+    options?: { forceRefresh?: boolean; signal?: AbortSignal }
+  ): Promise<ApiResponse<FlightSearchResponse>> {
+    const cacheKey = JSON.stringify(params);
+    const cached = searchCache.get(cacheKey);
+
+    if (!options?.forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+
+    const res = await apiClient.get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', {
+      params,
+      signal: options?.signal,
+    });
+    if (res.data && res.data.success) {
+      searchCache.set(cacheKey, { timestamp: Date.now(), data: res.data });
+    }
     return res.data;
   },
 

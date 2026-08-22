@@ -30,6 +30,9 @@ export const FlightSearchPage: React.FC = () => {
 
   const [flights, setFlights] = useState<Flight[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [slowMessage, setSlowMessage] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [timeAgoText, setTimeAgoText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showModifySearch, setShowModifySearch] = useState<boolean>(false);
 
@@ -42,27 +45,88 @@ export const FlightSearchPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('CHEAPEST');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
   const searchSeqRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Format "Updated X ago"
+  useEffect(() => {
+    if (!lastUpdated) return;
+
+    const updateAgo = () => {
+      const seconds = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+      if (seconds < 10) {
+        setTimeAgoText('Updated just now');
+      } else if (seconds < 60) {
+        setTimeAgoText(`Updated ${seconds} seconds ago`);
+      } else {
+        const mins = Math.floor(seconds / 60);
+        setTimeAgoText(`Updated ${mins}m ago`);
+      }
+    };
+
+    updateAgo();
+    const timer = setInterval(updateAgo, 5000);
+    return () => clearInterval(timer);
+  }, [lastUpdated]);
 
   const fetchFlights = useCallback(async () => {
     const seq = ++searchSeqRef.current;
-    try {
+
+    // Abort previous in-flight search request if still running
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const searchParamsObj = {
+      origin,
+      destination,
+      departureDate,
+      cabinClass,
+      passengers,
+      page: 0,
+      size: 50,
+    };
+
+    // Stale-While-Revalidate: Check if we have cached results to render immediately
+    const cached = flightService.getCachedSearch(searchParamsObj);
+    if (cached && cached.data?.data?.content) {
+      setFlights(cached.data.data.content);
+      setLastUpdated(new Date(cached.timestamp));
+      setLoading(false);
+      setError(null);
+    } else {
       setLoading(true);
       setError(null);
+    }
 
-      const res = await flightService.searchFlights({
-        origin,
-        destination,
-        departureDate,
-        cabinClass,
-        passengers,
-        page: 0,
-        size: 50,
+    // Two-stage non-intrusive status messages
+    setSlowMessage(null);
+    const stage1Timer = setTimeout(() => {
+      if (seq === searchSeqRef.current) {
+        setSlowMessage('Connecting to live flight services…');
+      }
+    }, 3500);
+
+    const stage2Timer = setTimeout(() => {
+      if (seq === searchSeqRef.current) {
+        setSlowMessage('Live flight services are taking a little longer than usual.');
+      }
+    }, 8000);
+
+    try {
+      const res = await flightService.searchFlights(searchParamsObj, {
+        signal: abortController.signal,
       });
 
+      clearTimeout(stage1Timer);
+      clearTimeout(stage2Timer);
       if (seq !== searchSeqRef.current) return;
+      setSlowMessage(null);
 
       if (res.success && res.data?.content) {
         setFlights(res.data.content);
+        setLastUpdated(new Date());
         // Calculate max price from results
         const highestPrice = Math.max(
           ...res.data.content.map((f) => {
@@ -77,14 +141,25 @@ export const FlightSearchPage: React.FC = () => {
         setFlights([]);
       }
     } catch (err: any) {
+      clearTimeout(stage1Timer);
+      clearTimeout(stage2Timer);
       if (seq !== searchSeqRef.current) return;
+      setSlowMessage(null);
+
+      // Do not display errors for cleanly cancelled search requests
+      if (err?.error === 'REQUEST_ABORTED' || err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+        return;
+      }
+
       const rawMsg = err?.message || '';
       if (rawMsg.toLowerCase().includes('not found') || rawMsg.toLowerCase().includes('search')) {
         setError('No direct flights found matching your selected date and route. Try modifying your dates or departure filters.');
       } else {
         setError(rawMsg || 'Unable to retrieve live flight schedules. Please check your network connection.');
       }
-      setFlights([]);
+      if (!cached) {
+        setFlights([]);
+      }
     } finally {
       if (seq === searchSeqRef.current) {
         setLoading(false);
@@ -94,6 +169,11 @@ export const FlightSearchPage: React.FC = () => {
 
   useEffect(() => {
     fetchFlights();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchFlights]);
 
   // Extract unique airlines
@@ -283,6 +363,12 @@ export const FlightSearchPage: React.FC = () => {
                 <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
                   {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
                 </span>
+                {timeAgoText && (
+                  <span className="text-[11px] text-emerald-400/90 font-medium bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {timeAgoText}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 All fares shown in Indian Rupees (₹) with airport taxes included
@@ -324,6 +410,14 @@ export const FlightSearchPage: React.FC = () => {
           {/* Flight Results Content */}
           {loading ? (
             <div className="space-y-4 py-2">
+              {slowMessage && (
+                <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs flex items-center gap-3 animate-fade-in shadow-lg transition-all">
+                  <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
+                  <div className="flex-1 font-medium text-sky-200">
+                    {slowMessage}
+                  </div>
+                </div>
+              )}
               {[1, 2, 3, 4].map((i) => (
                 <FlightCardSkeleton key={i} />
               ))}

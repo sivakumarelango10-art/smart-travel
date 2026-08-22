@@ -50,13 +50,17 @@ public class AviationstackFlightDataProvider implements FlightStatusProvider {
         }
 
         try {
+            boolean wasCached = aviationstackClient.getCacheManager() != null &&
+                    aviationstackClient.getCacheManager().getCachedFlight(flightNumber).isPresent();
+
             Optional<AviationstackFlightResponse> liveResponse = aviationstackClient.getFlightStatus(flightNumber);
             if (liveResponse.isPresent() && !liveResponse.get().getData().isEmpty()) {
                 AviationstackFlightItem item = liveResponse.get().getData().get(0);
-                FlightStatusSnapshot snapshot = normalizer.toFlightStatusSnapshot(item, flightNumber);
+                String source = wasCached ? "CACHED_AVIATIONSTACK" : "AVIATIONSTACK";
+                FlightStatusSnapshot snapshot = normalizer.toFlightStatusSnapshot(item, flightNumber, source);
                 if (snapshot != null) {
-                    log.info("Aviationstack real-time telemetry snapshot retrieved for flight {}: status={}",
-                            flightNumber, snapshot.status());
+                    log.info("Aviationstack real-time telemetry snapshot retrieved for flight {}: status={}, source={}",
+                            flightNumber, snapshot.status(), source);
                     return Optional.of(snapshot);
                 }
             }
@@ -81,7 +85,7 @@ public class AviationstackFlightDataProvider implements FlightStatusProvider {
                     f.getEstimatedArrival(),
                     gate,
                     term,
-                    "LOCAL_FALLBACK"
+                    "SIMULATED"
             );
         });
     }

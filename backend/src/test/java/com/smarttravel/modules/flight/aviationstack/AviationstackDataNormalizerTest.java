@@ -78,7 +78,7 @@ class AviationstackDataNormalizerTest {
         assertEquals(25, snapshot.delayMinutes());
         assertEquals("Gate 12", snapshot.gate());
         assertEquals("T3", snapshot.terminal());
-        assertEquals("AVIATIONSTACK_LIVE_FEED", snapshot.updatedSource());
+        assertEquals("AVIATIONSTACK", snapshot.updatedSource());
         assertNotNull(snapshot.revisedDepartureTime());
         assertNotNull(snapshot.revisedArrivalTime());
     }

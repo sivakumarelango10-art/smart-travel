@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -7,6 +7,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PageLoader } from './components/PageLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { startKeepAliveHeartbeat, stopKeepAliveHeartbeat } from './services/warmupService';
 
 // Lazy-loaded Customer & Public Pages
 const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
@@ -41,6 +42,13 @@ const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificatio
 const AdminSystemPage = lazy(() => import('./pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })));
 
 export default function App() {
+  useEffect(() => {
+    startKeepAliveHeartbeat();
+    return () => {
+      stopKeepAliveHeartbeat();
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <ErrorBoundary>

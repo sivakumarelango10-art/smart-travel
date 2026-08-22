@@ -303,12 +303,12 @@ public class FlightServiceImpl implements FlightService {
         
         // Fetch up to 6 real active flights from DB
         List<Flight> activeFlights = flightRepository.findAll().stream()
-                .filter(f -> Boolean.TRUE.equals(f.getActive()))
+                .filter(Flight::isActive)
                 .limit(6)
                 .toList();
 
         for (Flight f : activeFlights) {
-            popular.add(toRichSnapshot(f, "SMARTTRAVEL_LIVE_FLEET"));
+            popular.add(toRichSnapshot(f, "SIMULATED"));
         }
 
         if (popular.size() < 6) {
@@ -478,7 +478,7 @@ public class FlightServiceImpl implements FlightService {
                 estArr,
                 "Gate " + ((Math.abs(cleanNum.hashCode()) % 15) + 1),
                 "T3",
-                "REALTIME_RADAR_TELEMETRY",
+                "SIMULATED",
                 airline,
                 airlineCode,
                 orig,

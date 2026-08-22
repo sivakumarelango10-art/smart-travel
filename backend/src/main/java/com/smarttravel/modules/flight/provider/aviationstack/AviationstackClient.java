@@ -249,6 +249,10 @@ public class AviationstackClient {
         }
     }
 
+    public AviationstackCacheManager getCacheManager() {
+        return cacheManager;
+    }
+
     private String buildSearchCacheKey(String dep, String arr, String date) {
         return String.format("search:%s->%s:%s",
                 dep != null ? dep.toUpperCase().trim() : "ANY",

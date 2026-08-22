@@ -136,6 +136,6 @@ public class AviationstackProperties {
     }
 
     public boolean isAviationstackMode() {
-        return "AVIATIONSTACK".equalsIgnoreCase(provider) || (apiKey != null && !apiKey.isBlank());
+        return apiKey != null && !apiKey.isBlank() && !"MOCK".equalsIgnoreCase(provider);
     }
 }
