@@ -48,24 +48,22 @@ public class MongoIndexConfig {
         }
         try {
             // 1. Flights collection compound indexes
-            var flightOps = mongoTemplate.indexOps("flights");
-            flightOps.ensureIndex(new Index().on("departureAirport.code", Sort.Direction.ASC)
+            ensureIndexSafely("flights", new Index().on("departureAirport.code", Sort.Direction.ASC)
                     .on("arrivalAirport.code", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .on("departureTime", Sort.Direction.ASC)
                     .named("idx_flight_esr_composite"));
-            flightOps.ensureIndex(new Index().on("flightNumber", Sort.Direction.ASC)
+            ensureIndexSafely("flights", new Index().on("flightNumber", Sort.Direction.ASC)
                     .named("idx_flight_number"));
-            flightOps.ensureIndex(new Index().on("status", Sort.Direction.ASC)
+            ensureIndexSafely("flights", new Index().on("status", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .named("idx_flight_status_active"));
 
             // 2. Bookings collection compound indexes
-            var bookingOps = mongoTemplate.indexOps("bookings");
-            bookingOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("bookings", new Index().on("userId", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_booking_user_date"));
-            bookingOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("bookings", new Index().on("userId", Sort.Direction.ASC)
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_booking_user_status_date"));
@@ -76,73 +74,64 @@ public class MongoIndexConfig {
             ensureTicketNumberUniqueIndex();
 
             // 4. Hotels collection compound indexes
-            var hotelOps = mongoTemplate.indexOps("hotels");
-            hotelOps.ensureIndex(new Index().on("address.city", Sort.Direction.ASC)
+            ensureIndexSafely("hotels", new Index().on("address.city", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .on("starRating", Sort.Direction.DESC)
                     .named("idx_hotel_address_city_rating"));
-            hotelOps.ensureIndex(new Index().on("nearestAirportCode", Sort.Direction.ASC)
+            ensureIndexSafely("hotels", new Index().on("nearestAirportCode", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .named("idx_hotel_airport_active"));
 
             // 5. Rooms collection indexes
-            var roomOps = mongoTemplate.indexOps("rooms");
-            roomOps.ensureIndex(new Index().on("hotelId", Sort.Direction.ASC)
+            ensureIndexSafely("rooms", new Index().on("hotelId", Sort.Direction.ASC)
                     .on("roomType", Sort.Direction.ASC)
                     .named("idx_room_hotel_type"));
 
             // 6. Reviews collection compound indexes
-            var reviewOps = mongoTemplate.indexOps("reviews");
-            reviewOps.ensureIndex(new Index().on("targetId", Sort.Direction.ASC)
+            ensureIndexSafely("reviews", new Index().on("targetId", Sort.Direction.ASC)
                     .on("targetType", Sort.Direction.ASC)
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_review_target_status_date"));
 
             // 7. Price Freezes collection compound indexes
-            var priceFreezeOps = mongoTemplate.indexOps("price_freezes");
-            priceFreezeOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("price_freezes", new Index().on("userId", Sort.Direction.ASC)
                     .on("flightId", Sort.Direction.ASC)
                     .on("status", Sort.Direction.ASC)
                     .named("idx_freeze_user_flight_status"));
 
             // 8. User Activity / Recommendations
-            var activityOps = mongoTemplate.indexOps("user_activities");
-            activityOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("user_activities", new Index().on("userId", Sort.Direction.ASC)
                     .on("eventType", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_user_activity_user_event_date"));
 
             // 9. Notifications collection
-            var notifOps = mongoTemplate.indexOps("notifications");
-            notifOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("notifications", new Index().on("userId", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_notification_user_created_date"));
-            notifOps.ensureIndex(new Index().on("userId", Sort.Direction.ASC)
+            ensureIndexSafely("notifications", new Index().on("userId", Sort.Direction.ASC)
                     .on("read", Sort.Direction.ASC)
                     .named("idx_notification_user_read_status"));
 
             // 10. Payments collection
-            var paymentOps = mongoTemplate.indexOps("payments");
-            paymentOps.ensureIndex(new Index().on("bookingId", Sort.Direction.ASC)
+            ensureIndexSafely("payments", new Index().on("bookingId", Sort.Direction.ASC)
                     .named("idx_payment_booking_id"));
-            paymentOps.ensureIndex(new Index().on("paymentStatus", Sort.Direction.ASC)
+            ensureIndexSafely("payments", new Index().on("paymentStatus", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_payment_status_date"));
 
             // 11. Flight Price Histories collection compound indexes
-            var historyOps = mongoTemplate.indexOps("flight_price_histories");
-            historyOps.ensureIndex(new Index().on("flightId", Sort.Direction.ASC)
+            ensureIndexSafely("flight_price_histories", new Index().on("flightId", Sort.Direction.ASC)
                     .on("cabinClass", Sort.Direction.ASC)
                     .on("capturedAt", Sort.Direction.DESC)
                     .named("idx_price_hist_flight_cabin_time"));
-            historyOps.ensureIndex(new Index().on("flightId", Sort.Direction.ASC)
+            ensureIndexSafely("flight_price_histories", new Index().on("flightId", Sort.Direction.ASC)
                     .on("capturedAt", Sort.Direction.DESC)
                     .named("idx_price_hist_flight_time"));
 
             // 12. Dynamic Pricing Rules collection index
-            var ruleOps = mongoTemplate.indexOps("dynamic_pricing_rules");
-            ruleOps.ensureIndex(new Index().on("type", Sort.Direction.ASC)
+            ensureIndexSafely("dynamic_pricing_rules", new Index().on("type", Sort.Direction.ASC)
                     .on("enabled", Sort.Direction.ASC)
                     .on("priority", Sort.Direction.ASC)
                     .named("idx_pricing_rule_type_enabled_prio"));
@@ -150,6 +139,39 @@ public class MongoIndexConfig {
             log.info("All MongoDB performance indexes successfully verified and initialized.");
         } catch (Exception ex) {
             log.warn("MongoDB index initialization warning (continuing startup): {}", ex.getMessage());
+        }
+    }
+
+    /**
+     * Ensures an index exists on the specified collection without failing on name conflicts.
+     * If an index with the identical key pattern already exists under another name,
+     * it skips creation and avoids MongoCommandException error 85 (IndexOptionsConflict).
+     */
+    public void ensureIndexSafely(String collectionName, Index index) {
+        if (!mongoTemplate.collectionExists(collectionName)) {
+            mongoTemplate.createCollection(collectionName);
+        }
+        try {
+            List<IndexInfo> existing = mongoTemplate.indexOps(collectionName).getIndexInfo();
+            org.bson.Document targetKeys = index.getIndexKeys();
+            for (IndexInfo info : existing) {
+                org.bson.Document existingKeys = new org.bson.Document();
+                for (var field : info.getIndexFields()) {
+                    existingKeys.put(field.getKey(), Sort.Direction.DESC.equals(field.getDirection()) ? -1 : 1);
+                }
+                if (existingKeys.equals(targetKeys)) {
+                    log.debug("Index with matching keys {} already exists as '{}' on '{}' — skipping creation.",
+                            targetKeys.toJson(), info.getName(), collectionName);
+                    return;
+                }
+            }
+            mongoTemplate.indexOps(collectionName).ensureIndex(index);
+        } catch (Exception ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("IndexOptionsConflict")) {
+                log.debug("Index already exists with different name/options on '{}' (skipping): {}", collectionName, ex.getMessage());
+            } else {
+                log.warn("MongoDB index initialization warning on '{}': {}", collectionName, ex.getMessage());
+            }
         }
     }
 
@@ -166,22 +188,30 @@ public class MongoIndexConfig {
         if (!mongoTemplate.collectionExists(collectionName)) {
             mongoTemplate.createCollection(collectionName);
         }
-        List<IndexInfo> existing = mongoTemplate.indexOps(collectionName).getIndexInfo();
-        for (IndexInfo info : existing) {
-            boolean coversField = info.getIndexFields().stream()
-                    .anyMatch(f -> fieldName.equals(f.getKey()));
-            if (coversField && info.isUnique()) {
-                log.info("MongoDB unique indexes successfully verified for {} collection "
-                        + "(existing index '{}' covers {{{}:1}, unique:true} — skipping creation).",
-                        collectionName, info.getName(), fieldName);
-                return;
+        try {
+            List<IndexInfo> existing = mongoTemplate.indexOps(collectionName).getIndexInfo();
+            for (IndexInfo info : existing) {
+                boolean coversField = info.getIndexFields().stream()
+                        .anyMatch(f -> fieldName.equals(f.getKey()));
+                if (coversField && info.isUnique()) {
+                    log.info("MongoDB unique indexes successfully verified for {} collection "
+                            + "(existing index '{}' covers {{{}:1}, unique:true} — skipping creation).",
+                            collectionName, info.getName(), fieldName);
+                    return;
+                }
+            }
+            mongoTemplate.indexOps(collectionName).ensureIndex(
+                    new Index().on(fieldName, Sort.Direction.ASC).unique()
+                            .named(preferredIndexName));
+            log.info("MongoDB unique index '{}' on '{}.{}' created successfully.",
+                    preferredIndexName, collectionName, fieldName);
+        } catch (Exception ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("IndexOptionsConflict")) {
+                log.debug("Unique index already exists on '{}.{}' with different name (skipping): {}", collectionName, fieldName, ex.getMessage());
+            } else {
+                log.warn("MongoDB unique index initialization warning on '{}.{}': {}", collectionName, fieldName, ex.getMessage());
             }
         }
-        mongoTemplate.indexOps(collectionName).ensureIndex(
-                new Index().on(fieldName, Sort.Direction.ASC).unique()
-                        .named(preferredIndexName));
-        log.info("MongoDB unique index '{}' on '{}.{}' created successfully.",
-                preferredIndexName, collectionName, fieldName);
     }
 
     /**
