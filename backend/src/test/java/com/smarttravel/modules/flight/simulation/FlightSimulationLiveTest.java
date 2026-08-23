@@ -75,7 +75,7 @@ class FlightSimulationLiveTest {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    private static final String TEST_FLIGHT = "SIM-LIVE-900";
+    private String testFlight;
     private String flightId;
     private String adminToken;
     private String userToken;
@@ -84,8 +84,9 @@ class FlightSimulationLiveTest {
 
     @BeforeEach
     void setUp() {
+        testFlight = "SIM-LIVE-" + System.currentTimeMillis();
         // Clean up previous test artifacts
-        flightRepository.findByFlightNumber(TEST_FLIGHT).ifPresent(f -> {
+        flightRepository.findByFlightNumber(testFlight).ifPresent(f -> {
             simulationConfigRepository.findByFlightId(f.getId()).ifPresent(simulationConfigRepository::delete);
             flightStatusHistoryRepository.deleteAll(flightStatusHistoryRepository.findByFlightIdOrderByChangedAtDesc(f.getId()));
             flightRepository.delete(f);
@@ -133,7 +134,7 @@ class FlightSimulationLiveTest {
         Instant arr = dep.plus(2, ChronoUnit.HOURS);
 
         FlightCreateRequest req = FlightCreateRequest.builder()
-                .flightNumber(TEST_FLIGHT)
+                .flightNumber(testFlight)
                 .airline("Simulation Airways")
                 .airlineCode("SA")
                 .departureAirport(del)
@@ -193,7 +194,7 @@ class FlightSimulationLiveTest {
                         .content(startPayload))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.flightNumber").value(TEST_FLIGHT))
+                .andExpect(jsonPath("$.data.flightNumber").value(testFlight))
                 .andExpect(jsonPath("$.data.enabled").value(true));
 
         // Verify MongoDB simulation config document

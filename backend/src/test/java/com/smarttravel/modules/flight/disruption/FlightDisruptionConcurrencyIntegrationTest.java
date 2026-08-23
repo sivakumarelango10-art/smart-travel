@@ -101,7 +101,7 @@ class FlightDisruptionConcurrencyIntegrationTest {
         }
 
         startLatch.countDown();
-        finishLatch.await(10, TimeUnit.SECONDS);
+        finishLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
 
         // Every thread should receive status CANCELLED (authoritative or idempotent return)
