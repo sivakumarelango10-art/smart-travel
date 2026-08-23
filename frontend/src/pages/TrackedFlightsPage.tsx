@@ -169,7 +169,9 @@ export const TrackedFlightsPage: React.FC = () => {
       return;
     }
 
-    const flightIdToTrack = activeSnapshot.flightId || activeSnapshot.flightNumber;
+    const flightIdToTrack = (activeSnapshot.flightId && !activeSnapshot.flightId.startsWith('radar_') && !activeSnapshot.flightId.startsWith('sim_'))
+      ? activeSnapshot.flightId
+      : activeSnapshot.flightNumber;
     try {
       await flightTrackingService.trackFlight(flightIdToTrack);
       setTrackActionMsg(`Flight ${activeSnapshot.flightNumber} added to your live tracking board!`);

@@ -270,7 +270,7 @@ public class FlightServiceImpl implements FlightService {
             var snapshotOpt = flightStatusProvider.fetchLatestStatus(normalizedFlightNumber, null);
             if (snapshotOpt.isPresent()) {
                 com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot snap = snapshotOpt.get();
-                if (snap.originCode() != null) {
+                if (snap.originCode() != null && snap.flightId() != null && !snap.flightId().isBlank()) {
                     return snap;
                 }
                 return enrichSnapshot(snap);
@@ -283,7 +283,19 @@ public class FlightServiceImpl implements FlightService {
             return toRichSnapshot(localFlightOpt.get(), "SIMULATED");
         }
 
-        // If not found in DB, generate realistic simulated live flight telemetry
+        // Check unhyphenated or hyphenated variant
+        String standardNumber = formatStandardFlightCode(normalizedFlightNumber);
+        localFlightOpt = flightRepository.findByFlightNumber(standardNumber);
+        if (localFlightOpt.isPresent()) {
+            return toRichSnapshot(localFlightOpt.get(), "SIMULATED");
+        }
+
+        // Auto-provision flight into MongoDB so it has a permanent entity ID
+        Flight autoFlight = autoProvisionFlight(standardNumber);
+        if (autoFlight != null) {
+            return toRichSnapshot(autoFlight, "SIMULATED");
+        }
+
         return generateSimulatedFlightSnapshot(normalizedFlightNumber);
     }
 
@@ -375,7 +387,7 @@ public class FlightServiceImpl implements FlightService {
     }
 
     private com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot enrichSnapshot(com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot snap) {
-        String num = snap.flightNumber() != null ? snap.flightNumber() : "AI-101";
+        String num = snap.flightNumber() != null ? formatStandardFlightCode(snap.flightNumber()) : "AI-101";
         String airline = resolveAirlineName(num);
         String airlineCode = resolveAirlineCode(num);
 
@@ -392,8 +404,19 @@ public class FlightServiceImpl implements FlightService {
         int alt = snap.status() == FlightStatus.DEPARTED ? 37000 : 0;
         int spd = snap.status() == FlightStatus.DEPARTED ? 860 : 0;
 
+        String resolvedFlightId = snap.flightId();
+        if (resolvedFlightId == null || resolvedFlightId.isBlank() || resolvedFlightId.startsWith("sim_") || resolvedFlightId.startsWith("radar_")) {
+            Optional<Flight> existing = flightRepository.findByFlightNumber(num);
+            if (existing.isPresent()) {
+                resolvedFlightId = existing.get().getId();
+            } else {
+                Flight provisioned = autoProvisionFlight(num);
+                resolvedFlightId = provisioned != null ? provisioned.getId() : "sim_" + num.replace("-", "").toLowerCase();
+            }
+        }
+
         return new com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot(
-                snap.flightNumber(),
+                num,
                 snap.status(),
                 snap.delayMinutes(),
                 snap.delayReason(),
@@ -423,12 +446,12 @@ public class FlightServiceImpl implements FlightService {
                 destCoords[1],
                 origCoords[0] + (destCoords[0] - origCoords[0]) * (progress / 100.0),
                 origCoords[1] + (destCoords[1] - origCoords[1]) * (progress / 100.0),
-                "sim_" + num.replace("-", "").toLowerCase()
+                resolvedFlightId
         );
     }
 
     private com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot generateSimulatedFlightSnapshot(String flightNum) {
-        String cleanNum = (flightNum == null || flightNum.isBlank()) ? "AI-101" : flightNum.toUpperCase().trim();
+        String cleanNum = (flightNum == null || flightNum.isBlank()) ? "AI-101" : formatStandardFlightCode(flightNum.toUpperCase().trim());
         String airline = resolveAirlineName(cleanNum);
         String airlineCode = resolveAirlineCode(cleanNum);
 
@@ -458,6 +481,15 @@ public class FlightServiceImpl implements FlightService {
         double progress = (status == FlightStatus.DEPARTED) ? 55.0 : (status == FlightStatus.BOARDING ? 5.0 : 15.0);
         int alt = (status == FlightStatus.DEPARTED) ? 36000 : 0;
         int spd = (status == FlightStatus.DEPARTED) ? 840 : 0;
+
+        String resolvedFlightId;
+        Optional<Flight> existing = flightRepository.findByFlightNumber(cleanNum);
+        if (existing.isPresent()) {
+            resolvedFlightId = existing.get().getId();
+        } else {
+            Flight provisioned = autoProvisionFlight(cleanNum);
+            resolvedFlightId = provisioned != null ? provisioned.getId() : "radar_" + cleanNum.replace("-", "").toLowerCase();
+        }
 
         return new com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot(
                 cleanNum,
@@ -490,8 +522,64 @@ public class FlightServiceImpl implements FlightService {
                 destCoords[1],
                 origCoords[0] + (destCoords[0] - origCoords[0]) * (progress / 100.0),
                 origCoords[1] + (destCoords[1] - origCoords[1]) * (progress / 100.0),
-                "radar_" + cleanNum.replace("-", "").toLowerCase()
+                resolvedFlightId
         );
+    }
+
+    private Flight autoProvisionFlight(String flightNumber) {
+        try {
+            String num = formatStandardFlightCode(flightNumber);
+            String airline = resolveAirlineName(num);
+            String airlineCode = resolveAirlineCode(num);
+            String orig = "DEL";
+            String dest = "BOM";
+            if (num.contains("204") || num.contains("6E")) { orig = "BLR"; dest = "DEL"; }
+            else if (num.contains("955") || num.contains("UK")) { orig = "BOM"; dest = "GOI"; }
+            else if (num.contains("500") || num.contains("EK")) { orig = "DXB"; dest = "BOM"; }
+            else if (num.contains("112") || num.contains("BA")) { orig = "LHR"; dest = "DEL"; }
+            else if (num.contains("402") || num.contains("SQ")) { orig = "SIN"; dest = "BOM"; }
+
+            Flight flight = Flight.builder()
+                    .flightNumber(num)
+                    .airline(airline)
+                    .airlineCode(airlineCode)
+                    .status(FlightStatus.ON_TIME)
+                    .departureAirport(com.smarttravel.modules.flight.model.AirportInfo.builder()
+                            .code(orig)
+                            .city(getCityName(orig))
+                            .name(getAirportFullName(orig))
+                            .terminal("T3")
+                            .build())
+                    .arrivalAirport(com.smarttravel.modules.flight.model.AirportInfo.builder()
+                            .code(dest)
+                            .city(getCityName(dest))
+                            .name(getAirportFullName(dest))
+                            .terminal("T2")
+                            .build())
+                    .departureTime(Instant.now().plus(3, ChronoUnit.HOURS))
+                    .arrivalTime(Instant.now().plus(5, ChronoUnit.HOURS))
+                    .aircraftModel("Airbus A321neo")
+                    .active(true)
+                    .build();
+
+            return flightRepository.save(flight);
+        } catch (Exception ex) {
+            log.warn("Auto-provisioning flight {} into MongoDB produced notice: {}", flightNumber, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String formatStandardFlightCode(String raw) {
+        if (raw == null) return "AI-101";
+        String clean = raw.toUpperCase().trim();
+        if (clean.startsWith("RADAR_")) clean = clean.substring(6);
+        if (clean.startsWith("SIM_")) clean = clean.substring(4);
+        if (clean.contains("-")) return clean;
+        // Regex split letters from numbers e.g. AI101 -> AI-101
+        if (clean.matches("^[A-Z0-9]{2}\\d+$")) {
+            return clean.substring(0, 2) + "-" + clean.substring(2);
+        }
+        return clean;
     }
 
     private String resolveAirlineName(String flightNum) {

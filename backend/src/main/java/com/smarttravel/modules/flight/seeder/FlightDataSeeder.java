@@ -40,20 +40,19 @@ public class FlightDataSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         try {
-            long existingCount = flightRepository.count();
-            if (existingCount >= 20) {
-                log.info("MongoDB flight collection already populated with {} flights. Verifying active schedules...", existingCount);
-                return;
-            }
-
-            log.info("Seeding realistic self-contained flight catalog into MongoDB...");
             List<Flight> seededFlights = generateInitialFleet();
+            int inserted = 0;
             for (Flight f : seededFlights) {
                 if (!flightRepository.existsByFlightNumber(f.getFlightNumber())) {
                     flightRepository.save(f);
+                    inserted++;
                 }
             }
-            log.info("Successfully seeded flight inventory into MongoDB.");
+            if (inserted > 0) {
+                log.info("Successfully seeded {} missing flagship flights (e.g. AI-101, 6E-204, UK-955) into MongoDB.", inserted);
+            } else {
+                log.info("MongoDB flight collection verified with all flagship flight schedules active.");
+            }
         } catch (Exception ex) {
             log.warn("Flight seeding encountered non-fatal error during startup: {}", ex.getMessage());
         }

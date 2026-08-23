@@ -33,24 +33,29 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
 
     @Override
     public TrackedFlightResponse trackFlight(String flightId, String userId) {
-        Flight flight = flightRepository.findById(flightId)
-                .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", flightId));
+        Flight flight = resolveFlight(flightId);
+        String resolvedFlightId = flight.getId();
 
-        // Check for existing tracking — make it idempotent
-        Optional<TrackedFlight> existing = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+        // Check for existing tracking (by resolved ID or raw parameter) — make it idempotent
+        Optional<TrackedFlight> existing = trackedFlightRepository.findByUserIdAndFlightId(userId, resolvedFlightId);
+        if (existing.isEmpty() && !resolvedFlightId.equals(flightId)) {
+            existing = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+        }
+
         if (existing.isPresent()) {
             TrackedFlight tf = existing.get();
             if (!tf.isActive()) {
                 // Re-activate if was previously untracked
                 tf.setActive(true);
+                tf.setFlightId(resolvedFlightId);
                 tf.setLastKnownStatus(flight.getStatus());
                 tf.setLastKnownEta(flight.getEstimatedArrival());
                 trackedFlightRepository.save(tf);
-                log.info("Re-activated flight tracking for user {} on flight {}", userId, flightId);
+                log.info("Re-activated flight tracking for user {} on flight {} ({})", userId, flight.getFlightNumber(), resolvedFlightId);
             } else {
-                log.info("User {} is already tracking flight {}", userId, flightId);
+                log.info("User {} is already tracking flight {} ({})", userId, flight.getFlightNumber(), resolvedFlightId);
             }
-            return toResponse(existing.get(), flight);
+            return toResponse(tf, flight);
         }
 
         // Build route string
@@ -58,7 +63,7 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
 
         TrackedFlight tracked = TrackedFlight.builder()
                 .userId(userId)
-                .flightId(flightId)
+                .flightId(resolvedFlightId)
                 .flightNumber(flight.getFlightNumber())
                 .route(route)
                 .active(true)
@@ -69,17 +74,17 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
         TrackedFlight saved;
         try {
             saved = trackedFlightRepository.save(tracked);
-            log.info("User {} is now tracking flight {} ({})", userId, flight.getFlightNumber(), flightId);
+            log.info("User {} is now tracking flight {} ({})", userId, flight.getFlightNumber(), resolvedFlightId);
         } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-            log.info("Concurrent insert caught by unique index for user {} and flight {}. Fetching existing record.", userId, flightId);
-            Optional<TrackedFlight> raced = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+            log.info("Concurrent insert caught by unique index for user {} and flight {}. Fetching existing record.", userId, resolvedFlightId);
+            Optional<TrackedFlight> raced = trackedFlightRepository.findByUserIdAndFlightId(userId, resolvedFlightId);
             if (raced.isEmpty()) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
                 }
-                raced = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+                raced = trackedFlightRepository.findByUserIdAndFlightId(userId, resolvedFlightId);
             }
             TrackedFlight tf = raced.orElse(tracked);
             if (!tf.isActive()) {
@@ -99,9 +104,16 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
 
     @Override
     public void untrackFlight(String flightId, String userId) {
-        TrackedFlight tracked = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId)
-                .orElseThrow(() -> new ResourceNotFoundException("TrackedFlight", "flightId", flightId));
+        Optional<TrackedFlight> trackedOpt = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+        if (trackedOpt.isEmpty()) {
+            try {
+                Flight flight = resolveFlight(flightId);
+                trackedOpt = trackedFlightRepository.findByUserIdAndFlightId(userId, flight.getId());
+            } catch (Exception ignored) {
+            }
+        }
 
+        TrackedFlight tracked = trackedOpt.orElseThrow(() -> new ResourceNotFoundException("TrackedFlight", "flightId", flightId));
         tracked.setActive(false);
         trackedFlightRepository.save(tracked);
         log.info("User {} stopped tracking flight {}", userId, flightId);
@@ -113,6 +125,9 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
 
         return tracked.stream().map(tf -> {
             Optional<Flight> flightOpt = flightRepository.findById(tf.getFlightId());
+            if (flightOpt.isEmpty() && tf.getFlightNumber() != null) {
+                flightOpt = flightRepository.findByFlightNumber(tf.getFlightNumber());
+            }
             if (flightOpt.isPresent()) {
                 Flight flight = flightOpt.get();
                 // Update last known status
@@ -129,9 +144,133 @@ public class FlightTrackingServiceImpl implements FlightTrackingService {
 
     @Override
     public boolean isTracking(String flightId, String userId) {
-        return trackedFlightRepository.findByUserIdAndFlightId(userId, flightId)
-                .map(TrackedFlight::isActive)
-                .orElse(false);
+        Optional<TrackedFlight> tracked = trackedFlightRepository.findByUserIdAndFlightId(userId, flightId);
+        if (tracked.isPresent()) {
+            return tracked.get().isActive();
+        }
+        try {
+            Flight resolved = resolveFlight(flightId);
+            return trackedFlightRepository.findByUserIdAndFlightId(userId, resolved.getId())
+                    .map(TrackedFlight::isActive)
+                    .orElse(false);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private Flight resolveFlight(String flightIdOrIdentifier) {
+        if (flightIdOrIdentifier == null || flightIdOrIdentifier.isBlank()) {
+            throw new ResourceNotFoundException("Flight", "id", flightIdOrIdentifier);
+        }
+
+        String raw = flightIdOrIdentifier.trim();
+
+        // 1. Direct MongoDB ID match
+        Optional<Flight> byId = flightRepository.findById(raw);
+        if (byId.isPresent()) {
+            return byId.get();
+        }
+
+        // 2. Direct Flight Number match (e.g. "AI-101", "6E-204")
+        String cleanUpper = raw.toUpperCase();
+        Optional<Flight> byNumber = flightRepository.findByFlightNumber(cleanUpper);
+        if (byNumber.isPresent()) {
+            return byNumber.get();
+        }
+
+        // 3. Normalized / formatted flight number (e.g., "AI101" <-> "AI-101")
+        String formatted = formatStandardFlightCode(cleanUpper);
+        Optional<Flight> byFormatted = flightRepository.findByFlightNumber(formatted);
+        if (byFormatted.isPresent()) {
+            return byFormatted.get();
+        }
+
+        // 4. Auto-provision flight into MongoDB for permanent tracking
+        Flight autoFlight = autoProvisionFlight(formatted);
+        if (autoFlight != null) {
+            return autoFlight;
+        }
+
+        throw new ResourceNotFoundException("Flight", "id", flightIdOrIdentifier);
+    }
+
+    private Flight autoProvisionFlight(String flightNumber) {
+        try {
+            String num = formatStandardFlightCode(flightNumber);
+            String airline = resolveAirlineName(num);
+            String airlineCode = resolveAirlineCode(num);
+            String orig = "DEL";
+            String dest = "BOM";
+            if (num.contains("204") || num.contains("6E")) { orig = "BLR"; dest = "DEL"; }
+            else if (num.contains("955") || num.contains("UK")) { orig = "BOM"; dest = "GOI"; }
+            else if (num.contains("500") || num.contains("EK")) { orig = "DXB"; dest = "BOM"; }
+            else if (num.contains("112") || num.contains("BA")) { orig = "LHR"; dest = "DEL"; }
+            else if (num.contains("402") || num.contains("SQ")) { orig = "SIN"; dest = "BOM"; }
+
+            Flight flight = Flight.builder()
+                    .flightNumber(num)
+                    .airline(airline)
+                    .airlineCode(airlineCode)
+                    .status(com.smarttravel.modules.flight.model.FlightStatus.ON_TIME)
+                    .departureAirport(com.smarttravel.modules.flight.model.AirportInfo.builder()
+                            .code(orig)
+                            .city(orig.equals("DEL") ? "Delhi" : orig.equals("BOM") ? "Mumbai" : orig.equals("BLR") ? "Bengaluru" : "New Delhi")
+                            .name(orig + " International Airport")
+                            .terminal("T3")
+                            .build())
+                    .arrivalAirport(com.smarttravel.modules.flight.model.AirportInfo.builder()
+                            .code(dest)
+                            .city(dest.equals("BOM") ? "Mumbai" : dest.equals("DEL") ? "Delhi" : dest.equals("GOI") ? "Goa" : "Mumbai")
+                            .name(dest + " International Airport")
+                            .terminal("T2")
+                            .build())
+                    .departureTime(java.time.Instant.now().plus(3, java.time.temporal.ChronoUnit.HOURS))
+                    .arrivalTime(java.time.Instant.now().plus(5, java.time.temporal.ChronoUnit.HOURS))
+                    .aircraftModel("Airbus A321neo")
+                    .active(true)
+                    .build();
+
+            return flightRepository.save(flight);
+        } catch (Exception ex) {
+            log.warn("Auto-provisioning flight {} into MongoDB produced notice: {}", flightNumber, ex.getMessage());
+            return null;
+        }
+    }
+
+    private String formatStandardFlightCode(String raw) {
+        if (raw == null) return "AI-101";
+        String clean = raw.toUpperCase().trim();
+        if (clean.startsWith("RADAR_")) clean = clean.substring(6);
+        if (clean.startsWith("SIM_")) clean = clean.substring(4);
+        if (clean.contains("-")) return clean;
+        if (clean.matches("^[A-Z0-9]{2}\\d+$")) {
+            return clean.substring(0, 2) + "-" + clean.substring(2);
+        }
+        return clean;
+    }
+
+    private String resolveAirlineName(String flightNum) {
+        String num = flightNum.toUpperCase();
+        if (num.startsWith("AI") || num.startsWith("AIC")) return "Air India";
+        if (num.startsWith("6E") || num.startsWith("IGO")) return "IndiGo";
+        if (num.startsWith("UK") || num.startsWith("VTI")) return "Vistara";
+        if (num.startsWith("SG") || num.startsWith("SEJ")) return "SpiceJet";
+        if (num.startsWith("EK") || num.startsWith("UAE")) return "Emirates";
+        if (num.startsWith("BA") || num.startsWith("BAW")) return "British Airways";
+        if (num.startsWith("SQ") || num.startsWith("SIA")) return "Singapore Airlines";
+        return "SmartTravel Airways";
+    }
+
+    private String resolveAirlineCode(String flightNum) {
+        String num = flightNum.toUpperCase();
+        if (num.startsWith("AI")) return "AI";
+        if (num.startsWith("6E")) return "6E";
+        if (num.startsWith("UK")) return "UK";
+        if (num.startsWith("SG")) return "SG";
+        if (num.startsWith("EK")) return "EK";
+        if (num.startsWith("BA")) return "BA";
+        if (num.startsWith("SQ")) return "SQ";
+        return "ST";
     }
 
     private TrackedFlightResponse toResponse(TrackedFlight tf, Flight flight) {
