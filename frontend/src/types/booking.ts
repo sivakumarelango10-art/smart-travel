@@ -21,6 +21,7 @@ export interface BookingCreateRequest {
   flightId: string;
   cabinClass: CabinClass;
   passengers: Passenger[];
+  priceFreezeId?: string;
 }
 
 export interface Booking {

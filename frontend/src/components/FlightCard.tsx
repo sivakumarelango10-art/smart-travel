@@ -22,6 +22,7 @@ import { PriceBreakdownCard } from './PriceBreakdownCard';
 import { AirlineLogo } from './AirlineLogo';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
+import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
 
 interface FlightCardProps {
   flight: Flight;
@@ -43,6 +44,9 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   const [isTracked, setIsTracked] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackMessage, setTrackMessage] = useState<string | null>(null);
+
+  // Real-time WebSocket dynamic pricing subscription
+  const { latestEvent, updatedPrice } = useFlightPricingWebSocket(flight.id, selectedCabin);
 
   const depDate = new Date(flight.departureTime);
   const arrDate = new Date(flight.arrivalTime);
@@ -72,9 +76,12 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     flight.cabinInventories?.find((c) => c.cabinClass === selectedCabin) ||
     flight.cabinInventories?.[0];
 
-  const pricePerPax = cabinInv ? cabinInv.totalPrice : flight.basePrice;
+  const initialPricePerPax = cabinInv ? cabinInv.totalPrice : flight.basePrice;
+  const pricePerPax = updatedPrice != null ? updatedPrice : initialPricePerPax;
   const totalPrice = pricePerPax * passengerCount;
-  const availableSeats = cabinInv ? cabinInv.availableSeats : flight.availableSeats;
+  const availableSeats = latestEvent?.availableSeats != null
+    ? latestEvent.availableSeats
+    : (cabinInv ? cabinInv.availableSeats : flight.availableSeats);
 
   const isDisrupted = flight.status === 'DELAYED' || flight.status === 'CANCELLED';
   const isBookable =
@@ -257,6 +264,12 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                   </span>
                 )}
               </div>
+              {latestEvent && (
+                <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 lg:justify-end animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Live Fare · {latestEvent.reason || 'Dynamic Price Active'}</span>
+                </div>
+              )}
               <p className="text-[11px] text-slate-400 whitespace-nowrap mt-0.5 flex items-center gap-1.5 lg:justify-end">
                 <span>Taxes incl.</span>
                 <span className="text-slate-600">•</span>

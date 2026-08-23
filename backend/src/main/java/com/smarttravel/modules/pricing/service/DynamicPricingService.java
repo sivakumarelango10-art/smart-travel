@@ -30,4 +30,10 @@ public interface DynamicPricingService {
      * Build a FlightPriceHistory record from the current breakdown.
      */
     FlightPriceHistory toHistoryRecord(DynamicPriceBreakdown breakdown, String flightNumber);
+
+    /**
+     * Broadcasts a real-time price change event to /topic/pricing/{flightId}.
+     */
+    void publishPriceUpdate(Flight flight, CabinInventory inventory, java.math.BigDecimal oldPrice);
 }
+

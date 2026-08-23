@@ -130,6 +130,23 @@ public class MongoIndexConfig {
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_payment_status_date"));
 
+            // 11. Flight Price Histories collection compound indexes
+            var historyOps = mongoTemplate.indexOps("flight_price_histories");
+            historyOps.ensureIndex(new Index().on("flightId", Sort.Direction.ASC)
+                    .on("cabinClass", Sort.Direction.ASC)
+                    .on("capturedAt", Sort.Direction.DESC)
+                    .named("idx_price_hist_flight_cabin_time"));
+            historyOps.ensureIndex(new Index().on("flightId", Sort.Direction.ASC)
+                    .on("capturedAt", Sort.Direction.DESC)
+                    .named("idx_price_hist_flight_time"));
+
+            // 12. Dynamic Pricing Rules collection index
+            var ruleOps = mongoTemplate.indexOps("dynamic_pricing_rules");
+            ruleOps.ensureIndex(new Index().on("type", Sort.Direction.ASC)
+                    .on("enabled", Sort.Direction.ASC)
+                    .on("priority", Sort.Direction.ASC)
+                    .named("idx_pricing_rule_type_enabled_prio"));
+
             log.info("All MongoDB performance indexes successfully verified and initialized.");
         } catch (Exception ex) {
             log.warn("MongoDB index initialization warning (continuing startup): {}", ex.getMessage());

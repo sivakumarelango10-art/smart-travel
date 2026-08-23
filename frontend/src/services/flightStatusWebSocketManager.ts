@@ -1,27 +1,30 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_BASE_URL, WS_BASE_URL } from '../config/constants';
-import { FlightStatusEvent } from '../types/api';
+import { FlightStatusEvent, DynamicPricingEvent } from '../types/api';
 
 type FlightStatusCallback = (event: FlightStatusEvent) => void;
+type DynamicPricingCallback = (event: DynamicPricingEvent) => void;
 type ConnectionStateListener = (connected: boolean, error: string | null) => void;
 
 /**
  * Singleton FlightStatusWebSocketManager
  * Manages ONE single shared STOMP/WebSocket connection for the entire application,
- * multiplexing multiple flight topic subscriptions (/topic/flight-status/{flightId})
- * and routing live updates to local component subscribers.
+ * multiplexing flight status (/topic/flight-status/{flightId}) and dynamic pricing
+ * (/topic/pricing/{flightId}) topic subscriptions without multiplying socket connections.
  */
 class FlightStatusWebSocketManager {
   private client: Client | null = null;
   private connected: boolean = false;
   private connectionError: string | null = null;
 
-  // Active subscribers: Map<flightId, Set<callback>>
+  // Active status subscribers: Map<flightId, Set<callback>>
   private flightCallbacks: Map<string, Set<FlightStatusCallback>> = new Map();
-
-  // Active STOMP broker subscriptions: Map<flightId, StompSubscription>
   private stompSubscriptions: Map<string, StompSubscription> = new Map();
+
+  // Active pricing subscribers: Map<flightId, Set<callback>>
+  private pricingCallbacks: Map<string, Set<DynamicPricingCallback>> = new Map();
+  private pricingStompSubscriptions: Map<string, StompSubscription> = new Map();
 
   // Connection state change listeners
   private connectionListeners: Set<ConnectionStateListener> = new Set();
@@ -108,7 +111,7 @@ class FlightStatusWebSocketManager {
     }
 
     // Only reconnect if there are active flight subscriptions or listeners
-    if (this.flightCallbacks.size === 0 && this.connectionListeners.size === 0) {
+    if (this.flightCallbacks.size === 0 && this.pricingCallbacks.size === 0 && this.connectionListeners.size === 0) {
       return;
     }
 
@@ -152,8 +155,30 @@ class FlightStatusWebSocketManager {
   }
 
   /**
-   * Unsubscribes a consumer callback.
-   * If no consumers remain for this flight, cancels the STOMP broker subscription to prevent leaks.
+   * Subscribes a consumer callback to dynamic pricing updates (/topic/pricing/{flightId}).
+   * Returns an unsubscribe function for React cleanup.
+   */
+  public subscribePricing(flightId: string, callback: DynamicPricingCallback): () => void {
+    if (!flightId) return () => {};
+
+    if (!this.pricingCallbacks.has(flightId)) {
+      this.pricingCallbacks.set(flightId, new Set());
+    }
+    this.pricingCallbacks.get(flightId)!.add(callback);
+
+    if (this.connected && this.client && !this.pricingStompSubscriptions.has(flightId)) {
+      this.subscribePricingStompTopic(flightId);
+    } else if (!this.connected) {
+      this.connect();
+    }
+
+    return () => {
+      this.unsubscribePricing(flightId, callback);
+    };
+  }
+
+  /**
+   * Unsubscribes a consumer callback for flight status.
    */
   public unsubscribe(flightId: string, callback: FlightStatusCallback): void {
     const callbacks = this.flightCallbacks.get(flightId);
@@ -172,6 +197,30 @@ class FlightStatusWebSocketManager {
           // ignore
         }
         this.stompSubscriptions.delete(flightId);
+      }
+    }
+  }
+
+  /**
+   * Unsubscribes a consumer callback for dynamic pricing.
+   */
+  public unsubscribePricing(flightId: string, callback: DynamicPricingCallback): void {
+    const callbacks = this.pricingCallbacks.get(flightId);
+    if (!callbacks) return;
+
+    callbacks.delete(callback);
+
+    if (callbacks.size === 0) {
+      this.pricingCallbacks.delete(flightId);
+
+      const stompSub = this.pricingStompSubscriptions.get(flightId);
+      if (stompSub) {
+        try {
+          stompSub.unsubscribe();
+        } catch (e) {
+          // ignore
+        }
+        this.pricingStompSubscriptions.delete(flightId);
       }
     }
   }
@@ -214,6 +263,15 @@ class FlightStatusWebSocketManager {
     });
     this.stompSubscriptions.clear();
 
+    this.pricingStompSubscriptions.forEach((sub) => {
+      try {
+        sub.unsubscribe();
+      } catch (e) {
+        // ignore
+      }
+    });
+    this.pricingStompSubscriptions.clear();
+
     if (this.client) {
       this.client.deactivate();
       this.client = null;
@@ -241,11 +299,48 @@ class FlightStatusWebSocketManager {
     }
   }
 
+  private subscribePricingStompTopic(flightId: string): void {
+    if (!this.client || !this.connected) return;
+
+    const topic = `/topic/pricing/${flightId}`;
+    try {
+      const stompSub = this.client.subscribe(topic, (message: IMessage) => {
+        try {
+          const event: DynamicPricingEvent = JSON.parse(message.body);
+          this.handleDynamicPricingEvent(flightId, event);
+        } catch (err) {
+          console.error('Failed to parse dynamic pricing message', err);
+        }
+      });
+      this.pricingStompSubscriptions.set(flightId, stompSub);
+    } catch (err) {
+      console.warn(`Failed to subscribe to STOMP pricing topic ${topic}:`, err);
+    }
+  }
+
   private restoreSubscriptions(): void {
     for (const flightId of this.flightCallbacks.keys()) {
       if (!this.stompSubscriptions.has(flightId)) {
         this.subscribeStompTopic(flightId);
       }
+    }
+    for (const flightId of this.pricingCallbacks.keys()) {
+      if (!this.pricingStompSubscriptions.has(flightId)) {
+        this.subscribePricingStompTopic(flightId);
+      }
+    }
+  }
+
+  private handleDynamicPricingEvent(flightId: string, event: DynamicPricingEvent): void {
+    const callbacks = this.pricingCallbacks.get(flightId);
+    if (callbacks) {
+      callbacks.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (err) {
+          console.error('Error executing dynamic pricing callback', err);
+        }
+      });
     }
   }
 

@@ -11,10 +11,11 @@ import {
   Plane,
   ShieldCheck
 } from 'lucide-react';
-import { Flight, CabinClass, Passenger, Seat, Booking } from '../types/api';
+import { Flight, CabinClass, Passenger, Seat, Booking, PriceFreeze } from '../types/api';
 import { flightService } from '../services/flightService';
 import { seatService } from '../services/seatService';
 import { bookingService } from '../services/bookingService';
+import { pricingService } from '../services/pricingService';
 import { useAuth } from '../context/AuthContext';
 import { SeatMap } from '../components/SeatMap';
 import { PassengerForm } from '../components/PassengerForm';
@@ -29,6 +30,7 @@ export const BookingPage: React.FC = () => {
 
   const cabinClass = (searchParams.get('cabinClass') as CabinClass) || 'ECONOMY';
   const passengerCount = parseInt(searchParams.get('passengers') || '1', 10);
+  const initialFreezeId = searchParams.get('priceFreezeId') || searchParams.get('freezeId');
 
   // Steps: 1: Seats, 2: Passengers, 3: Review & Book
   const [step, setStep] = useState<number>(1);
@@ -55,6 +57,10 @@ export const BookingPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+
+  // Price Freeze state
+  const [appliedFreeze, setAppliedFreeze] = useState<PriceFreeze | null>(null);
+  const [userFreezes, setUserFreezes] = useState<PriceFreeze[]>([]);
 
   // Post-booking & Payment state
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
@@ -100,6 +106,29 @@ export const BookingPage: React.FC = () => {
       }
 
       setSeats(seatList);
+
+      // Fetch user's active price freezes if authenticated
+      if (isAuthenticated) {
+        try {
+          const freezes = await pricingService.getUserPriceFreezes();
+          const activeForFlight = (freezes || []).filter(
+            (f) =>
+              f.status === 'ACTIVE' &&
+              f.flightId === flightId &&
+              (!f.expiresAt || new Date(f.expiresAt) > new Date())
+          );
+          setUserFreezes(activeForFlight);
+
+          if (initialFreezeId) {
+            const matched = (freezes || []).find((f) => f.id === initialFreezeId && f.status === 'ACTIVE');
+            if (matched) setAppliedFreeze(matched);
+          } else if (activeForFlight.length > 0 && !appliedFreeze) {
+            setAppliedFreeze(activeForFlight[0]);
+          }
+        } catch (e) {
+          console.warn('Could not fetch user price freezes:', e);
+        }
+      }
     } catch (err: any) {
       console.error('Failed to load flight or seat map details:', err);
       setBookingError(err?.message || 'Failed to load flight or seat map details');
@@ -110,7 +139,7 @@ export const BookingPage: React.FC = () => {
 
   useEffect(() => {
     loadFlightAndSeats();
-  }, [flightId]);
+  }, [flightId, isAuthenticated]);
 
   const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
     setPassengers((prev) => {
@@ -201,6 +230,7 @@ export const BookingPage: React.FC = () => {
         flightId,
         cabinClass,
         passengers: mappedPassengers,
+        priceFreezeId: appliedFreeze ? appliedFreeze.id : undefined,
       });
 
       if (res.success && res.data) {
@@ -510,12 +540,46 @@ export const BookingPage: React.FC = () => {
         </div>
 
         {/* Right Fare Summary Card */}
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-4 space-y-4">
+          {userFreezes.length > 0 && (
+            <div className="p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-xs text-slate-300 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                  Active Price Freeze Found
+                </span>
+                <span className="text-[11px] text-indigo-400 font-mono">
+                  ₹{userFreezes[0].lockedTotalPrice.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                You have a locked price freeze expiring at{' '}
+                <strong className="text-white">
+                  {new Date(userFreezes[0].expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </strong>.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAppliedFreeze(appliedFreeze ? null : userFreezes[0])}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    appliedFreeze
+                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                  }`}
+                >
+                  {appliedFreeze ? '✓ Locked Fare Applied' : 'Apply Locked Fare'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <FareSummaryCard
             flight={flight}
             cabinClass={cabinClass}
             passengerCount={passengerCount}
             selectedSeats={selectedSeats}
+            appliedFreeze={appliedFreeze}
           />
         </div>
       </div>

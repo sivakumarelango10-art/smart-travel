@@ -13,11 +13,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 /**
  * Background scheduler periodically triggering active flight simulations.
  * Incorporates concurrent execution locks to prevent double-processing or race conditions.
  */
 @Component
+@ConditionalOnProperty(prefix = "smarttravel.flight.simulation", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class FlightSimulationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(FlightSimulationScheduler.class);

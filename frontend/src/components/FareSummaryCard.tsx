@@ -1,6 +1,7 @@
 import React from 'react';
-import { ShieldCheck, Receipt, Clock } from 'lucide-react';
-import { Flight, CabinClass } from '../types/api';
+import { ShieldCheck, Receipt, Clock, Lock } from 'lucide-react';
+import { Flight, CabinClass, PriceFreeze } from '../types/api';
+import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
 
 interface FareSummaryCardProps {
   flight: Flight;
@@ -8,6 +9,7 @@ interface FareSummaryCardProps {
   passengerCount: number;
   selectedSeats?: string[];
   expiresAt?: string;
+  appliedFreeze?: PriceFreeze | null;
 }
 
 export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
@@ -16,20 +18,38 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   passengerCount,
   selectedSeats = [],
   expiresAt,
+  appliedFreeze,
 }) => {
+  // Real-time pricing WebSocket subscription (if not locked by freeze)
+  const { updatedPrice } = useFlightPricingWebSocket(flight.id, cabinClass);
+
   const cabinInv =
     flight.cabinInventories?.find((c) => c.cabinClass === cabinClass) ||
     flight.cabinInventories?.[0];
 
-  const basePricePerPax = cabinInv ? cabinInv.basePrice : flight.basePrice;
-  const taxPerPax = cabinInv ? cabinInv.taxAmount : 540;
-  const feePerPax = cabinInv ? cabinInv.feeAmount : 150;
-  const totalPerPax = cabinInv ? cabinInv.totalPrice : basePricePerPax + taxPerPax + feePerPax;
+  let basePricePerPax: number;
+  let taxPerPax: number;
+  let feePerPax: number;
+  let totalPerPax: number;
+
+  if (appliedFreeze) {
+    totalPerPax = appliedFreeze.lockedPricePerPassenger;
+    basePricePerPax = appliedFreeze.basePriceAtFreeze || Math.round(totalPerPax * 0.8);
+    taxPerPax = Math.round(basePricePerPax * 0.12);
+    feePerPax = Math.max(0, totalPerPax - basePricePerPax - taxPerPax);
+  } else {
+    const rawBase = cabinInv ? cabinInv.basePrice : flight.basePrice;
+    basePricePerPax = rawBase;
+    taxPerPax = cabinInv ? cabinInv.taxAmount : Math.round(rawBase * 0.12);
+    feePerPax = cabinInv ? cabinInv.feeAmount : 150;
+    const defaultTotal = cabinInv ? cabinInv.totalPrice : basePricePerPax + taxPerPax + feePerPax;
+    totalPerPax = updatedPrice != null ? updatedPrice : defaultTotal;
+  }
 
   const totalBase = basePricePerPax * passengerCount;
   const totalTax = taxPerPax * passengerCount;
   const totalFee = feePerPax * passengerCount;
-  const totalAmount = totalPerPax * passengerCount;
+  const totalAmount = appliedFreeze ? appliedFreeze.lockedTotalPrice : totalPerPax * passengerCount;
 
   return (
     <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 shadow-2xl space-y-5 sticky top-24 backdrop-blur-xl">
@@ -91,7 +111,12 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
       </div>
 
       {/* Expiration or Guarantee Notice */}
-      {expiresAt ? (
+      {appliedFreeze ? (
+        <div className="p-3.5 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center gap-2.5 text-indigo-300 text-xs font-bold shadow-md">
+          <Lock className="w-4 h-4 shrink-0 text-indigo-400" />
+          <span>Price Freeze Applied: Locked at ₹{appliedFreeze.lockedTotalPrice.toLocaleString('en-IN')} (Expires {new Date(appliedFreeze.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
+        </div>
+      ) : expiresAt ? (
         <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center gap-2.5 text-amber-300 text-xs font-bold shadow-md">
           <Clock className="w-4 h-4 shrink-0" />
           <span>Payment Window: 15-minute concurrency lock active</span>

@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -36,6 +37,10 @@ import java.util.StringJoiner;
  *   Occupancy 80–90%  → +20%
  *   Occupancy 90–100% → +30%
  */
+import com.smarttravel.modules.pricing.event.DynamicPricingEvent;
+import com.smarttravel.modules.pricing.websocket.PricingWebSocketPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Service
 public class DynamicPricingServiceImpl implements DynamicPricingService {
 
@@ -47,11 +52,15 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
 
     private final DynamicPricingRuleRepository ruleRepository;
     private final FlightPriceHistoryRepository historyRepository;
+    private final PricingWebSocketPublisher pricingWebSocketPublisher;
 
+    @Autowired
     public DynamicPricingServiceImpl(DynamicPricingRuleRepository ruleRepository,
-                                     FlightPriceHistoryRepository historyRepository) {
+                                     FlightPriceHistoryRepository historyRepository,
+                                     @Autowired(required = false) PricingWebSocketPublisher pricingWebSocketPublisher) {
         this.ruleRepository = ruleRepository;
         this.historyRepository = historyRepository;
+        this.pricingWebSocketPublisher = pricingWebSocketPublisher;
     }
 
     @Override
@@ -225,12 +234,48 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
         return 30.0;
     }
 
+    @Override
+    public void publishPriceUpdate(Flight flight, CabinInventory inventory, BigDecimal oldPrice) {
+        if (flight == null || inventory == null || pricingWebSocketPublisher == null) {
+            return;
+        }
+        try {
+            DynamicPriceBreakdown breakdown = calculateDynamicPrice(flight, inventory, 1);
+            DynamicPricingEvent event = DynamicPricingEvent.builder()
+                    .flightId(flight.getId())
+                    .flightNumber(flight.getFlightNumber())
+                    .cabinClass(inventory.getCabinClass())
+                    .oldPrice(oldPrice)
+                    .newPrice(breakdown.getTotalPerPassenger())
+                    .currency(breakdown.getCurrency())
+                    .demandAdjustmentPercent(breakdown.getDemandAdjustmentPercent())
+                    .seasonalAdjustmentPercent(breakdown.getSeasonalAdjustmentPercent())
+                    .holidayAdjustmentPercent(breakdown.getHolidayAdjustmentPercent())
+                    .occupancyRatio(breakdown.getOccupancyRatio())
+                    .availableSeats(inventory.getAvailableSeats())
+                    .reason(buildReasonString(breakdown))
+                    .timestamp(Instant.now())
+                    .build();
+
+            pricingWebSocketPublisher.publish(event);
+        } catch (Exception ex) {
+            log.error("Failed to publish price update for flight {}: {}", flight.getId(), ex.getMessage());
+        }
+    }
+
     private String buildReasonString(DynamicPriceBreakdown breakdown) {
-        StringJoiner reasons = new StringJoiner("; ");
-        if (breakdown.getDemandReason() != null) reasons.add(breakdown.getDemandReason());
-        if (breakdown.getSeasonalReason() != null) reasons.add(breakdown.getSeasonalReason());
-        if (breakdown.getHolidayReason() != null) reasons.add(breakdown.getHolidayReason());
-        String result = reasons.toString();
-        return result.isEmpty() ? "Standard pricing" : result;
+        if (breakdown == null) return "Dynamic pricing calculation";
+        List<String> reasons = new ArrayList<>();
+        if (breakdown.getDemandReason() != null && !breakdown.getDemandReason().isBlank()) {
+            reasons.add(breakdown.getDemandReason());
+        }
+        if (breakdown.getSeasonalReason() != null && !breakdown.getSeasonalReason().isBlank()) {
+            reasons.add(breakdown.getSeasonalReason());
+        }
+        if (breakdown.getHolidayReason() != null && !breakdown.getHolidayReason().isBlank()) {
+            reasons.add(breakdown.getHolidayReason());
+        }
+        return reasons.isEmpty() ? "Standard rate calculation" : String.join(" | ", reasons);
     }
 }
+

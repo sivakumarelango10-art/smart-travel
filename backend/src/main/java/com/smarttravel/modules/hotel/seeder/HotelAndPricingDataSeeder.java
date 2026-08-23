@@ -28,6 +28,16 @@ import java.util.Set;
 /**
  * Seeds demo hotels with rich photo galleries, default pricing rules, and initial system admin on application startup.
  */
+import com.smarttravel.modules.flight.model.CabinInventory;
+import com.smarttravel.modules.flight.model.Flight;
+import com.smarttravel.modules.flight.repository.FlightRepository;
+import com.smarttravel.modules.pricing.model.FlightPriceHistory;
+import com.smarttravel.modules.pricing.repository.FlightPriceHistoryRepository;
+
+import java.math.RoundingMode;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+
 @Component
 public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
@@ -37,15 +47,22 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
     private final DynamicPricingRuleRepository pricingRuleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FlightRepository flightRepository;
+    private final FlightPriceHistoryRepository priceHistoryRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public HotelAndPricingDataSeeder(HotelRepository hotelRepository,
                                      DynamicPricingRuleRepository pricingRuleRepository,
                                      UserRepository userRepository,
-                                     PasswordEncoder passwordEncoder) {
+                                     PasswordEncoder passwordEncoder,
+                                     @org.springframework.beans.factory.annotation.Autowired(required = false) FlightRepository flightRepository,
+                                     @org.springframework.beans.factory.annotation.Autowired(required = false) FlightPriceHistoryRepository priceHistoryRepository) {
         this.hotelRepository = hotelRepository;
         this.pricingRuleRepository = pricingRuleRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.flightRepository = flightRepository;
+        this.priceHistoryRepository = priceHistoryRepository;
     }
 
     @Override
@@ -53,6 +70,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
         seedAdminUser();
         seedHotels();
         seedPricingRules();
+        seedPriceHistory();
     }
 
     private void seedAdminUser() {
@@ -253,7 +271,22 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
     private void seedPricingRules() {
         if (pricingRuleRepository.count() > 0) {
-            log.debug("Pricing rules collection non-empty, skipping seed");
+            // Self-healing: if existing rules had fractional values (< 1.0), normalize to whole percentages (e.g. 0.20 -> 20.0)
+            List<DynamicPricingRule> existingRules = pricingRuleRepository.findAll();
+            boolean updated = false;
+            for (DynamicPricingRule r : existingRules) {
+                if (r.getPercentageAdjustment() > 0 && r.getPercentageAdjustment() < 1.0) {
+                    r.setPercentageAdjustment(r.getPercentageAdjustment() * 100.0);
+                    updated = true;
+                } else if (r.getPercentageAdjustment() < 0 && r.getPercentageAdjustment() > -1.0) {
+                    r.setPercentageAdjustment(r.getPercentageAdjustment() * 100.0);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                pricingRuleRepository.saveAll(existingRules);
+                log.info("Normalized {} dynamic pricing rules to whole percentage values", existingRules.size());
+            }
             return;
         }
 
@@ -261,21 +294,100 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
         List<DynamicPricingRule> rules = List.of(
                 // Demand/Occupancy Rules
-                buildDemandRule("High Occupancy Surge (>80%)", 1, 0.20, 0.80, 1.00, "20% surge when flight/hotel reaches 80% occupancy"),
-                buildDemandRule("Extreme Occupancy Surge (>90%)", 2, 0.35, 0.90, 1.00, "35% surge when flight/hotel reaches 90% occupancy"),
-                buildDemandRule("Low Demand Discount (<30%)", 3, -0.10, 0.00, 0.30, "10% discount when occupancy is below 30% to stimulate bookings"),
+                buildDemandRule("High Occupancy Surge (>80%)", 1, 20.0, 0.80, 0.90, "20% surge when flight/hotel reaches 80% occupancy"),
+                buildDemandRule("Extreme Occupancy Surge (>90%)", 2, 35.0, 0.90, 1.00, "35% surge when flight/hotel reaches 90% occupancy"),
+                buildDemandRule("Low Demand Discount (<30%)", 3, -10.0, 0.00, 0.30, "10% discount when occupancy is below 30% to stimulate bookings"),
+
+                // Holiday Peak Rules (explicitly 20% Holiday Surge)
+                buildTimeBoundRule("Independence Day & Long Weekend Surge", DynamicPricingRuleType.HOLIDAY, 5, 20.0,
+                        LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20), "20% holiday peak surge"),
+                buildTimeBoundRule("Diwali Festival High Season (Oct-Nov)", DynamicPricingRuleType.HOLIDAY, 15, 30.0,
+                        LocalDate.of(2026, 10, 20), LocalDate.of(2026, 11, 15), "30% Diwali festive demand peak"),
+                buildTimeBoundRule("Year End & New Year Surge (Dec-Jan)", DynamicPricingRuleType.HOLIDAY, 20, 40.0,
+                        LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), "40% New Year holiday travel surge"),
 
                 // Seasonal Rules
-                buildTimeBoundRule("Summer Vacation Peak (May-Jun)", DynamicPricingRuleType.SEASONAL, 10, 0.15,
-                        LocalDate.of(2026, 5, 1), LocalDate.of(2026, 6, 30), "15% summer holiday surge"),
-                buildTimeBoundRule("Diwali Festival High Season (Oct-Nov)", DynamicPricingRuleType.HOLIDAY, 15, 0.30,
-                        LocalDate.of(2026, 10, 20), LocalDate.of(2026, 11, 15), "30% Diwali festive demand peak"),
-                buildTimeBoundRule("Year End & New Year Surge (Dec-Jan)", DynamicPricingRuleType.HOLIDAY, 20, 0.40,
-                        LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5), "40% New Year holiday travel surge")
+                buildTimeBoundRule("Summer Vacation Peak (May-Jun)", DynamicPricingRuleType.SEASONAL, 10, 15.0,
+                        LocalDate.of(2026, 5, 1), LocalDate.of(2026, 6, 30), "15% summer holiday surge")
         );
 
         pricingRuleRepository.saveAll(rules);
         log.info("Seeded {} dynamic pricing rules", rules.size());
+    }
+
+    private void seedPriceHistory() {
+        if (priceHistoryRepository == null || flightRepository == null) return;
+        if (priceHistoryRepository.count() > 0) {
+            log.debug("Flight price history collection non-empty, skipping seed");
+            return;
+        }
+
+        log.info("Seeding realistic historical price points for key flights...");
+        List<Flight> sampleFlights = flightRepository.findAll().stream()
+                .filter(f -> f.getFlightNumber() != null &&
+                        (f.getFlightNumber().equals("AI-101") ||
+                         f.getFlightNumber().equals("6E-204") ||
+                         f.getFlightNumber().equals("UK-955") ||
+                         f.getFlightNumber().equals("EK-500") ||
+                         f.getFlightNumber().equals("SG-8169") ||
+                         f.getFlightNumber().equals("BA-112") ||
+                         f.getFlightNumber().equals("SQ-402")))
+                .limit(10)
+                .toList();
+
+        List<FlightPriceHistory> histories = new ArrayList<>();
+        Instant now = Instant.now();
+
+        for (Flight flight : sampleFlights) {
+            if (flight.getCabinInventories() == null || flight.getCabinInventories().isEmpty()) continue;
+            CabinInventory eco = flight.getCabinInventories().get(0);
+            BigDecimal base = eco.getBasePrice() != null ? eco.getBasePrice() : new BigDecimal("5000.00");
+
+            double[] occupancyPcts = { 0.25, 0.38, 0.45, 0.55, 0.68, 0.76, 0.85, 0.92 };
+            double[] demandSurges = { 0.0, 0.0, 5.0, 5.0, 10.0, 10.0, 20.0, 30.0 };
+            String[] reasons = {
+                "Standard base fare (25% booked)",
+                "Early bird discount window",
+                "Moderate demand uptick (+5%)",
+                "Steady weekday bookings (+5%)",
+                "Weekend peak demand surge (+10%)",
+                "High occupancy surge (+10%)",
+                "Last-minute high demand (+20%)",
+                "High demand (92% seats filled) (+30%)"
+            };
+
+            for (int i = 0; i < occupancyPcts.length; i++) {
+                Instant pointTime = now.minus(14 - (i * 2), ChronoUnit.DAYS).plus(i * 3, ChronoUnit.HOURS);
+                double demandPct = demandSurges[i];
+                BigDecimal demandAdj = base.multiply(BigDecimal.valueOf(demandPct / 100.0)).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal adjustedBase = base.add(demandAdj).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal tax = adjustedBase.multiply(new BigDecimal("0.12")).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal fee = new BigDecimal("150.00");
+                BigDecimal finalPrice = adjustedBase.add(tax).add(fee).setScale(2, RoundingMode.HALF_UP);
+
+                histories.add(FlightPriceHistory.builder()
+                        .flightId(flight.getId())
+                        .flightNumber(flight.getFlightNumber())
+                        .cabinClass(eco.getCabinClass())
+                        .basePrice(base)
+                        .demandAdjustmentPercent(demandPct)
+                        .seasonalAdjustmentPercent(0.0)
+                        .holidayAdjustmentPercent(0.0)
+                        .dynamicAdjustmentAmount(demandAdj)
+                        .taxAmount(tax)
+                        .feeAmount(fee)
+                        .finalPrice(finalPrice)
+                        .occupancyRatio(occupancyPcts[i])
+                        .reason(reasons[i])
+                        .capturedAt(pointTime)
+                        .build());
+            }
+        }
+
+        if (!histories.isEmpty()) {
+            priceHistoryRepository.saveAll(histories);
+            log.info("Seeded {} historical price snapshots across {} flights", histories.size(), sampleFlights.size());
+        }
     }
 
     // ── Builders ──────────────────────────────────────────────────────────────

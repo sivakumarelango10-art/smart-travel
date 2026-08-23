@@ -59,6 +59,7 @@ public class BookingServiceImpl implements BookingService {
     private final com.smarttravel.modules.ticket.service.TicketService ticketService;
     private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
     private final com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService;
+    private final com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -71,7 +72,8 @@ public class BookingServiceImpl implements BookingService {
                               BookingProperties bookingProperties,
                               @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
                               @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService,
-                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService) {
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService) {
         this.bookingRepository = bookingRepository;
         this.flightRepository = flightRepository;
         this.reservationService = reservationService;
@@ -83,6 +85,7 @@ public class BookingServiceImpl implements BookingService {
         this.ticketService = ticketService;
         this.seatMapService = seatMapService;
         this.priceFreezeService = priceFreezeService;
+        this.dynamicPricingService = dynamicPricingService;
     }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -92,7 +95,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null, null);
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null, null, null);
     }
 
     @Override
@@ -237,6 +240,22 @@ public class BookingServiceImpl implements BookingService {
                     priceFreezeService.markAsUsed(request.getPriceFreezeId(), savedBooking.getId(), userId);
                 } catch (Exception ex) {
                     log.warn("Failed to mark price freeze {} as used: {}", request.getPriceFreezeId(), ex.getMessage());
+                }
+            }
+
+            // Broadcast real-time dynamic price update to topic subscribers
+            if (dynamicPricingService != null) {
+                try {
+                    flightRepository.findById(flight.getId()).ifPresent(freshFlight -> {
+                        if (freshFlight.getCabinInventories() != null) {
+                            freshFlight.getCabinInventories().stream()
+                                    .filter(ci -> ci.getCabinClass() == cabinClass)
+                                    .findFirst()
+                                    .ifPresent(ci -> dynamicPricingService.publishPriceUpdate(freshFlight, ci, null));
+                        }
+                    });
+                } catch (Exception ex) {
+                    log.warn("Failed to broadcast real-time pricing update after booking: {}", ex.getMessage());
                 }
             }
         } catch (Exception ex) {

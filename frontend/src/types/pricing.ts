@@ -63,3 +63,20 @@ export interface FlightPriceHistory {
   reason?: string;
   capturedAt: string;
 }
+
+export interface DynamicPricingEvent {
+  flightId: string;
+  flightNumber: string;
+  cabinClass: CabinClass;
+  oldPrice?: number;
+  newPrice: number;
+  currency: string;
+  demandAdjustmentPercent: number;
+  seasonalAdjustmentPercent?: number;
+  holidayAdjustmentPercent?: number;
+  occupancyRatio?: number;
+  availableSeats?: number;
+  reason?: string;
+  timestamp: string;
+}
+
