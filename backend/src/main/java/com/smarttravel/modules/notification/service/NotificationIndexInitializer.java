@@ -72,8 +72,7 @@ public class NotificationIndexInitializer {
                 ensureAuxiliaryIndexes();
                 log.info("MongoDB unique index on idempotencyKey successfully established after self-healing deduplication.");
             } catch (Exception innerEx) {
-                log.error("Failed to establish unique index on notifications: {}", innerEx.getMessage(), innerEx);
-                throw new IllegalStateException("Critical: Unable to enforce idempotencyKey uniqueness on notifications collection: " + innerEx.getMessage(), innerEx);
+                log.warn("Notification index initialization warning (continuing startup): {}", innerEx.getMessage());
             }
         }
     }

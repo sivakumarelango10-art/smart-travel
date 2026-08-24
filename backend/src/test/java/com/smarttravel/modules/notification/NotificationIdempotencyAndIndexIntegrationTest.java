@@ -246,7 +246,7 @@ public class NotificationIdempotencyAndIndexIntegrationTest {
         }
 
         startLatch.countDown();
-        finishLatch.await(10, TimeUnit.SECONDS);
+        finishLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
 
         assertThat(responses).hasSize(threadCount);

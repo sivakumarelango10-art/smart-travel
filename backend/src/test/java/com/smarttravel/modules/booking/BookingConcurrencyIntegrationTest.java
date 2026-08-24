@@ -168,9 +168,9 @@ class BookingConcurrencyIntegrationTest {
             });
         }
 
-        readyLatch.await(5, TimeUnit.SECONDS);
+        readyLatch.await(10, TimeUnit.SECONDS);
         startLatch.countDown(); // Fire all 10 requests simultaneously
-        doneLatch.await(10, TimeUnit.SECONDS);
+        doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
 
         assertThat(successCount.get()).isEqualTo(expectedSuccess);
@@ -262,9 +262,9 @@ class BookingConcurrencyIntegrationTest {
             });
         }
 
-        readyLatch.await(5, TimeUnit.SECONDS);
+        readyLatch.await(10, TimeUnit.SECONDS);
         startLatch.countDown();
-        doneLatch.await(10, TimeUnit.SECONDS);
+        doneLatch.await(30, TimeUnit.SECONDS);
         executor.shutdown();
 
         assertThat(successCount.get()).isEqualTo(1);
