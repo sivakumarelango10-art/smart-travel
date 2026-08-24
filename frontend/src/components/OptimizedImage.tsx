@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { ImageOff } from 'lucide-react';
 import { Skeleton } from './Skeleton';
@@ -11,6 +11,7 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   imageClassName?: string;
   priority?: boolean;
   fallbackIcon?: React.ReactNode;
+  fallbackSrc?: string;
 }
 
 /**
@@ -25,10 +26,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   imageClassName,
   priority = false,
   fallbackIcon,
+  fallbackSrc,
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [hasTriedFallback, setHasTriedFallback] = useState(false);
 
   // Auto-optimize Unsplash images for WebP format and responsive compression
   const getOptimizedSrc = (url: string): string => {
@@ -39,7 +43,24 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     return url;
   };
 
-  const optimizedSrc = getOptimizedSrc(src);
+  useEffect(() => {
+    setCurrentSrc(src);
+    setLoaded(false);
+    setError(false);
+    setHasTriedFallback(false);
+  }, [src]);
+
+  const handleImageError = () => {
+    if (fallbackSrc && !hasTriedFallback && fallbackSrc !== currentSrc) {
+      setHasTriedFallback(true);
+      setCurrentSrc(fallbackSrc);
+      setLoaded(false);
+    } else {
+      setError(true);
+    }
+  };
+
+  const optimizedSrc = getOptimizedSrc(currentSrc);
 
   return (
     <div
@@ -64,7 +85,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           // @ts-expect-error - fetchpriority is standard HTML5 in modern browsers
           fetchpriority={priority ? 'high' : 'auto'}
           onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
+          onError={handleImageError}
           className={clsx(
             'w-full h-full object-cover transition-opacity duration-300 ease-out',
             loaded ? 'opacity-100' : 'opacity-0',

@@ -161,7 +161,8 @@ const INSPIRATION_CARDS = [
   {
     title: 'Beach Escapes',
     subtitle: 'Sun, sand & endless turquoise waves',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80',
     destinations: 'Goa • Maldives • Bali • Phuket',
     from: 'DEL',
     to: 'GOI',
@@ -169,7 +170,8 @@ const INSPIRATION_CARDS = [
   {
     title: 'Mountain Adventures',
     subtitle: 'Crisp alpine breezes & snow summits',
-    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
     destinations: 'Manali • Leh • Shimla • Srinagar',
     from: 'DEL',
     to: 'BOM',
@@ -177,7 +179,8 @@ const INSPIRATION_CARDS = [
   {
     title: 'City Breaks',
     subtitle: 'Iconic skylines, cuisine & culture',
-    image: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=800&q=80',
     destinations: 'Dubai • Singapore • Tokyo • London',
     from: 'BOM',
     to: 'DEL',
@@ -185,7 +188,8 @@ const INSPIRATION_CARDS = [
   {
     title: 'Weekend Getaways',
     subtitle: 'Quick recharges within short flights',
-    image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80',
+    fallback: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
     destinations: 'Jaipur • Udaipur • Kochi • Bengaluru',
     from: 'BLR',
     to: 'DEL',
@@ -558,6 +562,7 @@ export const HomePage: React.FC = () => {
               <OptimizedImage
                 src={card.image}
                 alt={card.title}
+                fallbackSrc={card.fallback}
                 aspectRatio="1/1"
                 className="absolute inset-0 w-full h-full"
                 imageClassName="transition-transform duration-700 group-hover:scale-110"
