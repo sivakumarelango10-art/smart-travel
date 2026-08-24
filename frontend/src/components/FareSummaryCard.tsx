@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Receipt, Clock, Lock } from 'lucide-react';
+import { ShieldCheck, Receipt, Lock } from 'lucide-react';
 import { Flight, CabinClass, PriceFreeze } from '../types/api';
 import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
 
@@ -17,7 +17,6 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   cabinClass,
   passengerCount,
   selectedSeats = [],
-  expiresAt,
   appliedFreeze,
 }) => {
   const { updatedPrice } = useFlightPricingWebSocket(flight.id, cabinClass);

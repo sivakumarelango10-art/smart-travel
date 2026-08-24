@@ -14,7 +14,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   withLink = true,
   className = '',
   showTagline = true,
-  theme = 'auto',
 }) => {
   const sizeMap = {
     xs: { logoH: 'h-6', text: 'text-base', tagline: 'text-[8px]' },

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldCheck,
   Zap,
   RotateCcw,
-  Sparkles,
   ArrowRight,
   RefreshCw,
   Compass,
@@ -12,12 +10,7 @@ import {
   ChevronRight,
   Tag,
   MapPin,
-  Award,
-  CreditCard,
-  Headphones,
   Radio,
-  Plane,
-  Building2,
   Lock
 } from 'lucide-react';
 import { FlightSearchWidget } from '../components/FlightSearchWidget';

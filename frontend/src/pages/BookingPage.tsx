@@ -9,8 +9,7 @@ import {
   ChevronLeft,
   AlertCircle,
   Plane,
-  ShieldCheck,
-  Lock
+  ShieldCheck
 } from 'lucide-react';
 import { Flight, CabinClass, Passenger, Seat, Booking, PriceFreeze } from '../types/api';
 import { flightService } from '../services/flightService';

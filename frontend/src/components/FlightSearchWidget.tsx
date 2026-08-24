@@ -9,8 +9,7 @@ import {
   Search,
   Plane,
   Building2,
-  ChevronDown,
-  Sparkles
+  ChevronDown
 } from 'lucide-react';
 import { CabinClass } from '../types/api';
 import { flightService } from '../services/flightService';

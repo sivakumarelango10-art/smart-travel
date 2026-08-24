@@ -10,8 +10,7 @@ import {
   ChevronUp,
   Calendar,
   Users,
-  ArrowLeftRight,
-  Sparkles
+  ArrowLeftRight
 } from 'lucide-react';
 import { Flight, CabinClass } from '../types/api';
 import { flightService } from '../services/flightService';
