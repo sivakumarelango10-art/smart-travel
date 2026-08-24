@@ -200,6 +200,17 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            By creating an account, you agree to SmartTravel&apos;s{' '}
+            <Link to="/terms-and-conditions" target="_blank" className="text-amber-400 font-bold hover:underline">
+              Terms &amp; Conditions
+            </Link>{' '}
+            and acknowledge our{' '}
+            <Link to="/privacy-policy" target="_blank" className="text-amber-400 font-bold hover:underline">
+              Privacy Policy
+            </Link>.
+          </p>
+
           <button
             type="submit"
             disabled={loading}

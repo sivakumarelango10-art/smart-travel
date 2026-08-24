@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
   Armchair,
   Users,
@@ -471,6 +471,28 @@ export const BookingPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Pre-Checkout Legal Consent & Cancellation Notice */}
+              <div className="p-4 rounded-2xl bg-[#14161F] border border-white/10 text-xs space-y-2 text-slate-300">
+                <div className="flex items-center gap-2 font-bold text-amber-400">
+                  <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Fare & Cancellation Terms Confirmation</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  By clicking <strong>&quot;Proceed to Secure Payment&quot;</strong>, you confirm the passenger details above and agree to SmartTravel&apos;s{' '}
+                  <Link to="/terms-and-conditions" target="_blank" className="text-amber-400 font-bold hover:underline">
+                    Terms &amp; Conditions
+                  </Link>
+                  ,{' '}
+                  <Link to="/terms-and-conditions#cancellation-policy" target="_blank" className="text-amber-400 font-bold hover:underline">
+                    Cancellation &amp; Refund Policy
+                  </Link>
+                  , and acknowledge our{' '}
+                  <Link to="/privacy-policy" target="_blank" className="text-amber-400 font-bold hover:underline">
+                    Privacy Policy
+                  </Link>.
+                </p>
               </div>
             </div>
           )}

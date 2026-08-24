@@ -26,6 +26,10 @@ const BoardingPassPage = lazy(() => import('./pages/BoardingPassPage').then((m) 
 const BoardingPassVerificationPage = lazy(() => import('./pages/BoardingPassVerificationPage').then((m) => ({ default: m.BoardingPassVerificationPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const OffersPage = lazy(() => import('./pages/OffersPage').then((m) => ({ default: m.OffersPage })));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsAndConditionsPage = lazy(() => import('./pages/TermsAndConditionsPage').then((m) => ({ default: m.TermsAndConditionsPage })));
+const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage').then((m) => ({ default: m.CookiePolicyPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 // Lazy-loaded Admin Pages (loaded only on demand by administrators)
@@ -66,9 +70,19 @@ export default function App() {
                 <Route path="flights" element={<FlightSearchPage />} />
                 <Route path="hotels" element={<HotelSearchPage />} />
                 <Route path="hotels/:hotelId" element={<HotelDetailsPage />} />
+                
+                {/* Live Flight Tracker & Radar Routes (Canonical: /live-tracker) */}
+                <Route path="live-tracker" element={<TrackedFlightsPage />} />
                 <Route path="tracked-flights" element={<TrackedFlightsPage />} />
                 <Route path="tracker" element={<TrackedFlightsPage />} />
                 <Route path="radar" element={<TrackedFlightsPage />} />
+                <Route path="live" element={<TrackedFlightsPage />} />
+
+                {/* Deals & Offers Routes (Canonical: /offers) */}
+                <Route path="offers" element={<OffersPage />} />
+                <Route path="deals" element={<OffersPage />} />
+                <Route path="deals-and-offers" element={<OffersPage />} />
+
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
                 <Route path="book/:flightId" element={<BookingPage />} />
@@ -76,6 +90,12 @@ export default function App() {
                 <Route path="verify-pass/:token" element={<BoardingPassVerificationPage />} />
                 <Route path="verify-boarding-pass" element={<BoardingPassVerificationPage />} />
                 <Route path="verify-boarding-pass/:token" element={<BoardingPassVerificationPage />} />
+                <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="privacy" element={<PrivacyPolicyPage />} />
+                <Route path="terms-and-conditions" element={<TermsAndConditionsPage />} />
+                <Route path="terms" element={<TermsAndConditionsPage />} />
+                <Route path="cookie-policy" element={<CookiePolicyPage />} />
+                <Route path="cookies" element={<CookiePolicyPage />} />
 
                 {/* Protected Customer Routes */}
                 <Route

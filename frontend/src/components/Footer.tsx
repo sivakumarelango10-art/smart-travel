@@ -9,7 +9,10 @@ import {
   Terminal,
   Plane,
   Building2,
-  Compass
+  Compass,
+  FileText,
+  Shield,
+  Cookie
 } from 'lucide-react';
 import { APP_NAME, APP_VERSION } from '../config/constants';
 import { BrandLogo } from './BrandLogo';
@@ -68,7 +71,7 @@ export const Footer: React.FC = () => {
         <div className="lg:col-span-2 space-y-4">
           <BrandLogo size="lg" withLink={true} />
           <p className="text-xs text-slate-400 leading-relaxed pr-6">
-            SmartTravel is a next-generation travel platform offering lightning-fast flight searches, interactive seat selection, luxury hotel bookings with live availability, real-time live flight radar, and transparent auto-refunds.
+            SmartTravel is an advanced travel platform offering lightning-fast flight searches, interactive seat selection, luxury hotel bookings with live availability, real-time live flight radar, and transparent auto-refunds.
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="px-2.5 py-1 rounded-lg bg-[#14161F] border border-white/10 text-[10px] font-mono text-amber-400 font-bold">
@@ -135,42 +138,60 @@ export const Footer: React.FC = () => {
             </li>
             <li>
               <Link to="/offers" className="hover:text-amber-400 transition">
-                Price Freeze & Deals
+                Deals &amp; Promo Offers
               </Link>
             </li>
             <li>
               <Link to="/my-bookings" className="hover:text-amber-400 transition">
-                Web Check-In & Boarding Pass
+                Web Check-In &amp; Boarding Pass
               </Link>
             </li>
             <li>
               <Link to="/my-bookings" className="hover:text-amber-400 transition">
-                Refunds & Cancellation
+                Refunds &amp; Cancellation
+              </Link>
+            </li>
+            <li>
+              <Link to="/account" className="hover:text-amber-400 transition">
+                User Profile &amp; Preferences
               </Link>
             </li>
           </ul>
         </div>
 
-        {/* Col 4: Quick Links & Documentation */}
+        {/* Col 4: Legal & Documentation */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-amber-400" /> Developer & Info
+            <Shield className="w-3.5 h-3.5 text-amber-400" /> Trust & Legal
           </h4>
           <ul className="space-y-2 text-xs">
             <li>
-              <Link to="/account" className="hover:text-amber-400 transition">
-                User Preferences & Profile
+              <Link to="/privacy-policy" className="hover:text-amber-400 transition flex items-center gap-1.5">
+                <Shield className="w-3 h-3 text-slate-500" />
+                <span>Privacy Policy</span>
               </Link>
             </li>
             <li>
+              <Link to="/terms-and-conditions" className="hover:text-amber-400 transition flex items-center gap-1.5">
+                <FileText className="w-3 h-3 text-slate-500" />
+                <span>Terms & Conditions</span>
+              </Link>
+            </li>
+            <li>
+              <Link to="/cookie-policy" className="hover:text-amber-400 transition flex items-center gap-1.5">
+                <Cookie className="w-3 h-3 text-slate-500" />
+                <span>Cookie & Storage Policy</span>
+              </Link>
+            </li>
+            <li className="pt-2 border-t border-white/5">
               <a
                 href={import.meta.env.VITE_SWAGGER_URL || '/swagger-ui.html'}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-amber-400 transition flex items-center gap-1 font-mono text-amber-400"
+                className="hover:text-amber-400 transition flex items-center gap-1.5 font-mono text-amber-400"
               >
-                <Terminal className="w-3.5 h-3.5" />
-                Swagger REST APIs
+                <Terminal className="w-3 h-3" />
+                <span>Swagger REST APIs</span>
               </a>
             </li>
           </ul>
@@ -180,10 +201,22 @@ export const Footer: React.FC = () => {
       {/* 3. COPYRIGHT & SECURITY */}
       <div className="border-t border-white/5 py-6 bg-[#060709]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
             <span>© {new Date().getFullYear()} {APP_NAME}. All rights reserved.</span>
             <span>•</span>
             <span className="font-mono text-slate-400">v{APP_VERSION}</span>
+            <span>•</span>
+            <Link to="/privacy-policy" className="hover:text-amber-400 transition">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link to="/terms-and-conditions" className="hover:text-amber-400 transition">
+              Terms of Service
+            </Link>
+            <span>•</span>
+            <Link to="/cookie-policy" className="hover:text-amber-400 transition">
+              Cookie Policy
+            </Link>
           </div>
 
           <div className="flex items-center gap-4 text-[11px] text-slate-500">
