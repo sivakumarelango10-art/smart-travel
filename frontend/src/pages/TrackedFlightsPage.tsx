@@ -22,6 +22,7 @@ import { pushNotificationService } from '../services/pushNotificationService';
 import { FlightLiveStatusTracker } from '../components/FlightLiveStatusTracker';
 import { LiveFlightRadarMap } from '../components/LiveFlightRadarMap';
 import { LiveAirspaceFeed } from '../components/LiveAirspaceFeed';
+import { PushNotificationModal } from '../components/PushNotificationModal';
 import { useAuth } from '../context/AuthContext';
 
 const POPULAR_FLIGHT_SUGGESTIONS = [
@@ -53,6 +54,7 @@ export const TrackedFlightsPage: React.FC = () => {
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
   const [pushSuccessMsg, setPushSuccessMsg] = useState<string | null>(null);
+  const [showPushModal, setShowPushModal] = useState(false);
 
   // Quick Action feedback
   const [trackActionMsg, setTrackActionMsg] = useState<string | null>(null);
@@ -498,7 +500,16 @@ export const TrackedFlightsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setShowPushModal(true)}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-sky-400 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <BellRing className="w-3.5 h-3.5" />
+              <span>Multi-Platform Settings</span>
+            </button>
+
             {pushSubscribed && (
               <button
                 type="button"
@@ -526,6 +537,15 @@ export const TrackedFlightsPage: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Multi-Platform Push Configuration Modal */}
+        <PushNotificationModal
+          isOpen={showPushModal}
+          onClose={() => {
+            setShowPushModal(false);
+            checkPushStatus();
+          }}
+        />
 
         {pushSuccessMsg && (
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs font-medium flex items-center gap-2.5 animate-slide-up">

@@ -7,6 +7,7 @@ import { AdminLayout } from './layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PageLoader } from './components/PageLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { InAppNotificationToast } from './components/InAppNotificationToast';
 import { startKeepAliveHeartbeat, stopKeepAliveHeartbeat } from './services/warmupService';
 
 // Lazy-loaded Customer & Public Pages
@@ -54,6 +55,7 @@ export default function App() {
       <ErrorBoundary>
         <AuthProvider>
           <NotificationProvider>
+            <InAppNotificationToast />
             <Suspense fallback={<PageLoader />}>
               <Routes>
               {/* Customer & Public Routes */}

@@ -7,6 +7,7 @@ import {
   Tag,
   BookmarkCheck,
   Bell,
+  BellRing,
   LogIn,
   UserPlus,
   LogOut,
@@ -23,6 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { BrandLogo } from './BrandLogo';
+import { PushNotificationModal } from './PushNotificationModal';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -34,6 +36,7 @@ export const Navbar: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -255,6 +258,20 @@ export const Navbar: React.FC = () => {
                           ))
                         )}
                       </div>
+
+                      <div className="p-2.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNotifications(false);
+                            setShowPushModal(true);
+                          }}
+                          className="w-full py-1.5 px-3 rounded-lg text-xs font-medium text-blue-400 hover:text-blue-300 hover:bg-slate-900 border border-slate-800 transition flex items-center justify-center gap-1.5"
+                        >
+                          <BellRing className="w-3.5 h-3.5" />
+                          <span>Push Alert Settings</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -422,6 +439,18 @@ export const Navbar: React.FC = () => {
               </Link>
             )}
 
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setShowPushModal(true);
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-blue-400 border border-slate-800 hover:bg-slate-850"
+            >
+              <BellRing className="w-4 h-4 text-blue-400" />
+              <span>Push Notification Settings</span>
+            </button>
+
             <a
               href="#destinations"
               onClick={() => setMobileMenuOpen(false)}
@@ -442,6 +471,12 @@ export const Navbar: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Global Push Notification Settings Modal */}
+      <PushNotificationModal
+        isOpen={showPushModal}
+        onClose={() => setShowPushModal(false)}
+      />
     </header>
   );
 };

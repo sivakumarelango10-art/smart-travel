@@ -17,16 +17,43 @@ import {
   EyeOff,
   Compass,
   BookmarkCheck,
-  Check
+  Check,
+  BellRing,
+  Bell,
+  BellOff,
+  Smartphone,
+  Monitor,
+  Apple,
+  Globe,
+  Send,
+  RefreshCw,
+  Share,
+  PlusSquare,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserPreferences } from '../types/auth';
+import { pushNotificationService, PlatformInfo } from '../services/pushNotificationService';
 
 export const MyAccountPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile, changePassword, deleteAccount, logout, isAdmin } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'PROFILE' | 'PREFERENCES' | 'SECURITY' | 'DANGER'>('PROFILE');
+  const [activeTab, setActiveTab] = useState<'PROFILE' | 'PREFERENCES' | 'NOTIFICATIONS' | 'SECURITY' | 'DANGER'>('PROFILE');
+
+  // Push Notifications state
+  const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [testPushLoading, setTestPushLoading] = useState(false);
+  const [pushFeedbackMsg, setPushFeedbackMsg] = useState<string | null>(null);
+  const [pushErrorMsg, setPushErrorMsg] = useState<string | null>(null);
+
+  // Travel Notification preference toggles
+  const [notifFlightDisruptions, setNotifFlightDisruptions] = useState(true);
+  const [notifGateChanges, setNotifGateChanges] = useState(true);
+  const [notifPriceAlerts, setNotifPriceAlerts] = useState(true);
+  const [notifBookingReceipts, setNotifBookingReceipts] = useState(true);
 
   // Profile fields state
   const [fullName, setFullName] = useState(user?.fullName || '');
@@ -67,6 +94,66 @@ export const MyAccountPage: React.FC = () => {
   const [deleteReason, setDeleteReason] = useState('No longer using the service');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Check push notification capabilities on load or tab switch
+  useEffect(() => {
+    const info = pushNotificationService.getPlatformInfo();
+    setPlatform(info);
+    if (info.isPushSupported) {
+      pushNotificationService.isSubscribed().then((sub) => {
+        setIsPushSubscribed(sub);
+      });
+    }
+  }, [activeTab]);
+
+  const handleTogglePushSubscription = async () => {
+    setPushLoading(true);
+    setPushFeedbackMsg(null);
+    setPushErrorMsg(null);
+
+    try {
+      if (isPushSubscribed) {
+        await pushNotificationService.unsubscribe();
+        setIsPushSubscribed(false);
+        setPushFeedbackMsg('Push notifications deactivated for this device.');
+      } else {
+        const success = await pushNotificationService.subscribe();
+        if (success) {
+          setIsPushSubscribed(true);
+          setPushFeedbackMsg('Push notifications enabled successfully!');
+        } else {
+          setPushErrorMsg('Notification permission was dismissed or blocked in browser settings.');
+        }
+      }
+    } catch (err: any) {
+      setPushErrorMsg(err?.message || 'Failed to update push notification subscription.');
+    } finally {
+      setPushLoading(false);
+      setTimeout(() => {
+        setPushFeedbackMsg(null);
+        setPushErrorMsg(null);
+      }, 5000);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setTestPushLoading(true);
+    setPushFeedbackMsg(null);
+    setPushErrorMsg(null);
+
+    try {
+      await pushNotificationService.sendTestPush();
+      setPushFeedbackMsg('Test alert dispatched! Look out for the notification banner.');
+    } catch (err: any) {
+      setPushErrorMsg(err?.message || 'Failed to trigger test push notification.');
+    } finally {
+      setTestPushLoading(false);
+      setTimeout(() => {
+        setPushFeedbackMsg(null);
+        setPushErrorMsg(null);
+      }, 5000);
+    }
+  };
 
   // Sync state if user updates in context
   useEffect(() => {
@@ -275,6 +362,19 @@ export const MyAccountPage: React.FC = () => {
         >
           <Compass className="w-3.5 h-3.5" />
           <span>Flight & Travel Preferences</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('NOTIFICATIONS')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2 shrink-0 ${
+            activeTab === 'NOTIFICATIONS'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+          }`}
+        >
+          <BellRing className="w-3.5 h-3.5 text-sky-400" />
+          <span>Alerts & Push Notifications</span>
         </button>
 
         <button
@@ -588,6 +688,244 @@ export const MyAccountPage: React.FC = () => {
             </div>
           </div>
         </form>
+      )}
+
+      {/* 4. TAB CONTENT: NOTIFICATIONS & MULTI-PLATFORM PUSH ALERTS */}
+      {activeTab === 'NOTIFICATIONS' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Push Status Banner / Feedback */}
+          {pushFeedbackMsg && (
+            <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2.5 animate-slide-up">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{pushFeedbackMsg}</span>
+            </div>
+          )}
+          {pushErrorMsg && (
+            <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2.5 animate-slide-up">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{pushErrorMsg}</span>
+            </div>
+          )}
+
+          {/* Main Push Notification Control Card */}
+          <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6 backdrop-blur-xl">
+            <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-white flex items-center gap-2">
+                  <BellRing className="w-5 h-5 text-sky-400" />
+                  <span>Browser & Device Push Notifications</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Receive instant real-time alerts on flight disruptions, gate changes, and booking confirmations even when this tab is closed.
+                </p>
+              </div>
+
+              {platform && (
+                <div className="flex items-center gap-2">
+                  {isPushSubscribed ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Push Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                      <BellOff className="w-3.5 h-3.5" />
+                      Push Inactive
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Platform & Browser Diagnostic Box */}
+            {platform && (
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                    {platform.os === 'iOS' ? (
+                      <Apple className="w-6 h-6" />
+                    ) : platform.os === 'Android' ? (
+                      <Smartphone className="w-6 h-6" />
+                    ) : platform.os === 'Windows' || platform.os === 'macOS' ? (
+                      <Monitor className="w-6 h-6" />
+                    ) : (
+                      <Globe className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">
+                      Current Device: {platform.browser} on {platform.os}
+                      {platform.isStandalone && ' (PWA Standalone App)'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      OS Notification Permission: <span className="font-mono text-slate-200 uppercase font-semibold">{platform.permission}</span>
+                      {' • '}
+                      Push Protocol: <span className="font-mono text-sky-400">W3C VAPID / RFC 8292</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleTogglePushSubscription}
+                    disabled={pushLoading || platform.requiresHomeScreenPWA}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg disabled:opacity-50 ${
+                      isPushSubscribed
+                        ? 'bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 hover:border-rose-500/40'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'
+                    }`}
+                  >
+                    {pushLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : isPushSubscribed ? (
+                      <>
+                        <BellOff className="w-4 h-4" />
+                        <span>Disable Push Alerts</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-4 h-4" />
+                        <span>Enable Push Notifications</span>
+                      </>
+                    )}
+                  </button>
+
+                  {isPushSubscribed && (
+                    <button
+                      type="button"
+                      onClick={handleSendTestPush}
+                      disabled={testPushLoading}
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white border border-slate-800 transition flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {testPushLoading ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Send Test Push Alert</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* iOS Web Push Setup Guide (if non-standalone) */}
+            {platform?.requiresHomeScreenPWA && (
+              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-3">
+                <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                  <Apple className="w-5 h-5" />
+                  <span>iOS Safari Web Push Setup Required</span>
+                </div>
+                <p className="leading-relaxed text-amber-200/90">
+                  Apple iOS 16.4+ enables Web Push Notifications when SmartTravel is installed to your Home Screen:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-amber-500/20 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">1</span>
+                    <span className="text-[11px] text-amber-100">Tap Safari <Share className="w-3.5 h-3.5 inline mx-1 text-white" /> Share button below</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-amber-500/20 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">2</span>
+                    <span className="text-[11px] text-amber-100">Select <PlusSquare className="w-3.5 h-3.5 inline mx-1 text-white" /> Add to Home Screen</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-amber-500/20 flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">3</span>
+                    <span className="text-[11px] text-amber-100">Open SmartTravel icon & enable alerts</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Travel Notification Category Preferences */}
+            <div className="pt-4 border-t border-slate-800">
+              <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-sky-400" />
+                <span>Notification Topic Subscriptions</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  {
+                    title: 'Flight Disruption & Delay Alerts',
+                    desc: 'Instant updates on cancellations, gate changes, and departure shifts',
+                    checked: notifFlightDisruptions,
+                    toggle: () => setNotifFlightDisruptions(!notifFlightDisruptions),
+                  },
+                  {
+                    title: 'Gate & Terminal Changes',
+                    desc: 'Real-time gate assignments and boarding call notifications',
+                    checked: notifGateChanges,
+                    toggle: () => setNotifGateChanges(!notifGateChanges),
+                  },
+                  {
+                    title: 'Price Drop & Dynamic Fare Alerts',
+                    desc: 'Alerts when routes you search drop in price',
+                    checked: notifPriceAlerts,
+                    toggle: () => setNotifPriceAlerts(!notifPriceAlerts),
+                  },
+                  {
+                    title: 'Booking Confirmations & E-Tickets',
+                    desc: 'Instant PDF ticket and booking confirmation receipts',
+                    checked: notifBookingReceipts,
+                    toggle: () => setNotifBookingReceipts(!notifBookingReceipts),
+                  },
+                ].map((pref, idx) => (
+                  <div
+                    key={idx}
+                    onClick={pref.toggle}
+                    className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 cursor-pointer transition flex items-start justify-between gap-3"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-slate-200">{pref.title}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{pref.desc}</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={pref.checked}
+                      onChange={pref.toggle}
+                      className="mt-0.5 w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform Compatibility Matrix */}
+            <div className="pt-4 border-t border-slate-800">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+                Supported Multi-Platform Push Engines
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { name: 'Apple iOS', desc: 'iOS 16.4+ Safari PWA', icon: Apple },
+                  { name: 'Google Android', desc: 'Chrome & Edge FCM', icon: Smartphone },
+                  { name: 'Microsoft Windows', desc: 'Edge / Chrome Action Center', icon: Monitor },
+                  { name: 'Apple macOS', desc: 'Safari 16+ & Chrome', icon: Globe },
+                ].map((p, idx) => {
+                  const Icon = p.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex flex-col items-center text-center gap-1"
+                    >
+                      <Icon className="w-5 h-5 text-blue-400" />
+                      <span className="text-xs font-bold text-slate-200">{p.name}</span>
+                      <span className="text-[10px] text-slate-500">{p.desc}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 5. TAB CONTENT: SECURITY & PASSWORD */}
