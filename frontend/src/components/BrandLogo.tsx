@@ -40,10 +40,10 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             }
           }}
         />
-        {/* Fallback geometric brand emblem */}
+        {/* Fallback luxury gold geometric brand emblem */}
         <div
           style={{ display: 'none' }}
-          className={`${sizeMap.logoH} aspect-square rounded-xl bg-gradient-to-br from-sky-400 via-sky-500 to-primary flex items-center justify-center text-white font-black shadow-sm`}
+          className={`${sizeMap.logoH} aspect-square rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 flex items-center justify-center text-black font-black shadow-glow-gold`}
         >
           <svg className="w-3/5 h-3/5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -54,16 +54,16 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       {/* Brand Wordmark & Tagline */}
       <div className="flex flex-col leading-none">
         <div className="flex items-center tracking-tight">
-          <span className={`font-black ${sizeMap.text} text-primary dark:text-white`}>
+          <span className={`font-black ${sizeMap.text} text-white`}>
             Smart
           </span>
-          <span className={`font-black ${sizeMap.text} text-secondary`}>
+          <span className={`font-black ${sizeMap.text} text-secondary ml-0.5`}>
             Travel
           </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-accent ml-0.5"></span>
+          <span className="w-1.5 h-1.5 rounded-full bg-accent ml-1 animate-pulse"></span>
         </div>
         {showTagline && (
-          <span className={`font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400 ${sizeMap.tagline} mt-0.5`}>
+          <span className={`font-bold tracking-widest uppercase text-slate-400 ${sizeMap.tagline} mt-0.5`}>
             EXPLORE • BOOK • JOURNEY
           </span>
         )}

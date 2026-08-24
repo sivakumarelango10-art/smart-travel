@@ -187,12 +187,12 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             <Radio className="w-3 h-3 animate-pulse" /> Live Seat Availability Active
           </span>
           {realtimeNotification && (
-            <span className="text-sky-400 font-medium animate-fade-in">{realtimeNotification}</span>
+            <span className="text-amber-400 font-medium animate-fade-in">{realtimeNotification}</span>
           )}
         </div>
 
         {effectivePreference && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-semibold text-[11px]">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 font-semibold text-[11px]">
             <Sparkles className="w-3 h-3 text-amber-400" />
             Highlighting Saved Preference: <strong className="text-white uppercase">{effectivePreference}</strong>
           </div>
@@ -200,37 +200,37 @@ export const SeatMap: React.FC<SeatMapProps> = ({
       </div>
 
       {/* Seat Map Legend & Upselling Summary */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs shadow-xl backdrop-blur-xl">
+      <div className="p-4 sm:p-5 rounded-3xl bg-[#14161F] border border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs shadow-xl backdrop-blur-xl">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-slate-800 border border-slate-700"></div>
+            <div className="w-5 h-5 rounded-lg bg-[#1F222E] border border-white/10"></div>
             <span className="text-slate-300 font-semibold">Standard (₹0)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 flex items-center justify-center text-[10px] text-indigo-300 font-bold">
+            <div className="w-5 h-5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-[10px] text-emerald-400 font-bold">
               ★
             </div>
             <span className="text-slate-300 font-semibold">Extra Legroom (+₹350–₹500)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-sky-500 border border-sky-400 text-white flex items-center justify-center font-bold text-[10px] shadow-sm shadow-sky-500/50">
-              <Check className="w-3.5 h-3.5" />
+            <div className="w-5 h-5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black flex items-center justify-center font-bold text-[10px] shadow-glow-gold">
+              <Check className="w-3.5 h-3.5 text-black" />
             </div>
-            <span className="text-slate-200 font-bold">Selected</span>
+            <span className="text-amber-400 font-bold">Selected</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-slate-950 border border-slate-800 opacity-40 cursor-not-allowed"></div>
+            <div className="w-5 h-5 rounded-lg bg-[#0B0C10] border border-white/5 opacity-40 cursor-not-allowed"></div>
             <span className="text-slate-500 font-medium">Occupied</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {totalSeatUpgradeCost > 0 && (
-            <span className="px-3 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold text-xs">
+            <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-xs">
               Seat Upgrades: +₹{totalSeatUpgradeCost.toLocaleString()}
             </span>
           )}
-          <div className="px-3.5 py-1.5 rounded-full bg-sky-950/60 border border-sky-800/40 text-sky-300 font-black text-xs">
+          <div className="px-3.5 py-1.5 rounded-full bg-[#181A22] border border-amber-500/30 text-amber-400 font-black text-xs">
             Selected: {selectedSeats.length} / {requiredCount} required
           </div>
         </div>
@@ -244,24 +244,24 @@ export const SeatMap: React.FC<SeatMapProps> = ({
       )}
 
       {/* Airplane Fuselage Layout */}
-      <div className="max-w-md mx-auto p-6 sm:p-8 rounded-[40px] bg-slate-900 border-2 border-slate-800 shadow-2xl relative">
+      <div className="max-w-md mx-auto p-6 sm:p-8 rounded-[40px] bg-[#12131A] border-2 border-white/10 shadow-2xl relative">
         {/* Cockpit Front Nose Curve */}
-        <div className="w-32 h-14 mx-auto mb-8 rounded-t-full border-t-2 border-x-2 border-slate-700 bg-slate-950/80 flex items-center justify-center shadow-inner">
+        <div className="w-32 h-14 mx-auto mb-8 rounded-t-full border-t-2 border-x-2 border-white/10 bg-[#0B0C10] flex items-center justify-center shadow-inner">
           <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Cockpit</span>
         </div>
 
         {/* Column Labels Header */}
-        <div className="flex items-center justify-between px-3 pb-3 text-xs font-mono font-black text-slate-400 border-b border-slate-800 mb-4">
+        <div className="flex items-center justify-between px-3 pb-3 text-xs font-mono font-black text-slate-400 border-b border-white/10 mb-4">
           <div className="flex gap-2">
-            <span className="w-8 text-center">A</span>
-            <span className="w-8 text-center">B</span>
-            <span className="w-8 text-center">C</span>
+            <span className="w-8 text-center text-amber-400">A</span>
+            <span className="w-8 text-center text-amber-400">B</span>
+            <span className="w-8 text-center text-amber-400">C</span>
           </div>
           <span className="text-[10px] uppercase text-slate-500 font-bold">Aisle</span>
           <div className="flex gap-2">
-            <span className="w-8 text-center">D</span>
-            <span className="w-8 text-center">E</span>
-            <span className="w-8 text-center">F</span>
+            <span className="w-8 text-center text-amber-400">D</span>
+            <span className="w-8 text-center text-amber-400">E</span>
+            <span className="w-8 text-center text-amber-400">F</span>
           </div>
         </div>
 
@@ -274,7 +274,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
               <button
                 type="button"
                 onClick={onRefreshSeats}
-                className="mt-2 px-4 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 text-xs font-bold transition inline-flex items-center gap-1.5"
+                className="mt-2 px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-400 border border-amber-400/30 text-xs font-bold transition inline-flex items-center gap-1.5"
               >
                 Refresh Seat Layout
               </button>
@@ -319,20 +319,20 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             } ${matchesPref ? '• Matches your preference!' : ''}`}
                             className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
                               isSelected
-                                ? 'bg-sky-500 border border-sky-400 text-white shadow-lg shadow-sky-500/40 scale-105'
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold scale-105'
                                 : isAvailable
                                 ? isExtraLegroom
-                                  ? 'bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 hover:scale-105'
+                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 hover:scale-105'
                                   : matchesPref
-                                  ? 'bg-slate-800 hover:bg-slate-750 border-2 border-amber-400/80 text-amber-300 hover:scale-105'
-                                  : 'bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-slate-200 hover:scale-105'
-                                : 'bg-slate-950 border border-slate-800 text-slate-600 opacity-40 cursor-not-allowed'
+                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300 hover:scale-105'
+                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200 hover:scale-105'
+                                : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
                             {isSelected ? (
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-3.5 h-3.5 text-black" />
                             ) : matchesPref && isAvailable && !isExtraLegroom ? (
-                              <span className="text-[10px] text-amber-300 font-bold">{col}</span>
+                              <span className="text-[10px] text-amber-400 font-bold">{col}</span>
                             ) : (
                               col
                             )}
@@ -368,20 +368,20 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             } ${matchesPref ? '• Matches your preference!' : ''}`}
                             className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
                               isSelected
-                                ? 'bg-sky-500 border border-sky-400 text-white shadow-lg shadow-sky-500/40 scale-105'
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold scale-105'
                                 : isAvailable
                                 ? isExtraLegroom
-                                  ? 'bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 hover:scale-105'
+                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 hover:scale-105'
                                   : matchesPref
-                                  ? 'bg-slate-800 hover:bg-slate-750 border-2 border-amber-400/80 text-amber-300 hover:scale-105'
-                                  : 'bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-slate-200 hover:scale-105'
-                                : 'bg-slate-950 border border-slate-800 text-slate-600 opacity-40 cursor-not-allowed'
+                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300 hover:scale-105'
+                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200 hover:scale-105'
+                                : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
                             {isSelected ? (
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-3.5 h-3.5 text-black" />
                             ) : matchesPref && isAvailable && !isExtraLegroom ? (
-                              <span className="text-[10px] text-amber-300 font-bold">{col}</span>
+                              <span className="text-[10px] text-amber-400 font-bold">{col}</span>
                             ) : (
                               col
                             )}
@@ -397,7 +397,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         )}
 
         {/* Fuselage Rear Curve */}
-        <div className="w-28 h-8 mx-auto mt-8 rounded-b-3xl border-b-2 border-x-2 border-slate-700 bg-slate-950/80 flex items-center justify-center">
+        <div className="w-28 h-8 mx-auto mt-8 rounded-b-3xl border-b-2 border-x-2 border-white/10 bg-[#0B0C10] flex items-center justify-center">
           <span className="text-[9px] uppercase font-black text-slate-400 tracking-widest">Galley & Restrooms</span>
         </div>
       </div>
