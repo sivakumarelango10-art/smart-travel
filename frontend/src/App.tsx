@@ -23,6 +23,7 @@ const MyAccountPage = lazy(() => import('./pages/MyAccountPage').then((m) => ({ 
 const TicketPage = lazy(() => import('./pages/TicketPage').then((m) => ({ default: m.TicketPage })));
 const CheckInPage = lazy(() => import('./pages/CheckInPage').then((m) => ({ default: m.CheckInPage })));
 const BoardingPassPage = lazy(() => import('./pages/BoardingPassPage').then((m) => ({ default: m.BoardingPassPage })));
+const BoardingPassVerificationPage = lazy(() => import('./pages/BoardingPassVerificationPage').then((m) => ({ default: m.BoardingPassVerificationPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
@@ -71,6 +72,10 @@ export default function App() {
                 <Route path="login" element={<LoginPage />} />
                 <Route path="register" element={<RegisterPage />} />
                 <Route path="book/:flightId" element={<BookingPage />} />
+                <Route path="verify-pass" element={<BoardingPassVerificationPage />} />
+                <Route path="verify-pass/:token" element={<BoardingPassVerificationPage />} />
+                <Route path="verify-boarding-pass" element={<BoardingPassVerificationPage />} />
+                <Route path="verify-boarding-pass/:token" element={<BoardingPassVerificationPage />} />
 
                 {/* Protected Customer Routes */}
                 <Route

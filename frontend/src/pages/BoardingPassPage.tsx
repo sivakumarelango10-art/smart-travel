@@ -10,13 +10,15 @@ import {
   Clock,
   MapPin,
   ShieldCheck,
-  QrCode
+  QrCode,
+  ExternalLink
 } from 'lucide-react';
 import { BoardingPass } from '../types/api';
 import { checkInService } from '../services/checkInService';
 import { BrandLogo } from '../components/BrandLogo';
 import { AirlineLogo } from '../components/AirlineLogo';
 import { BoardingPassSkeleton } from '../components/BoardingPassSkeleton';
+import { RealQRCode } from '../components/RealQRCode';
 
 export const BoardingPassPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -152,7 +154,8 @@ export const BoardingPassPage: React.FC = () => {
   const depTimeFormatted = formatTime(activePass.departureTime);
   const flightDateFormatted = formatDate(activePass.departureTime);
   const passNumber = activePass.boardingPassNumber || activePass.checkInNumber || activePass.id || 'BP-OFFICIAL';
-  const qrPayload = `STBP|${passNumber}|${activePass.bookingReference || 'PNR'}|${activePass.flightNumber || 'FL'}|${activePass.seatNumber || 'ST'}|${(activePass.passengerName || 'PAX').replace(/\s+/g, '_')}`;
+  const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://smart-travel.sage.vercel.app';
+  const qrScannerUrl = `${origin}/verify-pass/${encodeURIComponent(passNumber)}?pnr=${encodeURIComponent(activePass.bookingReference || '')}&flight=${encodeURIComponent(activePass.flightNumber || '')}&pax=${encodeURIComponent(activePass.passengerName || '')}&seat=${encodeURIComponent(activePass.seatNumber || '')}`;
 
   return (
     <div className="max-w-xl mx-auto py-8 space-y-6 animate-fade-in">
@@ -317,44 +320,28 @@ export const BoardingPassPage: React.FC = () => {
         {/* Machine-Readable Barcode & QR Code Section */}
         <div className="p-6 bg-slate-950 text-center space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-slate-900/90 rounded-2xl border border-slate-800">
-            {/* 2D QR Code Representation */}
-            <div className="flex items-center gap-4" title={`Scannable QR Payload: ${qrPayload}`} data-qr-payload={qrPayload}>
-              <div className="w-20 h-20 bg-white p-1.5 rounded-xl shrink-0 flex items-center justify-center shadow-lg">
-                <svg viewBox="0 0 100 100" className="w-full h-full text-slate-950 fill-current">
-                  {/* High contrast scannable QR pattern */}
-                  <rect x="0" y="0" width="30" height="30" rx="3" />
-                  <rect x="5" y="5" width="20" height="20" fill="white" />
-                  <rect x="9" y="9" width="12" height="12" />
-                  <rect x="70" y="0" width="30" height="30" rx="3" />
-                  <rect x="75" y="5" width="20" height="20" fill="white" />
-                  <rect x="79" y="9" width="12" height="12" />
-                  <rect x="0" y="70" width="30" height="30" rx="3" />
-                  <rect x="5" y="75" width="20" height="20" fill="white" />
-                  <rect x="9" y="79" width="12" height="12" />
-                  <rect x="40" y="10" width="8" height="8" />
-                  <rect x="52" y="10" width="8" height="8" />
-                  <rect x="40" y="24" width="8" height="8" />
-                  <rect x="40" y="40" width="20" height="20" rx="2" />
-                  <rect x="70" y="40" width="10" height="8" />
-                  <rect x="85" y="40" width="10" height="8" />
-                  <rect x="70" y="55" width="25" height="8" />
-                  <rect x="40" y="70" width="10" height="10" />
-                  <rect x="55" y="70" width="10" height="10" />
-                  <rect x="40" y="85" width="25" height="10" />
-                  <rect x="75" y="75" width="20" height="20" rx="2" />
-                </svg>
+            {/* Real Dynamic Scannable 2D QR Code */}
+            <div className="flex items-center gap-4 text-left">
+              <div className="p-1.5 bg-white rounded-2xl shrink-0 shadow-lg border border-slate-200">
+                <RealQRCode value={qrScannerUrl} size={84} includeMargin={false} />
               </div>
-              <div className="text-left">
+              <div className="space-y-1">
                 <span className="text-[11px] font-black text-white uppercase tracking-wider block flex items-center gap-1.5">
                   <QrCode className="w-3.5 h-3.5 text-sky-400" />
-                  Gate Scanner QR Code
+                  Real Scannable Gate QR Code
                 </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  Pass ID: <strong className="text-slate-200 font-mono">{passNumber}</strong>
+                <span className="text-[10px] text-slate-400 block">
+                  Scan with any phone camera to view full live manifest
                 </span>
-                <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
-                  ✓ Verified & Authenticated by SmartTravel Security
-                </span>
+                <Link
+                  to={`/verify-pass/${encodeURIComponent(passNumber)}?pnr=${encodeURIComponent(activePass.bookingReference || '')}&flight=${encodeURIComponent(activePass.flightNumber || '')}&pax=${encodeURIComponent(activePass.passengerName || '')}&seat=${encodeURIComponent(activePass.seatNumber || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-400 hover:text-sky-300 transition mt-0.5"
+                >
+                  <span>Open Verification Manifest</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
               </div>
             </div>
 
