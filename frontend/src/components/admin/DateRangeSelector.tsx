@@ -63,25 +63,25 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-sm transition-colors"
+          className="flex items-center gap-2 px-3.5 py-2 bg-[#14161F] border border-white/10 rounded-xl text-sm font-medium text-slate-200 hover:bg-[#181A22] shadow-xl transition-colors"
         >
-          <Calendar className="w-4 h-4 text-primary-500" />
+          <Calendar className="w-4 h-4 text-amber-400" />
           <span>{PERIOD_LABELS[period]}</span>
           <ChevronDown className="w-4 h-4 text-slate-400" />
         </button>
 
         {isOpen && (
-          <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 p-2">
+          <div className="absolute left-0 mt-2 w-72 bg-[#14161F] rounded-2xl shadow-2xl border border-white/10 z-50 p-2">
             <div className="space-y-1 mb-2">
               {(Object.keys(PERIOD_LABELS) as AnalyticsPeriod[]).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => handleSelectPeriod(p)}
-                  className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     period === p
-                      ? 'bg-primary-50 dark:bg-primary-950/50 text-primary-600 dark:text-primary-400 font-semibold'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      ? 'bg-amber-400/15 text-amber-400 font-bold border border-amber-400/20'
+                      : 'text-slate-300 hover:bg-[#181A22]'
                   }`}
                 >
                   {PERIOD_LABELS[p]}
@@ -91,35 +91,35 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 
             {/* Custom Range Input fields */}
             {period === 'custom' && (
-              <form onSubmit={handleApplyCustom} className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+              <form onSubmit={handleApplyCustom} className="pt-2 border-t border-white/10 space-y-2">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
                     From
                   </label>
                   <input
                     type="date"
                     value={customFrom}
                     onChange={(e) => setCustomFrom(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                    className="w-full text-xs px-2.5 py-1.5 border border-white/10 rounded-lg bg-[#181A22] text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
                     To
                   </label>
                   <input
                     type="date"
                     value={customTo}
                     onChange={(e) => setCustomTo(e.target.value)}
-                    className="w-full text-xs px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white"
+                    className="w-full text-xs px-2.5 py-1.5 border border-white/10 rounded-lg bg-[#181A22] text-white"
                   />
                 </div>
                 {customError && (
-                  <p className="text-[11px] text-rose-500">{customError}</p>
+                  <p className="text-[11px] text-rose-400">{customError}</p>
                 )}
                 <button
                   type="submit"
-                  className="w-full py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-md hover:bg-primary-700 transition-colors"
+                  className="w-full py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-black text-xs font-black rounded-lg shadow-glow-gold transition-colors"
                 >
                   Apply Range
                 </button>
@@ -132,7 +132,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
       {/* Refresh Button & Last Updated Timestamp */}
       <div className="flex items-center gap-3">
         {lastUpdated && (
-          <span className="text-xs text-slate-400 dark:text-slate-500">
+          <span className="text-xs text-slate-400">
             Updated {lastUpdated.toLocaleTimeString()}
           </span>
         )}
@@ -140,10 +140,10 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-sm transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#14161F] border border-white/10 rounded-xl text-sm font-medium text-slate-200 hover:bg-[#181A22] shadow-xl transition-colors disabled:opacity-50"
           title="Refresh dashboard data"
         >
-          <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin text-primary-500' : ''}`} />
+          <RefreshCw className={`w-4 h-4 text-amber-400 ${loading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>

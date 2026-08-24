@@ -38,115 +38,81 @@ export const FlightSearchPage: React.FC = () => {
 
   // Filter States
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
-  const [priceLimit, setPriceLimit] = useState<number>(50000);
-  const [maxPrice, setMaxPrice] = useState<number>(50000);
+  const [maxPrice, setMaxPrice] = useState<number>(0);
+  const [priceLimit, setPriceLimit] = useState<number>(0);
   const [nonStopOnly, setNonStopOnly] = useState<boolean>(false);
   const [timeWindow, setTimeWindow] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<string>('CHEAPEST');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
-  const searchSeqRef = useRef<number>(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Format "Updated X ago"
-  useEffect(() => {
-    if (!lastUpdated) return;
-
-    const updateAgo = () => {
-      const seconds = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-      if (seconds < 10) {
-        setTimeAgoText('Updated just now');
-      } else if (seconds < 60) {
-        setTimeAgoText(`Updated ${seconds}s ago`);
-      } else {
-        const mins = Math.floor(seconds / 60);
-        setTimeAgoText(`Updated ${mins}m ago`);
-      }
-    };
-
-    updateAgo();
-    const timer = setInterval(updateAgo, 5000);
-    return () => clearInterval(timer);
-  }, [lastUpdated]);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchFlights = useCallback(async () => {
-    const seq = ++searchSeqRef.current;
+    setLoading(true);
+    setError(null);
+    setSlowMessage(null);
 
-    // Abort previous search request if running
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    const searchParamsObj = {
-      origin,
-      destination,
-      departureDate,
-      cabinClass,
-      passengers,
-      page: 0,
-      size: 50,
-    };
-
-    // Stale-While-Revalidate caching
-    const cached = flightService.getCachedSearch(searchParamsObj);
-    if (cached && cached.data?.data?.content) {
-      setFlights(cached.data.data.content);
-      setLastUpdated(new Date(cached.timestamp));
-      setLoading(false);
-      setError(null);
-    } else {
-      setLoading(true);
-      setError(null);
-    }
-
-    const slowTimer = setTimeout(() => {
-      if (seq === searchSeqRef.current) {
-        setSlowMessage('Connecting to airline GDS inventory...');
-      }
-    }, 2000);
+    // Warm-up timeout indicator for Render backend
+    slowTimerRef.current = setTimeout(() => {
+      setSlowMessage('Connecting to airline reservation systems. Please hold on...');
+    }, 4000);
 
     try {
-      const res = await flightService.searchFlights(searchParamsObj);
-      if (seq !== searchSeqRef.current) return;
+      const res = await flightService.searchFlights({
+        origin,
+        destination,
+        departureDate,
+        cabinClass,
+        passengers,
+      });
 
-      const items = res.data.content || [];
-      setFlights(items);
-      setLastUpdated(new Date());
+      if (res.data && Array.isArray(res.data)) {
+        setFlights(res.data);
+        setLastUpdated(new Date());
 
-      // Compute dynamic max budget
-      if (items.length > 0) {
-        const highestFare = Math.max(
-          ...items.map((f) => {
-            const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
-            return inv ? inv.totalPrice : f.basePrice;
-          })
-        );
-        const roundedMax = Math.ceil(highestFare / 1000) * 1000 + 2000;
-        setMaxPrice(roundedMax);
-        setPriceLimit(roundedMax);
+        // Calculate max price for the budget slider
+        const prices = res.data.map((f: Flight) => {
+          const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
+          return (inv ? inv.totalPrice : f.basePrice) * passengers;
+        });
+        const highestPrice = Math.max(...prices, 15000);
+        setMaxPrice(highestPrice);
+        setPriceLimit(highestPrice);
+      } else {
+        setFlights([]);
       }
-      setError(null);
     } catch (err: any) {
-      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
-        return;
-      }
-      if (seq !== searchSeqRef.current) return;
-      if (!cached) {
-        setError(err.message || 'Unable to retrieve live flight schedules.');
-      }
+      setError(err.message || 'Failed to retrieve flights for this route.');
     } finally {
-      clearTimeout(slowTimer);
-      if (seq === searchSeqRef.current) {
-        setLoading(false);
-        setSlowMessage(null);
-      }
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+      setLoading(false);
+      setSlowMessage(null);
     }
   }, [origin, destination, departureDate, cabinClass, passengers]);
 
   useEffect(() => {
     fetchFlights();
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
   }, [fetchFlights]);
+
+  // Live "Updated X seconds ago" counter
+  useEffect(() => {
+    if (!lastUpdated) return;
+
+    const interval = setInterval(() => {
+      const diffSec = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+      if (diffSec < 60) {
+        setTimeAgoText(`Updated ${diffSec}s ago`);
+      } else {
+        const mins = Math.floor(diffSec / 60);
+        setTimeAgoText(`Updated ${mins}m ago`);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [lastUpdated]);
 
   // Extract available airlines
   const availableAirlines = Array.from(new Set(flights.map((f) => f.airline))).filter(Boolean);
@@ -207,15 +173,15 @@ export const FlightSearchPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-16">
       {/* 1. TOP ROUTE SUMMARY HEADER */}
-      <section className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+      <section className="p-4 sm:p-5 rounded-2xl bg-[#14161F] border border-white/10 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-sm">
-              <Plane className="w-5 h-5 text-secondary transform rotate-45" />
+            <div className="w-10 h-10 rounded-xl bg-[#181A22] text-amber-400 border border-white/10 flex items-center justify-center font-bold shadow-glow-gold">
+              <Plane className="w-5 h-5 text-amber-400 transform rotate-45" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black text-primary tracking-tight">
+                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                   {origin} ➔ {destination}
                 </h1>
                 <button
@@ -230,18 +196,18 @@ export const FlightSearchPage: React.FC = () => {
                       passengers: passengers.toString(),
                     });
                   }}
-                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-secondary transition-transform active:rotate-180 duration-300"
+                  className="p-1.5 rounded-lg bg-[#181A22] hover:bg-[#1F222E] text-amber-400 border border-white/10 transition-transform active:rotate-180 duration-300"
                 >
                   <ArrowLeftRight className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-bold text-secondary bg-secondary/10 px-2.5 py-0.5 rounded-full border border-secondary/20">
+                <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
                   {cabinClass.replace('_', ' ')}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+              <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <Calendar className="w-3.5 h-3.5 text-amber-400" />
                   {new Date(departureDate).toLocaleDateString('en-US', {
                     weekday: 'short',
                     month: 'short',
@@ -249,9 +215,9 @@ export const FlightSearchPage: React.FC = () => {
                     year: 'numeric',
                   })}
                 </span>
-                <span>•</span>
+                <span className="text-white/20">•</span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  <Users className="w-3.5 h-3.5 text-amber-400" />
                   {passengers} {passengers === 1 ? 'Traveler' : 'Travelers'}
                 </span>
               </div>
@@ -262,9 +228,9 @@ export const FlightSearchPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowModifySearch(!showModifySearch)}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primary text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition"
+              className="px-4 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-white text-xs font-bold flex items-center gap-1.5 border border-white/10 transition"
             >
-              <Edit3 className="w-3.5 h-3.5 text-secondary" />
+              <Edit3 className="w-3.5 h-3.5 text-amber-400" />
               <span>{showModifySearch ? 'Hide Search Form' : 'Modify Search'}</span>
               {showModifySearch ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
@@ -273,7 +239,7 @@ export const FlightSearchPage: React.FC = () => {
 
         {/* Expandable Search Widget */}
         {showModifySearch && (
-          <div className="mt-4 pt-4 border-t border-slate-100 animate-slide-up">
+          <div className="mt-4 pt-4 border-t border-white/10 animate-slide-up">
             <FlightSearchWidget
               compact
               initialOrigin={origin}
@@ -320,23 +286,23 @@ export const FlightSearchPage: React.FC = () => {
         {/* Right Flight List Column */}
         <main className="xl:col-span-9 space-y-4">
           {/* Header Controls Bar */}
-          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-[#14161F] border border-white/10 shadow-xl flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-black text-primary text-base">
+                <h2 className="font-black text-white text-base">
                   Available Flights
                 </h2>
-                <span className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20">
+                <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
                   {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
                 </span>
                 {timeAgoText && (
-                  <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-glow-emerald">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     {timeAgoText}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 All fares in INR (₹) with airport taxes and mandatory fees included upfront
               </p>
             </div>
@@ -345,9 +311,9 @@ export const FlightSearchPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="xl:hidden px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primary text-xs font-bold flex items-center gap-2 border border-slate-200"
+              className="xl:hidden px-4 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-white text-xs font-bold flex items-center gap-2 border border-white/10"
             >
-              <SlidersHorizontal className="w-4 h-4 text-secondary" />
+              <SlidersHorizontal className="w-4 h-4 text-amber-400" />
               <span>Filters ({selectedAirlines.length + (nonStopOnly ? 1 : 0)})</span>
             </button>
           </div>
@@ -377,8 +343,8 @@ export const FlightSearchPage: React.FC = () => {
           {loading ? (
             <div className="space-y-4 py-2">
               {slowMessage && (
-                <div className="p-4 rounded-2xl bg-secondary/10 border border-secondary/20 text-secondary text-xs flex items-center gap-3 animate-fade-in shadow-sm">
-                  <div className="w-2.5 h-2.5 rounded-full bg-secondary animate-ping shrink-0" />
+                <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs flex items-center gap-3 animate-fade-in shadow-glow-gold">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
                   <div className="flex-1 font-semibold">
                     {slowMessage}
                   </div>
@@ -389,36 +355,36 @@ export const FlightSearchPage: React.FC = () => {
               ))}
             </div>
           ) : error ? (
-            <div className="p-10 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center mx-auto">
+            <div className="p-10 rounded-2xl bg-[#14161F] border border-white/10 text-center space-y-4 shadow-xl">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="font-bold text-primary text-lg">Unable to Load Flights</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">{error}</p>
+              <h3 className="font-bold text-white text-lg">Unable to Load Flights</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">{error}</p>
               <button
                 onClick={fetchFlights}
-                className="px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-hover text-xs font-bold inline-flex items-center gap-2 transition"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-extrabold inline-flex items-center gap-2 transition shadow-glow-gold"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4 text-black" />
                 Retry Search
               </button>
             </div>
           ) : filteredFlights.length === 0 ? (
-            <div className="p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center mx-auto">
+            <div className="p-12 rounded-2xl bg-[#14161F] border border-white/10 text-center space-y-4 shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center mx-auto shadow-glow-gold">
                 <Plane className="w-7 h-7 transform -rotate-45" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-black text-primary text-lg">No Flights Found</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                  No flights match your filters between <strong className="text-primary">{origin}</strong> and{' '}
-                  <strong className="text-primary">{destination}</strong> on {departureDate}.
+                <h3 className="font-black text-white text-lg">No Flights Found</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                  No flights match your filters between <strong className="text-white">{origin}</strong> and{' '}
+                  <strong className="text-white">{destination}</strong> on {departureDate}.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition"
+                className="px-4 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-amber-400 border border-white/10 text-xs font-bold transition"
               >
                 Reset All Filters
               </button>

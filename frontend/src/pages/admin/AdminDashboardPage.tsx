@@ -104,11 +104,11 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-            <BarChart3 className="w-7 h-7 text-primary-600" />
+          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
+            <BarChart3 className="w-7 h-7 text-amber-400" />
             Executive Operations Dashboard
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             Real-time platform revenue, booking lifecycle, cabin inventory, and operational metrics.
           </p>
         </div>
@@ -124,18 +124,18 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Error state */}
       {error && (
-        <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl text-rose-800 dark:text-rose-300 flex items-center justify-between">
+        <div className="p-4 bg-rose-500/15 border border-rose-500/30 rounded-2xl text-rose-300 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
             <div>
               <p className="text-sm font-semibold">Failed to fetch analytics</p>
-              <p className="text-xs text-rose-700 dark:text-rose-400">{error}</p>
+              <p className="text-xs text-rose-400">{error}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => fetchDashboardData(true)}
-            className="px-3 py-1.5 bg-rose-600 text-white text-xs font-semibold rounded-lg hover:bg-rose-700 transition-colors"
+            className="px-3 py-1.5 bg-rose-600 text-white text-xs font-semibold rounded-xl hover:bg-rose-700 transition-colors"
           >
             Retry
           </button>
@@ -152,8 +152,8 @@ export const AdminDashboardPage: React.FC = () => {
           value={formatCurrency(revenue?.grossRevenue ?? overview?.totalGrossRevenue)}
           subtitle={period === 'last30days' ? 'Last 30 days total' : `Selected ${period}`}
           icon={DollarSign}
-          iconColor="text-emerald-600"
-          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
+          iconColor="text-emerald-400"
+          iconBg="bg-emerald-500/10 border border-emerald-500/20"
           trend={{
             value: formatCurrency(revenue?.netRevenue),
             isPositive: true,
@@ -167,8 +167,8 @@ export const AdminDashboardPage: React.FC = () => {
           value={(bookings?.totalBookings ?? overview?.totalBookings ?? 0).toLocaleString()}
           subtitle={`${bookings?.confirmedBookings ?? overview?.confirmedBookings ?? 0} confirmed`}
           icon={Compass}
-          iconColor="text-primary-600"
-          iconBg="bg-primary-50 dark:bg-primary-950/40"
+          iconColor="text-amber-400"
+          iconBg="bg-amber-400/10 border border-amber-400/20"
           trend={{
             value: `${bookings?.confirmationRate ?? 0}%`,
             isPositive: (bookings?.confirmationRate ?? 0) >= 50,
@@ -182,8 +182,8 @@ export const AdminDashboardPage: React.FC = () => {
           value={(overview?.activeFlights ?? flights?.activeFlights ?? 0).toLocaleString()}
           subtitle={`${flights?.flightsDepartingToday ?? 0} departing today`}
           icon={Plane}
-          iconColor="text-sky-600"
-          iconBg="bg-sky-50 dark:bg-sky-950/40"
+          iconColor="text-amber-400"
+          iconBg="bg-amber-400/10 border border-amber-400/20"
           trend={{
             value: `${flights?.averageOccupancyPercentage ?? 0}%`,
             isPositive: (flights?.averageOccupancyPercentage ?? 0) >= 60,
@@ -197,8 +197,8 @@ export const AdminDashboardPage: React.FC = () => {
           value={(customers?.totalCustomers ?? overview?.totalCustomers ?? 0).toLocaleString()}
           subtitle={`${customers?.activeCustomers ?? overview?.activeCustomers ?? 0} active accounts`}
           icon={Users}
-          iconColor="text-indigo-600"
-          iconBg="bg-indigo-50 dark:bg-indigo-950/40"
+          iconColor="text-amber-400"
+          iconBg="bg-amber-400/10 border border-amber-400/20"
           trend={{
             value: `${customers?.newCustomersInPeriod ?? 0} new`,
             isPositive: true,
@@ -210,70 +210,70 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Secondary KPI Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Total Seats</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+          <p className="text-lg font-bold text-white mt-0.5">
             {seats?.totalSeats.toLocaleString() ?? '0'}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{seats?.availableSeats.toLocaleString()} available</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.availableSeats.toLocaleString()} available</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Seat Occupancy</p>
-          <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <p className="text-lg font-bold text-emerald-400 mt-0.5">
             {seats?.overallOccupancyPercentage ?? 0}%
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{seats?.bookedSeats.toLocaleString()} booked</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.bookedSeats.toLocaleString()} booked</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Tickets Issued</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+          <p className="text-lg font-bold text-white mt-0.5">
             {overview?.ticketsIssued.toLocaleString() ?? '0'}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Active e-tickets</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Active e-tickets</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Check-Ins Done</p>
-          <p className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+          <p className="text-lg font-bold text-white mt-0.5">
             {overview?.checkInsCompleted.toLocaleString() ?? '0'}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Boarding passes</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Boarding passes</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Payment Success</p>
-          <p className="text-lg font-bold text-sky-600 dark:text-sky-400 mt-0.5">
+          <p className="text-lg font-bold text-amber-400 mt-0.5">
             {payments?.paymentSuccessRate ?? overview?.paymentSuccessRate ?? 0}%
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">{payments?.successfulPayments ?? 0} verified</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{payments?.successfulPayments ?? 0} verified</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3.5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Refunds Processed</p>
-          <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+          <p className="text-lg font-bold text-rose-400 mt-0.5">
             {formatCurrency(revenue?.refundedAmount ?? overview?.totalRefundedAmount)}
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">Disruption refunds</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Disruption refunds</p>
         </div>
       </div>
 
       {/* Main Charts & Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend Chart */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
                 Gross Revenue Trend
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-400">
                 Daily verified payment volume for {period}
               </p>
             </div>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-sm font-bold text-emerald-400">
               {formatCurrency(revenue?.grossRevenue)}
             </span>
           </div>
@@ -288,22 +288,22 @@ export const AdminDashboardPage: React.FC = () => {
           />
 
           {/* Revenue Period Breakdown comparison */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 text-center">
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5 text-center">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Today</p>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+              <p className="text-xs font-bold text-white mt-0.5">
                 {formatCurrency(revenue?.revenueToday)}
               </p>
             </div>
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">This Month</p>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+              <p className="text-xs font-bold text-white mt-0.5">
                 {formatCurrency(revenue?.revenueThisMonth)}
               </p>
             </div>
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Prev Month</p>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+              <p className="text-xs font-bold text-white mt-0.5">
                 {formatCurrency(revenue?.revenuePreviousMonth)}
               </p>
             </div>
@@ -311,18 +311,18 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         {/* Booking Volume Trend Chart */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Compass className="w-4 h-4 text-primary-500" />
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Compass className="w-4 h-4 text-amber-400" />
                 Booking Volume Trend
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-400">
                 Daily created bookings for {period}
               </p>
             </div>
-            <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
+            <span className="text-sm font-bold text-amber-400">
               {bookings?.totalBookings ?? 0} Bookings
             </span>
           </div>
@@ -331,28 +331,28 @@ export const AdminDashboardPage: React.FC = () => {
             data={bookings?.trend || []}
             valueKey="bookings"
             label="Total Bookings"
-            color="#2563eb"
+            color="#f59e0b"
             formatValue={(v) => `${v} bookings`}
             height={180}
           />
 
           {/* Booking Rate Metrics */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 text-center">
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/5 text-center">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Confirmed</p>
-              <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <p className="text-xs font-bold text-emerald-400 mt-0.5">
                 {bookings?.confirmationRate ?? 0}%
               </p>
             </div>
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Cancelled</p>
-              <p className="text-xs font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+              <p className="text-xs font-bold text-rose-400 mt-0.5">
                 {bookings?.cancellationRate ?? 0}%
               </p>
             </div>
-            <div className="p-2 rounded bg-slate-50 dark:bg-slate-900/40">
+            <div className="p-2 rounded-xl bg-[#181A22]">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Avg Value</p>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+              <p className="text-xs font-bold text-amber-400 mt-0.5">
                 {formatCurrency(bookings?.averageBookingValue)}
               </p>
             </div>
@@ -363,18 +363,18 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Cabin Utilization & Flight Status Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cabin Utilization */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div className="lg:col-span-2 bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-indigo-500" />
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-400" />
                 Cabin-Wise Seat Utilization
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-400">
                 Seat inventory isolation & occupancy across cabin classes
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 shadow-glow-gold">
               Overall: {seats?.overallOccupancyPercentage ?? 0}%
             </span>
           </div>
@@ -383,21 +383,21 @@ export const AdminDashboardPage: React.FC = () => {
             {(seats?.cabinUtilization || []).map((cabin) => (
               <div
                 key={cabin.cabinClass}
-                className="p-4 rounded-xl border border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/30"
+                className="p-4 rounded-xl border border-white/10 bg-[#181A22]"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
                     {cabin.cabinClass.replace('_', ' ')}
                   </span>
-                  <span className="text-xs font-bold text-primary-600 dark:text-primary-400">
+                  <span className="text-xs font-bold text-amber-400">
                     {cabin.occupancyPercentage}% Occupancy
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-3 overflow-hidden">
+                <div className="w-full bg-[#14161F] rounded-full h-2 mb-3 overflow-hidden border border-white/5">
                   <div
-                    className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${Math.min(cabin.occupancyPercentage, 100)}%` }}
                   />
                 </div>
@@ -405,19 +405,19 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="grid grid-cols-3 text-center text-xs">
                   <div>
                     <span className="text-slate-400 text-[10px] block">Total</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-white">
                       {cabin.totalSeats}
                     </span>
                   </div>
                   <div>
-                    <span className="text-emerald-500 text-[10px] block">Booked</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-emerald-400 text-[10px] block">Booked</span>
+                    <span className="font-semibold text-emerald-400">
                       {cabin.bookedSeats}
                     </span>
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] block">Available</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-amber-400">
                       {cabin.availableSeats}
                     </span>
                   </div>
@@ -428,42 +428,42 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
 
         {/* Flight Status Breakdown */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+        <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Plane className="w-4 h-4 text-sky-500" />
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Plane className="w-4 h-4 text-amber-400" />
               Flight Operational Status
             </h2>
           </div>
 
           <div className="space-y-3">
             {[
-              { label: 'Scheduled / On Time', count: flights?.scheduledFlights ?? 0, color: 'bg-emerald-500' },
-              { label: 'Boarding', count: flights?.boardingFlights ?? 0, color: 'bg-sky-500' },
-              { label: 'Delayed', count: flights?.delayedFlights ?? 0, color: 'bg-amber-500' },
-              { label: 'Departed / Arrived', count: (flights?.departedFlights ?? 0) + (flights?.arrivedFlights ?? 0), color: 'bg-indigo-500' },
+              { label: 'Scheduled / On Time', count: flights?.scheduledFlights ?? 0, color: 'bg-emerald-400' },
+              { label: 'Boarding', count: flights?.boardingFlights ?? 0, color: 'bg-amber-400' },
+              { label: 'Delayed', count: flights?.delayedFlights ?? 0, color: 'bg-amber-600' },
+              { label: 'Departed / Arrived', count: (flights?.departedFlights ?? 0) + (flights?.arrivedFlights ?? 0), color: 'bg-slate-400' },
               { label: 'Cancelled', count: flights?.cancelledFlights ?? 0, color: 'bg-rose-500' },
             ].map((st) => (
               <div key={st.label} className="flex items-center justify-between text-xs py-1">
                 <div className="flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${st.color}`} />
-                  <span className="text-slate-600 dark:text-slate-300 font-medium">{st.label}</span>
+                  <span className="text-slate-300 font-medium">{st.label}</span>
                 </div>
-                <span className="font-bold text-slate-900 dark:text-white">{st.count}</span>
+                <span className="font-bold text-white">{st.count}</span>
               </div>
             ))}
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+          <div className="mt-5 pt-4 border-t border-white/5 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">Departing Today:</span>
-              <span className="font-bold text-slate-900 dark:text-white">
+              <span className="text-slate-400">Departing Today:</span>
+              <span className="font-bold text-white">
                 {flights?.flightsDepartingToday ?? 0}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">Low Inventory (&lt;10% seats):</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400">
+              <span className="text-slate-400">Low Inventory (&lt;10% seats):</span>
+              <span className="font-bold text-amber-400">
                 {flights?.flightsWithLowInventory ?? 0}
               </span>
             </div>
@@ -472,26 +472,26 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Top Flights Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+      <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <ArrowUpRight className="w-4 h-4 text-primary-500" />
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <ArrowUpRight className="w-4 h-4 text-amber-400" />
               Flight Performance Leaderboard
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-400">
               Ranked flight catalog metrics (no passenger PII exposed)
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/60 p-1 rounded-lg self-start sm:self-auto">
+          <div className="flex items-center gap-1 bg-[#181A22] p-1 rounded-xl border border-white/10 self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setFlightRankMode('revenue')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                 flightRankMode === 'revenue'
-                  ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               By Revenue
@@ -499,10 +499,10 @@ export const AdminDashboardPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setFlightRankMode('bookings')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                 flightRankMode === 'bookings'
-                  ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               By Bookings
@@ -510,10 +510,10 @@ export const AdminDashboardPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setFlightRankMode('occupancy')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
                 flightRankMode === 'occupancy'
-                  ? 'bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               By Occupancy
@@ -524,7 +524,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-400 font-semibold uppercase">
+              <tr className="border-b border-white/10 text-slate-400 font-semibold uppercase">
                 <th className="pb-3 pr-4">Flight</th>
                 <th className="pb-3 pr-4">Airline</th>
                 <th className="pb-3 pr-4">Route</th>
@@ -533,30 +533,30 @@ export const AdminDashboardPage: React.FC = () => {
                 <th className="pb-3 text-right">Occupancy</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            <tbody className="divide-y divide-white/5">
               {getRankedFlights().length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400">
+                  <td colSpan={6} className="py-6 text-center text-slate-500">
                     No flight performance records found for this ranking
                   </td>
                 </tr>
               ) : (
                 getRankedFlights().map((f, idx) => (
-                  <tr key={f.flightId || idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                    <td className="py-3 pr-4 font-bold text-slate-900 dark:text-white">
+                  <tr key={f.flightId || idx} className="hover:bg-[#181A22] transition-colors">
+                    <td className="py-3 pr-4 font-bold text-white">
                       {f.flightNumber}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{f.airline}</td>
-                    <td className="py-3 pr-4 font-medium text-slate-700 dark:text-slate-300">
+                    <td className="py-3 pr-4 text-slate-300">{f.airline}</td>
+                    <td className="py-3 pr-4 font-medium text-amber-400">
                       {f.origin && f.destination ? `${f.origin} → ${f.destination}` : '—'}
                     </td>
-                    <td className="py-3 pr-4 text-right font-semibold text-slate-900 dark:text-white">
+                    <td className="py-3 pr-4 text-right font-semibold text-white">
                       {f.bookingCount ?? 0}
                     </td>
-                    <td className="py-3 pr-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-3 pr-4 text-right font-bold text-amber-400">
                       {formatCurrency(f.revenue)}
                     </td>
-                    <td className="py-3 text-right font-semibold text-slate-900 dark:text-white">
+                    <td className="py-3 text-right font-semibold text-emerald-400">
                       {f.occupancyPercentage ? `${f.occupancyPercentage}%` : '—'}
                     </td>
                   </tr>
@@ -568,50 +568,50 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Customer & Audience Metrics */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+      <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Users className="w-4 h-4 text-indigo-500" />
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-400" />
               Customer Retention & Engagement
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-400">
               Aggregated platform traveler counts (zero PII exposure)
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60">
+          <div className="p-4 rounded-xl bg-[#181A22] border border-white/10">
             <p className="text-xs text-slate-400 uppercase font-semibold">Total Customers</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            <p className="text-2xl font-black text-white mt-1">
               {customers?.totalCustomers.toLocaleString() ?? '0'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{customers?.activeCustomers.toLocaleString()} active</p>
+            <p className="text-xs text-slate-400 mt-1">{customers?.activeCustomers.toLocaleString()} active</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60">
+          <div className="p-4 rounded-xl bg-[#181A22] border border-white/10">
             <p className="text-xs text-slate-400 uppercase font-semibold">Booked Travelers</p>
-            <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
+            <p className="text-2xl font-black text-amber-400 mt-1">
               {customers?.customersWithBookings.toLocaleString() ?? '0'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">With &ge; 1 confirmed booking</p>
+            <p className="text-xs text-slate-400 mt-1">With &ge; 1 confirmed booking</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60">
+          <div className="p-4 rounded-xl bg-[#181A22] border border-white/10">
             <p className="text-xs text-slate-400 uppercase font-semibold">Repeat Customers</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+            <p className="text-2xl font-black text-emerald-400 mt-1">
               {customers?.repeatCustomers.toLocaleString() ?? '0'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Multiple bookings</p>
+            <p className="text-xs text-slate-400 mt-1">Multiple bookings</p>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/60">
+          <div className="p-4 rounded-xl bg-[#181A22] border border-white/10">
             <p className="text-xs text-slate-400 uppercase font-semibold">Avg Bookings/User</p>
-            <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+            <p className="text-2xl font-black text-amber-400 mt-1">
               {customers?.averageBookingsPerCustomer ?? 0}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Per active booker</p>
+            <p className="text-xs text-slate-400 mt-1">Per active booker</p>
           </div>
         </div>
       </div>

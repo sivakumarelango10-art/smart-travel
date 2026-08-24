@@ -104,7 +104,6 @@ export const TrackedFlightsPage: React.FC = () => {
     await pushNotificationService.isSubscribed();
   };
 
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchLiveStatus(searchQuery);
@@ -161,16 +160,16 @@ export const TrackedFlightsPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-16 max-w-6xl mx-auto">
       {/* 1. HERO HEADER */}
-      <section className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <section className="p-6 sm:p-8 rounded-3xl bg-[#14161F] border border-white/10 shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-secondary text-xs font-bold uppercase tracking-wider mb-1">
-            <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
+            <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
             <span>Global Airspace Telemetry</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">
-            Live Flight Radar & Radar Telemetry
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Live Flight Radar & Telemetry
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
             Track commercial flights in real time with live airspace radar telemetry, altitude profiles, speed gauges, and gate status alerts.
           </p>
         </div>
@@ -182,23 +181,23 @@ export const TrackedFlightsPage: React.FC = () => {
               if (isAuthenticated) fetchTracked();
             }}
             disabled={searchLoading || loadingTracked}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 border border-slate-200 hover:bg-slate-200 text-xs font-bold text-slate-700 rounded-xl transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#181A22] border border-white/10 hover:bg-[#1F222E] text-xs font-bold text-slate-300 rounded-xl transition disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${searchLoading || loadingTracked ? 'animate-spin text-secondary' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${searchLoading || loadingTracked ? 'animate-spin text-amber-400' : 'text-amber-400'}`} />
             <span>Live Refresh</span>
           </button>
           <Link
             to="/flights"
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs rounded-xl shadow-glow-gold transition"
           >
-            <Search className="w-3.5 h-3.5" />
+            <Search className="w-3.5 h-3.5 text-black" />
             <span>Search Flights</span>
           </Link>
         </div>
       </section>
 
       {/* 2. SEARCH BAR & POPULAR SUGGESTIONS */}
-      <section className="p-5 sm:p-6 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
+      <section className="p-5 sm:p-6 bg-[#14161F] border border-white/10 rounded-2xl shadow-xl space-y-4">
         <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -207,23 +206,23 @@ export const TrackedFlightsPage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
               placeholder="Enter Flight Number (e.g. AI-101, 6E-204, UK-955, EK-500)..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-primary font-mono font-bold placeholder-slate-400 focus:outline-none focus:border-secondary text-xs uppercase tracking-wider transition"
+              className="w-full pl-11 pr-4 py-3 bg-[#181A22] border border-white/10 rounded-xl text-white font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-amber-400 text-xs uppercase tracking-wider transition"
             />
           </div>
           <button
             type="submit"
             disabled={searchLoading || !searchQuery.trim()}
-            className="w-full sm:w-auto px-6 py-3 bg-primary hover:bg-primary-hover text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-xs rounded-xl shadow-glow-gold transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
-            <Radio className={`w-4 h-4 text-secondary ${searchLoading ? 'animate-spin' : ''}`} />
+            <Radio className={`w-4 h-4 text-black ${searchLoading ? 'animate-spin' : ''}`} />
             <span>{searchLoading ? 'Scanning Airspace...' : 'Track Live Flight'}</span>
           </button>
         </form>
 
         {/* Quick Select Pills */}
         <div className="flex items-center gap-2 flex-wrap text-xs pt-1">
-          <span className="text-slate-500 font-semibold flex items-center gap-1">
-            <Compass className="w-3.5 h-3.5 text-secondary" />
+          <span className="text-slate-400 font-semibold flex items-center gap-1">
+            <Compass className="w-3.5 h-3.5 text-amber-400" />
             Active Airspace:
           </span>
           {POPULAR_FLIGHT_SUGGESTIONS.map((item) => (
@@ -236,8 +235,8 @@ export const TrackedFlightsPage: React.FC = () => {
               }}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 border ${
                 activeSnapshot?.flightNumber === item.code
-                  ? 'bg-secondary text-white border-secondary shadow-sm'
-                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black border-transparent shadow-glow-gold'
+                  : 'bg-[#181A22] hover:bg-[#1F222E] border-white/10 text-slate-300'
               }`}
             >
               <span>{item.code}</span>
@@ -249,15 +248,15 @@ export const TrackedFlightsPage: React.FC = () => {
 
       {/* 3. ACTIVE LIVE FLIGHT RADAR & TELEMETRY */}
       {searchError && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs flex items-center gap-3">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-500" />
+        <div className="p-4 bg-rose-500/15 border border-rose-500/30 text-rose-400 rounded-2xl text-xs flex items-center gap-3">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
           <span>{searchError}</span>
         </div>
       )}
 
       {trackActionMsg && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-glow-emerald">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{trackActionMsg}</span>
         </div>
       )}
@@ -265,7 +264,7 @@ export const TrackedFlightsPage: React.FC = () => {
       {activeSnapshot && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-primary">Live Aircraft Telemetry: {activeSnapshot.flightNumber}</h2>
+            <h2 className="text-lg font-black text-white">Live Aircraft Telemetry: {activeSnapshot.flightNumber}</h2>
             {isAuthenticated && (
               <button
                 type="button"
@@ -273,18 +272,18 @@ export const TrackedFlightsPage: React.FC = () => {
                 disabled={isCurrentFlightTracked}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
                   isCurrentFlightTracked
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-primary hover:bg-primary-hover text-white shadow-sm'
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
                 }`}
               >
                 {isCurrentFlightTracked ? (
                   <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Tracked in Dashboard</span>
                   </>
                 ) : (
                   <>
-                    <BookmarkPlus className="w-3.5 h-3.5" />
+                    <BookmarkPlus className="w-3.5 h-3.5 text-black" />
                     <span>Save to Tracked Flights</span>
                   </>
                 )}
@@ -299,8 +298,8 @@ export const TrackedFlightsPage: React.FC = () => {
       {/* 4. LIVE AIRSPACE TRAFFIC FEED */}
       <section className="space-y-4">
         <div>
-          <h2 className="text-lg font-black text-primary">Live Commercial Air Traffic</h2>
-          <p className="text-xs text-slate-500">Real-time ADS-B transponder telemetry across active flight paths</p>
+          <h2 className="text-lg font-black text-white">Live Commercial Air Traffic</h2>
+          <p className="text-xs text-slate-400">Real-time ADS-B transponder telemetry across active flight paths</p>
         </div>
 
         <LiveAirspaceFeed
@@ -312,46 +311,46 @@ export const TrackedFlightsPage: React.FC = () => {
 
       {/* 5. USER'S SAVED TRACKED FLIGHTS */}
       {isAuthenticated && (
-        <section className="space-y-4 pt-4 border-t border-slate-200">
+        <section className="space-y-4 pt-4 border-t border-white/10">
           <div>
-            <h2 className="text-lg font-black text-primary">My Saved Tracked Flights</h2>
-            <p className="text-xs text-slate-500">Flights you are actively monitoring</p>
+            <h2 className="text-lg font-black text-white">My Saved Tracked Flights</h2>
+            <p className="text-xs text-slate-400">Flights you are actively monitoring</p>
           </div>
 
           {loadingTracked ? (
-            <div className="p-6 text-center text-xs text-slate-500 font-semibold">Loading saved flights...</div>
+            <div className="p-6 text-center text-xs text-slate-400 font-semibold">Loading saved flights...</div>
           ) : trackedFlights.length === 0 ? (
-            <div className="p-8 rounded-2xl bg-white border border-slate-200 text-center space-y-2">
-              <Plane className="w-8 h-8 text-slate-300 mx-auto" />
-              <p className="text-xs text-slate-500">You are not actively tracking any flights.</p>
+            <div className="p-8 rounded-2xl bg-[#14161F] border border-white/10 text-center space-y-2">
+              <Plane className="w-8 h-8 text-slate-600 mx-auto" />
+              <p className="text-xs text-slate-400">You are not actively tracking any flights.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {trackedFlights.map((tf) => (
                 <div
                   key={tf.flightId}
-                  className="p-4 rounded-xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm flex items-center justify-between gap-3 transition"
+                  className="p-4 rounded-xl bg-[#14161F] border border-white/10 hover:border-amber-500/30 hover:shadow-card-hover flex items-center justify-between gap-3 transition"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-primary text-sm">{tf.flightNumber}</span>
-                      <span className="text-xs text-slate-500">{tf.departureAirportCode ?? tf.route?.split('→')[0]?.trim()} ➔ {tf.arrivalAirportCode ?? tf.route?.split('→')[1]?.trim()}</span>
+                      <span className="font-mono font-bold text-amber-400 text-sm">{tf.flightNumber}</span>
+                      <span className="text-xs text-slate-300">{tf.departureAirportCode ?? tf.route?.split('→')[0]?.trim()} ➔ {tf.arrivalAirportCode ?? tf.route?.split('→')[1]?.trim()}</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{tf.route}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{tf.route}</p>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleSelectAirspaceFlight(tf.flightNumber)}
-                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-bold transition shadow-sm"
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 text-black text-xs font-black transition shadow-glow-gold"
                     >
                       View Radar
                     </button>
                     <button
                       type="button"
                       onClick={() => handleUntrack(tf.flightId)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
                       title="Remove from tracking"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -25,11 +25,11 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 animate-pulse">
-        <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-40 mb-4" />
+      <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 animate-pulse">
+        <div className="h-5 bg-[#181A22] rounded w-40 mb-4" />
         <div className="space-y-3">
-          <div className="h-16 bg-slate-100 dark:bg-slate-700/40 rounded-lg" />
-          <div className="h-16 bg-slate-100 dark:bg-slate-700/40 rounded-lg" />
+          <div className="h-16 bg-[#181A22] rounded-xl" />
+          <div className="h-16 bg-[#181A22] rounded-xl" />
         </div>
       </div>
     );
@@ -111,45 +111,45 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
   const getAlertIcon = (type: AlertItem['type']) => {
     switch (type) {
       case 'danger':
-        return <Ban className="w-5 h-5 text-rose-500 shrink-0" />;
+        return <Ban className="w-5 h-5 text-rose-400 shrink-0" />;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />;
+        return <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />;
       case 'info':
-        return <Clock className="w-5 h-5 text-sky-500 shrink-0" />;
+        return <Clock className="w-5 h-5 text-amber-400 shrink-0" />;
     }
   };
 
   const getAlertStyles = (type: AlertItem['type']) => {
     switch (type) {
       case 'danger':
-        return 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-900 dark:text-rose-200';
+        return 'bg-rose-500/10 border-rose-500/30 text-rose-300';
       case 'warning':
-        return 'bg-amber-50/70 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200';
+        return 'bg-amber-500/10 border-amber-500/30 text-amber-300';
       case 'info':
-        return 'bg-sky-50/70 dark:bg-sky-950/20 border-sky-200 dark:border-sky-900/40 text-sky-900 dark:text-sky-200';
+        return 'bg-amber-400/10 border-amber-400/20 text-amber-300';
     }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+    <div className="bg-[#14161F] rounded-2xl border border-white/10 p-5 shadow-xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-primary-500" />
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+          <ShieldAlert className="w-5 h-5 text-amber-400" />
+          <h2 className="text-base font-bold text-white">
             Operational Alerts & Actions
           </h2>
         </div>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 shadow-glow-gold">
           {alerts.length} Active
         </span>
       </div>
 
       {alerts.length === 0 ? (
-        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-lg text-emerald-800 dark:text-emerald-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 shadow-glow-emerald">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <div>
-            <p className="text-sm font-semibold">All Systems Normal</p>
-            <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+            <p className="text-sm font-bold text-white">All Systems Normal</p>
+            <p className="text-xs text-slate-400 mt-0.5">
               No operational disruptions, delayed flights, or expired seat bottlenecks detected.
             </p>
           </div>
@@ -159,21 +159,21 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className={`flex items-start justify-between gap-3 p-3.5 rounded-lg border text-sm transition-all ${getAlertStyles(
+              className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border text-sm transition-all ${getAlertStyles(
                 alert.type
               )}`}
             >
               <div className="flex items-start gap-3">
                 {getAlertIcon(alert.type)}
                 <div>
-                  <h3 className="font-semibold text-sm">{alert.title}</h3>
-                  <p className="text-xs opacity-90 mt-0.5">{alert.description}</p>
+                  <h3 className="font-bold text-sm text-white">{alert.title}</h3>
+                  <p className="text-xs opacity-90 mt-0.5 text-slate-300">{alert.description}</p>
                 </div>
               </div>
               {alert.linkTo && (
                 <Link
                   to={alert.linkTo}
-                  className="shrink-0 text-xs font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
+                  className="shrink-0 text-xs font-bold text-amber-400 underline underline-offset-2 hover:opacity-80 transition-opacity"
                 >
                   {alert.linkText || 'View'}
                 </Link>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Mail, AlertCircle, ShieldCheck, Eye, EyeOff, Check } from 'lucide-react';
+import { LogIn, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -38,25 +38,25 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto py-10 sm:py-14 px-4">
-      <div className="rounded-2xl bg-white border border-slate-200 p-7 sm:p-8 shadow-card space-y-6">
+      <div className="rounded-3xl bg-[#14161F] border border-white/10 p-7 sm:p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-3">
           <BrandLogo size="xl" withLink={true} className="mx-auto justify-center" />
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-primary tracking-tight">Sign In to SmartTravel</h1>
-            <p className="text-xs text-slate-500">Access your live flight bookings, hotels & digital boarding passes</p>
+            <h1 className="text-2xl font-black text-white tracking-tight">Sign In to SmartTravel</h1>
+            <p className="text-xs text-slate-400">Access your live flight bookings, hotels & digital boarding passes</p>
           </div>
         </div>
 
         {error && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+          <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">Email Address</label>
+            <label className="text-xs font-bold text-slate-300">Email Address</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
@@ -65,13 +65,13 @@ export const LoginPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-primary placeholder-slate-400 focus:outline-none focus:border-secondary transition font-medium"
+                className="w-full bg-[#181A22] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">Password</label>
+            <label className="text-xs font-bold text-slate-300">Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
@@ -80,12 +80,12 @@ export const LoginPage: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-xs text-primary placeholder-slate-400 focus:outline-none focus:border-secondary transition font-medium"
+                className="w-full bg-[#181A22] border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
+                className="absolute right-3 top-3 text-slate-400 hover:text-white transition"
                 aria-label="Toggle password visibility"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -94,12 +94,12 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between pt-1 text-xs">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-slate-300">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-300 text-secondary focus:ring-secondary"
+                className="rounded bg-[#181A22] border-white/20 text-amber-400 focus:ring-amber-400"
               />
               <span>Remember me</span>
             </label>
@@ -108,25 +108,25 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs sm:text-sm shadow-glow-gold transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              <span className="flex items-center gap-2 text-black">
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
                 <span>Authenticating...</span>
               </span>
             ) : (
               <>
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-4 h-4 text-black" />
                 <span>Sign In</span>
               </>
             )}
           </button>
         </form>
 
-        <div className="pt-2 text-center text-xs text-slate-500">
+        <div className="pt-2 text-center text-xs text-slate-400">
           Don't have an account?{' '}
-          <Link to="/register" className="text-secondary font-bold hover:underline">
+          <Link to="/register" className="text-amber-400 font-bold hover:underline">
             Register for Free
           </Link>
         </div>

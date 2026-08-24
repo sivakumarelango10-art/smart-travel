@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Building2, Search, Star, MapPin, ArrowRight, ShieldCheck, Coffee } from 'lucide-react';
+import { Building2, Search, Star, MapPin, ArrowRight } from 'lucide-react';
 import { Hotel } from '../types/api';
 import { hotelService } from '../services/hotelService';
-import { StarRating } from '../components/StarRating';
 import { HotelCardSkeleton } from '../components/HotelCardSkeleton';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { recommendationService } from '../services/recommendationService';
@@ -93,9 +92,9 @@ export const HotelSearchPage: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       {/* 1. HERO SEARCH HEADER */}
-      <section className="rounded-3xl bg-primary text-white p-6 sm:p-10 shadow-xl border border-slate-800 space-y-6">
+      <section className="rounded-3xl bg-[#14161F] text-white p-6 sm:p-10 shadow-2xl border border-white/10 space-y-6">
         <div className="max-w-3xl space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 text-secondary text-xs font-bold">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs font-bold shadow-glow-gold">
             <Building2 className="w-3.5 h-3.5" />
             <span>Luxury Stays & Business Hotels</span>
           </div>
@@ -115,7 +114,7 @@ export const HotelSearchPage: React.FC = () => {
               placeholder="Search by city, airport or landmark (e.g. Mumbai, Goa)"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-secondary transition font-medium"
+              className="w-full bg-[#181A22] border border-white/10 rounded-xl px-4 py-3 pl-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
           </div>
@@ -124,21 +123,21 @@ export const HotelSearchPage: React.FC = () => {
             <select
               value={minStars || ''}
               onChange={(e) => setMinStars(e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-secondary transition cursor-pointer font-medium"
+              className="w-full bg-[#181A22] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400 transition cursor-pointer font-medium"
             >
-              <option value="">All Star Ratings</option>
-              <option value="5">5-Star Luxury Only</option>
-              <option value="4">4-Star & Above</option>
-              <option value="3">3-Star & Above</option>
+              <option value="" className="bg-[#14161F]">All Star Ratings</option>
+              <option value="5" className="bg-[#14161F]">5-Star Luxury Only</option>
+              <option value="4" className="bg-[#14161F]">4-Star & Above</option>
+              <option value="3" className="bg-[#14161F]">3-Star & Above</option>
             </select>
           </div>
 
           <div className="sm:col-span-2">
             <button
               type="submit"
-              className="w-full h-full min-h-[46px] rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full h-full min-h-[46px] rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold text-sm shadow-glow-gold transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 text-black" />
               <span>Search</span>
             </button>
           </div>
@@ -159,8 +158,8 @@ export const HotelSearchPage: React.FC = () => {
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${
                   isSelected
-                    ? 'bg-secondary text-white shadow-sm'
-                    : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
+                    : 'bg-[#181A22] text-slate-300 hover:bg-[#1F222E] border border-white/10'
                 }`}
               >
                 {c}
@@ -174,10 +173,10 @@ export const HotelSearchPage: React.FC = () => {
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-black text-primary tracking-tight">
+            <h2 className="text-xl font-black text-white tracking-tight">
               {city ? `Hotels in ${city}` : 'All Featured Hotels & Resorts'}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Showing {totalCount} verified properties with instant confirmation
             </p>
           </div>
@@ -190,12 +189,12 @@ export const HotelSearchPage: React.FC = () => {
             ))}
           </div>
         ) : hotels.length === 0 ? (
-          <div className="p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center mx-auto">
+          <div className="p-12 rounded-2xl bg-[#14161F] border border-white/10 text-center space-y-4 shadow-xl">
+            <div className="w-14 h-14 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center mx-auto shadow-glow-gold">
               <Building2 className="w-7 h-7" />
             </div>
-            <h3 className="text-lg font-black text-primary">No Hotels Found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <h3 className="text-lg font-black text-white">No Hotels Found</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
               No hotels match your search criteria. Try clearing the filter or choosing another destination city.
             </p>
             <button
@@ -204,7 +203,7 @@ export const HotelSearchPage: React.FC = () => {
                 setCity('');
                 setMinStars(undefined);
               }}
-              className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-extrabold transition shadow-glow-gold"
             >
               Reset Search
             </button>
@@ -218,23 +217,23 @@ export const HotelSearchPage: React.FC = () => {
               return (
                 <div
                   key={hotel.id}
-                  className="rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-card overflow-hidden group flex flex-col justify-between transition-all duration-200"
+                  className="rounded-2xl bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover overflow-hidden group flex flex-col justify-between transition-all duration-300"
                 >
                   <div>
                     {/* Hotel Image with Badges */}
-                    <div className="relative h-48 overflow-hidden bg-slate-100">
+                    <div className="relative h-48 overflow-hidden bg-[#181A22]">
                       <ImageWithFallback
                         src={thumbnail}
                         alt={hotel.name}
                         containerClassName="w-full h-full"
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary/85 backdrop-blur-md text-amber-400 text-[11px] font-bold flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-amber-400" />
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#0B0C10]/85 backdrop-blur-md text-amber-400 text-[11px] font-bold flex items-center gap-1 border border-white/10 shadow-md">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                         {hotel.starRating}-Star
                       </span>
                       {hotel.nearestAirportCode && (
-                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-slate-900/80 text-white font-mono text-[10px] font-bold border border-white/10">
+                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-[#0B0C10]/85 text-amber-400 font-mono text-[10px] font-bold border border-white/10">
                           Near {hotel.nearestAirportCode}
                         </span>
                       )}
@@ -243,11 +242,11 @@ export const HotelSearchPage: React.FC = () => {
                     {/* Content */}
                     <div className="p-5 space-y-3">
                       <div>
-                        <h3 className="text-lg font-black text-primary group-hover:text-secondary transition line-clamp-1">
+                        <h3 className="text-lg font-black text-white group-hover:text-amber-400 transition line-clamp-1">
                           {hotel.name}
                         </h3>
-                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                          <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
+                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                           <span>
                             {hotel.address?.city}, {hotel.address?.country}
                           </span>
@@ -259,7 +258,7 @@ export const HotelSearchPage: React.FC = () => {
                         {hotel.amenities?.slice(0, 3).map((amenity) => (
                           <span
                             key={amenity}
-                            className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md"
+                            className="text-[10px] font-semibold text-slate-300 bg-[#181A22] px-2 py-0.5 rounded-md border border-white/5"
                           >
                             {amenity}
                           </span>
@@ -269,21 +268,21 @@ export const HotelSearchPage: React.FC = () => {
                   </div>
 
                   {/* Pricing & CTA Footer */}
-                  <div className="p-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className="p-5 pt-3 border-t border-white/5 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-slate-400 font-medium block">Starting rate</span>
-                      <div className="text-xl font-black text-primary">
+                      <div className="text-xl font-black text-amber-400">
                         ₹{hotel.baseNightlyRate?.toLocaleString('en-IN')}
-                        <span className="text-xs text-slate-500 font-normal"> / night</span>
+                        <span className="text-xs text-slate-400 font-normal"> / night</span>
                       </div>
                     </div>
 
                     <Link
                       to={`/hotels/${hotel.id}`}
-                      className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-black flex items-center gap-1.5 transition shadow-glow-gold"
                     >
                       <span>Select Rooms</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 text-black" />
                     </Link>
                   </div>
                 </div>
@@ -299,18 +298,18 @@ export const HotelSearchPage: React.FC = () => {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
+              className="px-4 py-2 rounded-xl bg-[#14161F] border border-white/10 text-xs font-bold text-slate-300 hover:bg-[#1F222E] disabled:opacity-40 transition"
             >
               Previous
             </button>
-            <span className="text-xs font-bold text-slate-600 px-3">
+            <span className="text-xs font-bold text-slate-400 px-3">
               Page {page + 1} of {totalPages}
             </span>
             <button
               type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
+              className="px-4 py-2 rounded-xl bg-[#14161F] border border-white/10 text-xs font-bold text-slate-300 hover:bg-[#1F222E] disabled:opacity-40 transition"
             >
               Next
             </button>
