@@ -36,13 +36,23 @@ public class SeatMapServiceImpl implements SeatMapService {
     private final SeatRepository seatRepository;
     private final FlightRepository flightRepository;
     private final AircraftSeatLayout aircraftSeatLayout;
+    private final com.smarttravel.modules.flight.websocket.SeatMapWebSocketPublisher seatMapWebSocketPublisher;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SeatMapServiceImpl(SeatRepository seatRepository,
+                              FlightRepository flightRepository,
+                              AircraftSeatLayout aircraftSeatLayout,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.flight.websocket.SeatMapWebSocketPublisher seatMapWebSocketPublisher) {
+        this.seatRepository = seatRepository;
+        this.flightRepository = flightRepository;
+        this.aircraftSeatLayout = aircraftSeatLayout;
+        this.seatMapWebSocketPublisher = seatMapWebSocketPublisher;
+    }
 
     public SeatMapServiceImpl(SeatRepository seatRepository,
                               FlightRepository flightRepository,
                               AircraftSeatLayout aircraftSeatLayout) {
-        this.seatRepository = seatRepository;
-        this.flightRepository = flightRepository;
-        this.aircraftSeatLayout = aircraftSeatLayout;
+        this(seatRepository, flightRepository, aircraftSeatLayout, null);
     }
 
     @Override
@@ -152,6 +162,18 @@ public class SeatMapServiceImpl implements SeatMapService {
             successfullyHeld.add(seatNumber);
         }
 
+        if (seatMapWebSocketPublisher != null && !successfullyHeld.isEmpty()) {
+            seatMapWebSocketPublisher.publishSeatUpdate(
+                    com.smarttravel.modules.flight.websocket.SeatMapUpdateEvent.builder()
+                            .flightId(flightId)
+                            .seatNumbers(successfullyHeld)
+                            .status(SeatStatus.HELD)
+                            .cabinClass(cabinClass)
+                            .action("HELD")
+                            .build()
+            );
+        }
+
         return true;
     }
 
@@ -162,7 +184,21 @@ public class SeatMapServiceImpl implements SeatMapService {
 
     @Override
     public void releaseSeats(String bookingId) {
+        List<Seat> seats = seatRepository.findByBookingId(bookingId);
         seatRepository.releaseSeatsForBooking(bookingId);
+
+        if (seatMapWebSocketPublisher != null && !seats.isEmpty()) {
+            String flightId = seats.get(0).getFlightId();
+            List<String> seatNumbers = seats.stream().map(Seat::getSeatNumber).collect(Collectors.toList());
+            seatMapWebSocketPublisher.publishSeatUpdate(
+                    com.smarttravel.modules.flight.websocket.SeatMapUpdateEvent.builder()
+                            .flightId(flightId)
+                            .seatNumbers(seatNumbers)
+                            .status(SeatStatus.AVAILABLE)
+                            .action("RELEASED")
+                            .build()
+            );
+        }
     }
 
     @Override

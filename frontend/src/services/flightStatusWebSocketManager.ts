@@ -1,10 +1,12 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_BASE_URL, WS_BASE_URL } from '../config/constants';
-import { FlightStatusEvent, DynamicPricingEvent } from '../types/api';
+import { FlightStatusEvent, DynamicPricingEvent, SeatMapUpdateEvent, RoomAvailabilityEvent } from '../types/api';
 
 type FlightStatusCallback = (event: FlightStatusEvent) => void;
 type DynamicPricingCallback = (event: DynamicPricingEvent) => void;
+type SeatMapCallback = (event: SeatMapUpdateEvent) => void;
+type RoomAvailabilityCallback = (event: RoomAvailabilityEvent) => void;
 type ConnectionStateListener = (connected: boolean, error: string | null) => void;
 
 /**
@@ -25,6 +27,14 @@ class FlightStatusWebSocketManager {
   // Active pricing subscribers: Map<flightId, Set<callback>>
   private pricingCallbacks: Map<string, Set<DynamicPricingCallback>> = new Map();
   private pricingStompSubscriptions: Map<string, StompSubscription> = new Map();
+
+  // Active seat map subscribers: Map<flightId, Set<callback>>
+  private seatMapCallbacks: Map<string, Set<SeatMapCallback>> = new Map();
+  private seatMapStompSubscriptions: Map<string, StompSubscription> = new Map();
+
+  // Active hotel room subscribers: Map<hotelId, Set<callback>>
+  private hotelRoomCallbacks: Map<string, Set<RoomAvailabilityCallback>> = new Map();
+  private hotelRoomStompSubscriptions: Map<string, StompSubscription> = new Map();
 
   // Connection state change listeners
   private connectionListeners: Set<ConnectionStateListener> = new Set();
@@ -178,6 +188,50 @@ class FlightStatusWebSocketManager {
   }
 
   /**
+   * Subscribes a consumer callback to seat map updates (/topic/seat-map/{flightId}).
+   */
+  public subscribeSeatMap(flightId: string, callback: SeatMapCallback): () => void {
+    if (!flightId) return () => {};
+
+    if (!this.seatMapCallbacks.has(flightId)) {
+      this.seatMapCallbacks.set(flightId, new Set());
+    }
+    this.seatMapCallbacks.get(flightId)!.add(callback);
+
+    if (this.connected && this.client && !this.seatMapStompSubscriptions.has(flightId)) {
+      this.subscribeSeatMapStompTopic(flightId);
+    } else if (!this.connected) {
+      this.connect();
+    }
+
+    return () => {
+      this.unsubscribeSeatMap(flightId, callback);
+    };
+  }
+
+  /**
+   * Subscribes a consumer callback to hotel room updates (/topic/hotels/{hotelId}/rooms).
+   */
+  public subscribeHotelRooms(hotelId: string, callback: RoomAvailabilityCallback): () => void {
+    if (!hotelId) return () => {};
+
+    if (!this.hotelRoomCallbacks.has(hotelId)) {
+      this.hotelRoomCallbacks.set(hotelId, new Set());
+    }
+    this.hotelRoomCallbacks.get(hotelId)!.add(callback);
+
+    if (this.connected && this.client && !this.hotelRoomStompSubscriptions.has(hotelId)) {
+      this.subscribeHotelRoomsStompTopic(hotelId);
+    } else if (!this.connected) {
+      this.connect();
+    }
+
+    return () => {
+      this.unsubscribeHotelRooms(hotelId, callback);
+    };
+  }
+
+  /**
    * Unsubscribes a consumer callback for flight status.
    */
   public unsubscribe(flightId: string, callback: FlightStatusCallback): void {
@@ -221,6 +275,54 @@ class FlightStatusWebSocketManager {
           // ignore
         }
         this.pricingStompSubscriptions.delete(flightId);
+      }
+    }
+  }
+
+  /**
+   * Unsubscribes a consumer callback for seat map.
+   */
+  public unsubscribeSeatMap(flightId: string, callback: SeatMapCallback): void {
+    const callbacks = this.seatMapCallbacks.get(flightId);
+    if (!callbacks) return;
+
+    callbacks.delete(callback);
+
+    if (callbacks.size === 0) {
+      this.seatMapCallbacks.delete(flightId);
+
+      const stompSub = this.seatMapStompSubscriptions.get(flightId);
+      if (stompSub) {
+        try {
+          stompSub.unsubscribe();
+        } catch (e) {
+          // ignore
+        }
+        this.seatMapStompSubscriptions.delete(flightId);
+      }
+    }
+  }
+
+  /**
+   * Unsubscribes a consumer callback for hotel rooms.
+   */
+  public unsubscribeHotelRooms(hotelId: string, callback: RoomAvailabilityCallback): void {
+    const callbacks = this.hotelRoomCallbacks.get(hotelId);
+    if (!callbacks) return;
+
+    callbacks.delete(callback);
+
+    if (callbacks.size === 0) {
+      this.hotelRoomCallbacks.delete(hotelId);
+
+      const stompSub = this.hotelRoomStompSubscriptions.get(hotelId);
+      if (stompSub) {
+        try {
+          stompSub.unsubscribe();
+        } catch (e) {
+          // ignore
+        }
+        this.hotelRoomStompSubscriptions.delete(hotelId);
       }
     }
   }
@@ -318,6 +420,44 @@ class FlightStatusWebSocketManager {
     }
   }
 
+  private subscribeSeatMapStompTopic(flightId: string): void {
+    if (!this.client || !this.connected) return;
+
+    const topic = `/topic/seat-map/${flightId}`;
+    try {
+      const stompSub = this.client.subscribe(topic, (message: IMessage) => {
+        try {
+          const event: SeatMapUpdateEvent = JSON.parse(message.body);
+          this.handleSeatMapEvent(flightId, event);
+        } catch (err) {
+          console.error('Failed to parse seat map message', err);
+        }
+      });
+      this.seatMapStompSubscriptions.set(flightId, stompSub);
+    } catch (err) {
+      console.warn(`Failed to subscribe to STOMP seat map topic ${topic}:`, err);
+    }
+  }
+
+  private subscribeHotelRoomsStompTopic(hotelId: string): void {
+    if (!this.client || !this.connected) return;
+
+    const topic = `/topic/hotels/${hotelId}/rooms`;
+    try {
+      const stompSub = this.client.subscribe(topic, (message: IMessage) => {
+        try {
+          const event: RoomAvailabilityEvent = JSON.parse(message.body);
+          this.handleHotelRoomEvent(hotelId, event);
+        } catch (err) {
+          console.error('Failed to parse hotel room message', err);
+        }
+      });
+      this.hotelRoomStompSubscriptions.set(hotelId, stompSub);
+    } catch (err) {
+      console.warn(`Failed to subscribe to STOMP hotel room topic ${topic}:`, err);
+    }
+  }
+
   private restoreSubscriptions(): void {
     for (const flightId of this.flightCallbacks.keys()) {
       if (!this.stompSubscriptions.has(flightId)) {
@@ -328,6 +468,42 @@ class FlightStatusWebSocketManager {
       if (!this.pricingStompSubscriptions.has(flightId)) {
         this.subscribePricingStompTopic(flightId);
       }
+    }
+    for (const flightId of this.seatMapCallbacks.keys()) {
+      if (!this.seatMapStompSubscriptions.has(flightId)) {
+        this.subscribeSeatMapStompTopic(flightId);
+      }
+    }
+    for (const hotelId of this.hotelRoomCallbacks.keys()) {
+      if (!this.hotelRoomStompSubscriptions.has(hotelId)) {
+        this.subscribeHotelRoomsStompTopic(hotelId);
+      }
+    }
+  }
+
+  private handleSeatMapEvent(flightId: string, event: SeatMapUpdateEvent): void {
+    const callbacks = this.seatMapCallbacks.get(flightId);
+    if (callbacks) {
+      callbacks.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (err) {
+          console.error('Error executing seat map callback', err);
+        }
+      });
+    }
+  }
+
+  private handleHotelRoomEvent(hotelId: string, event: RoomAvailabilityEvent): void {
+    const callbacks = this.hotelRoomCallbacks.get(hotelId);
+    if (callbacks) {
+      callbacks.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (err) {
+          console.error('Error executing hotel room callback', err);
+        }
+      });
     }
   }
 

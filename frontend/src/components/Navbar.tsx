@@ -3,23 +3,18 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Plane,
   Building2,
-  Compass,
   Tag,
   BookmarkCheck,
   Bell,
-  BellRing,
-  LogIn,
-  UserPlus,
   LogOut,
   CheckCheck,
-  AlertCircle,
   Clock,
-  Sparkles,
   ChevronDown,
   Shield,
   Menu,
   X,
-  User
+  User,
+  Radio
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -41,12 +36,15 @@ export const Navbar: React.FC = () => {
   const notifRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/flights' && (location.pathname === '/' || location.pathname === '/flights')) return true;
+    return location.pathname === path;
+  };
 
-  // Scroll listener for sticky navbar effect
+  // Scroll listener for subtle header elevation
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -81,403 +79,321 @@ export const Navbar: React.FC = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 transition-all duration-200 ${
         isScrolled
-          ? 'bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 shadow-2xl shadow-black/40 py-2.5'
-          : 'bg-gradient-to-b from-slate-950/90 to-slate-950/70 backdrop-blur-lg border-b border-white/5 py-3.5'
+          ? 'bg-primary/95 backdrop-blur-md border-b border-slate-800 shadow-md py-2.5'
+          : 'bg-primary border-b border-slate-800/80 py-3'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* LEFT: Brand Logo */}
-          <BrandLogo size="md" showBadge={true} withLink={true} />
+          {/* 1. BRAND LOGO */}
+          <div className="flex items-center gap-8">
+            <BrandLogo size="md" showTagline={true} withLink={true} />
 
-          {/* CENTER: Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 backdrop-blur-md">
-            <Link
-              to="/flights"
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 ${
-                isActive('/flights') || isActive('/')
-                  ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <Plane className="w-3.5 h-3.5 text-blue-400" />
-              <span>Flights</span>
-            </Link>
+            {/* 2. DESKTOP NAVIGATION */}
+            <nav className="hidden lg:flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+              <Link
+                to="/flights"
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-2 ${
+                  isActive('/flights')
+                    ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Plane className={`w-3.5 h-3.5 ${isActive('/flights') ? 'text-secondary' : 'text-slate-400'}`} />
+                <span>Flights</span>
+              </Link>
 
-            <Link
-              to="/hotels"
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 ${
-                isActive('/hotels')
-                  ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5 text-blue-400" />
-              <span>Stays & Hotels</span>
-            </Link>
+              <Link
+                to="/hotels"
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-2 ${
+                  isActive('/hotels')
+                    ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Building2 className={`w-3.5 h-3.5 ${isActive('/hotels') ? 'text-secondary' : 'text-slate-400'}`} />
+                <span>Hotels & Stays</span>
+              </Link>
 
-            <Link
-              to="/tracked-flights"
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-1.5 ${
-                isActive('/tracked-flights')
-                  ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Live Tracker</span>
-            </Link>
+              <Link
+                to="/live-tracker"
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-2 ${
+                  isActive('/live-tracker')
+                    ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Radio className="w-3.5 h-3.5 text-secondary animate-pulse" />
+                <span>Live Radar</span>
+              </Link>
 
-            <a
-              href="#destinations"
-              onClick={(e) => {
-                if (location.pathname === '/') {
-                  e.preventDefault();
-                  document.getElementById('destinations')?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition flex items-center gap-1.5"
-            >
-              <Compass className="w-3.5 h-3.5 text-slate-400" />
-              <span>Destinations</span>
-            </a>
+              <Link
+                to="/offers"
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-2 ${
+                  isActive('/offers')
+                    ? 'text-white bg-slate-800 border border-slate-700 shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Tag className="w-3.5 h-3.5 text-accent" />
+                <span>Deals & Offers</span>
+              </Link>
+            </nav>
+          </div>
 
-            <a
-              href="#offers"
-              onClick={(e) => {
-                if (location.pathname === '/') {
-                  e.preventDefault();
-                  document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition flex items-center gap-1.5"
-            >
-              <Tag className="w-3.5 h-3.5 text-amber-500" />
-              <span>Offers</span>
-            </a>
-          </nav>
+          {/* 3. RIGHT CONTROLS: NOTIFICATIONS & AUTH */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Live Notifications Popover */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition"
+                aria-label="View notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
 
-          {/* RIGHT: Notifications & User Auth */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {isAuthenticated ? (
-              <>
-                {/* My Bookings Button */}
-                <Link
-                  to="/my-bookings"
-                  className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
-                    isActive('/my-bookings')
-                      ? 'bg-slate-800 text-white border-slate-700'
-                      : 'bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 border-slate-800'
-                  }`}
-                >
-                  <BookmarkCheck className="w-4 h-4 text-blue-400" />
-                  <span>My Bookings</span>
-                </Link>
-
-                {/* Notifications Popover */}
-                <div className="relative" ref={notifRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition duration-150"
-                    aria-label="Notifications"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-slate-900 border border-slate-800 shadow-xl overflow-hidden z-50 animate-fade-in">
-                      <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-                        <div className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-blue-400" />
-                          <span className="font-semibold text-sm text-white">Notifications</span>
-                          {unreadCount > 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-semibold border border-blue-500/20">
-                              {unreadCount} unread
-                            </span>
-                          )}
-                        </div>
-                        {unreadCount > 0 && (
-                          <button
-                            onClick={markAllAsRead}
-                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
-                          >
-                            <CheckCheck className="w-3.5 h-3.5" />
-                            Mark all read
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="max-h-80 overflow-y-auto divide-y divide-slate-800">
-                        {notifications.length === 0 ? (
-                          <div className="py-10 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-slate-600" />
-                            <span>No notifications right now</span>
-                          </div>
-                        ) : (
-                          notifications.map((n) => (
-                            <div
-                              key={n.id}
-                              onClick={() => !n.isRead && markAsRead(n.id)}
-                              className={`p-3.5 transition duration-150 cursor-pointer ${
-                                n.isRead
-                                  ? 'bg-slate-900 hover:bg-slate-850'
-                                  : 'bg-slate-800/60 hover:bg-slate-800 border-l-2 border-blue-500'
-                              }`}
-                            >
-                              <div className="flex items-start gap-2.5">
-                                <div className="mt-0.5">
-                                  {n.type.includes('CANCEL') || n.priority === 'URGENT' ? (
-                                    <AlertCircle className="w-4 h-4 text-rose-400" />
-                                  ) : n.type.includes('DELAY') ? (
-                                    <Clock className="w-4 h-4 text-amber-400" />
-                                  ) : (
-                                    <Sparkles className="w-4 h-4 text-blue-400" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-xs font-semibold ${n.isRead ? 'text-slate-300' : 'text-white'}`}>
-                                    {n.title}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
-                                    {n.message}
-                                  </p>
-                                  <p className="text-[10px] text-slate-500 mt-1">
-                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      <div className="p-2.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowNotifications(false);
-                            setShowPushModal(true);
-                          }}
-                          className="w-full py-1.5 px-3 rounded-lg text-xs font-medium text-blue-400 hover:text-blue-300 hover:bg-slate-900 border border-slate-800 transition flex items-center justify-center gap-1.5"
-                        >
-                          <BellRing className="w-3.5 h-3.5" />
-                          <span>Push Alert Settings</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* User Profile Dropdown */}
-                <div className="relative" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition"
-                  >
-                    <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-                      {user?.fullName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <span className="hidden sm:inline text-xs font-medium text-slate-200 max-w-[120px] truncate">
-                      {user?.fullName || user?.email}
-                    </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </button>
-
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-60 rounded-xl bg-slate-900 border border-slate-800 shadow-xl py-1 overflow-hidden z-50 animate-fade-in">
-                      <div className="px-4 py-3 border-b border-slate-800 bg-slate-950">
-                        <p className="text-xs font-semibold text-white truncate">{user?.fullName || 'Traveler'}</p>
-                        <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
-                        {isAdmin && (
-                          <span className="inline-flex mt-1.5 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[9px] font-bold">
-                            ADMINISTRATOR
-                          </span>
-                        )}
-                      </div>
-
-                      <Link
-                        to="/account"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                      >
-                        <User className="w-4 h-4 text-slate-400" />
-                        <span>My Account</span>
-                      </Link>
-
-                      <Link
-                        to="/my-bookings"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                      >
-                        <BookmarkCheck className="w-4 h-4 text-blue-400" />
-                        <span>My Bookings</span>
-                      </Link>
-
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-slate-800 transition font-medium"
-                        >
-                          <Shield className="w-4 h-4 text-blue-400" />
-                          <span>Admin Control Center</span>
-                        </Link>
+              {/* Notification Popover Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-primary border border-slate-800 shadow-2xl z-50 p-4 space-y-3 dropdown-enter">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">Travel Alerts & Updates</span>
+                      {unreadCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold text-[10px]">
+                          {unreadCount} new
+                        </span>
                       )}
-
-                      <div className="border-t border-slate-800 my-1"></div>
-
+                    </div>
+                    {unreadCount > 0 && (
                       <button
+                        type="button"
+                        onClick={markAllAsRead}
+                        className="text-[11px] font-semibold text-secondary hover:underline flex items-center gap-1"
+                      >
+                        <CheckCheck className="w-3 h-3" /> Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        <Clock className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                        <p className="font-semibold text-slate-300">No new travel notifications</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">Flight status and gate updates will appear here.</p>
+                      </div>
+                    ) : (
+                      notifications.slice(0, 5).map((notif) => (
+                        <div
+                          key={notif.id}
+                          onClick={() => markAsRead(notif.id)}
+                          className={`p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                            notif.isRead
+                              ? 'bg-slate-900/50 border-slate-800 text-slate-400'
+                              : 'bg-slate-900 border-slate-700 text-slate-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-bold text-white text-xs">{notif.title}</span>
+                            <span className="text-[10px] text-slate-500 shrink-0">
+                              {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 mt-1 leading-snug">{notif.message}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setShowPushModal(true);
+                      }}
+                      className="text-[11px] text-secondary hover:underline font-semibold"
+                    >
+                      Push Alert Settings
+                    </button>
+                    <Link
+                      to="/account"
+                      onClick={() => setShowNotifications(false)}
+                      className="text-[11px] text-slate-400 hover:text-white font-medium"
+                    >
+                      View All Alerts →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Authenticated User Menu or Sign In */}
+            {isAuthenticated ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-white border border-slate-700 text-xs font-semibold transition"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-secondary/20 border border-secondary/40 text-secondary font-bold flex items-center justify-center text-xs">
+                    {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </div>
+                  <span className="hidden sm:inline font-medium max-w-[120px] truncate">
+                    {user?.fullName || user?.email?.split('@')[0]}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {/* User Dropdown */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-primary border border-slate-800 shadow-2xl z-50 p-2 space-y-1 dropdown-enter">
+                    <div className="px-3 py-2 border-b border-slate-800">
+                      <div className="text-xs font-bold text-white truncate">{user?.fullName || 'Traveler'}</div>
+                      <div className="text-[11px] text-slate-400 truncate">{user?.email}</div>
+                    </div>
+
+                    <Link
+                      to="/my-bookings"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    >
+                      <BookmarkCheck className="w-4 h-4 text-secondary" />
+                      <span>My Bookings & Trips</span>
+                    </Link>
+
+                    <Link
+                      to="/account"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    >
+                      <User className="w-4 h-4 text-secondary" />
+                      <span>Account & Preferences</span>
+                    </Link>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-accent hover:bg-slate-800 transition"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    )}
+
+                    <div className="pt-1 border-t border-slate-800">
+                      <button
+                        type="button"
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-rose-400 hover:bg-rose-500/10 transition text-left font-medium"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/10 transition text-left"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>Sign Out</span>
                       </button>
                     </div>
-                  )}
-                </div>
-              </>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800 transition flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold transition"
                 >
-                  <LogIn className="w-4 h-4 text-slate-400" />
-                  <span>Sign In</span>
+                  Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-1.5"
+                  className="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl bg-secondary hover:bg-secondary-hover text-white text-xs font-bold shadow-sm shadow-secondary/30 transition"
                 >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Create Account</span>
+                  Get Started
                 </Link>
               </div>
             )}
 
-            {/* Mobile Hamburger Menu Button */}
+            {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 hover:text-white transition ml-1"
-              aria-label="Toggle Menu"
+              className="lg:hidden p-2 rounded-xl bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700"
+              aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden mt-3 pt-3 border-t border-slate-800 space-y-1 pb-2 animate-fade-in">
+      {/* 4. MOBILE NAVIGATION DRAWER */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-slate-800 bg-primary/98 backdrop-blur-xl px-4 py-4 space-y-3 animate-fade-in">
+          <nav className="space-y-1">
             <Link
               to="/flights"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white border border-slate-800"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                isActive('/flights') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-850'
+              }`}
             >
-              <Plane className="w-4 h-4 text-blue-400" />
-              <span>Search Flights</span>
+              <Plane className="w-4 h-4 text-secondary" />
+              <span>Flights</span>
             </Link>
 
             <Link
               to="/hotels"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white border border-slate-800"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                isActive('/hotels') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-850'
+              }`}
             >
-              <Building2 className="w-4 h-4 text-blue-400" />
-              <span>Stays & Hotels</span>
+              <Building2 className="w-4 h-4 text-secondary" />
+              <span>Hotels & Stays</span>
             </Link>
 
             <Link
-              to="/tracked-flights"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white border border-slate-800"
+              to="/live-tracker"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                isActive('/live-tracker') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-850'
+              }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Live Flight Tracker</span>
+              <Radio className="w-4 h-4 text-secondary animate-pulse" />
+              <span>Live Flight Radar</span>
+            </Link>
+
+            <Link
+              to="/offers"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                isActive('/offers') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-850'
+              }`}
+            >
+              <Tag className="w-4 h-4 text-accent" />
+              <span>Deals & Offers</span>
             </Link>
 
             {isAuthenticated && (
-              <>
-                <Link
-                  to="/account"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white border border-slate-800"
-                >
-                  <User className="w-4 h-4 text-slate-400" />
-                  <span>My Account</span>
-                </Link>
-
-                <Link
-                  to="/my-bookings"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white border border-slate-800"
-                >
-                  <BookmarkCheck className="w-4 h-4 text-blue-400" />
-                  <span>My Bookings</span>
-                </Link>
-              </>
-            )}
-
-            {isAuthenticated && isAdmin && (
               <Link
-                to="/admin"
-                className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-blue-400 border border-blue-500/30"
+                to="/my-bookings"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                  isActive('/my-bookings') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-850'
+                }`}
               >
-                <Shield className="w-4 h-4 text-blue-400" />
-                <span>Admin Portal</span>
+                <BookmarkCheck className="w-4 h-4 text-secondary" />
+                <span>My Bookings</span>
               </Link>
             )}
+          </nav>
+        </div>
+      )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setShowPushModal(true);
-              }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 text-blue-400 border border-slate-800 hover:bg-slate-850"
-            >
-              <BellRing className="w-4 h-4 text-blue-400" />
-              <span>Push Notification Settings</span>
-            </button>
-
-            <a
-              href="#destinations"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-900"
-            >
-              <Compass className="w-4 h-4 text-slate-400" />
-              <span>Popular Destinations</span>
-            </a>
-
-            <a
-              href="#offers"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-900"
-            >
-              <Tag className="w-4 h-4 text-amber-500" />
-              <span>Exclusive Offers</span>
-            </a>
-          </div>
-        )}
-      </div>
-
-      {/* Global Push Notification Settings Modal */}
-      <PushNotificationModal
-        isOpen={showPushModal}
-        onClose={() => setShowPushModal(false)}
-      />
+      {/* Push Notification Setup Modal */}
+      {showPushModal && (
+        <PushNotificationModal isOpen={showPushModal} onClose={() => setShowPushModal(false)} />
+      )}
     </header>
   );
 };
-

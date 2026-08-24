@@ -10,7 +10,8 @@ import {
   ChevronUp,
   Calendar,
   Users,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Sparkles
 } from 'lucide-react';
 import { Flight, CabinClass } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -56,7 +57,7 @@ export const FlightSearchPage: React.FC = () => {
       if (seconds < 10) {
         setTimeAgoText('Updated just now');
       } else if (seconds < 60) {
-        setTimeAgoText(`Updated ${seconds} seconds ago`);
+        setTimeAgoText(`Updated ${seconds}s ago`);
       } else {
         const mins = Math.floor(seconds / 60);
         setTimeAgoText(`Updated ${mins}m ago`);
@@ -71,7 +72,7 @@ export const FlightSearchPage: React.FC = () => {
   const fetchFlights = useCallback(async () => {
     const seq = ++searchSeqRef.current;
 
-    // Abort previous in-flight search request if still running
+    // Abort previous search request if running
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -88,7 +89,7 @@ export const FlightSearchPage: React.FC = () => {
       size: 50,
     };
 
-    // Stale-While-Revalidate: Check if we have cached results to render immediately
+    // Stale-While-Revalidate caching
     const cached = flightService.getCachedSearch(searchParamsObj);
     if (cached && cached.data?.data?.content) {
       setFlights(cached.data.data.content);
@@ -100,130 +101,56 @@ export const FlightSearchPage: React.FC = () => {
       setError(null);
     }
 
-    // Two-stage non-intrusive status messages
-    setSlowMessage(null);
-    const stage1Timer = setTimeout(() => {
+    const slowTimer = setTimeout(() => {
       if (seq === searchSeqRef.current) {
-        setSlowMessage('Connecting to live flight services…');
+        setSlowMessage('Connecting to airline GDS inventory...');
       }
-    }, 3500);
-
-    const stage2Timer = setTimeout(() => {
-      if (seq === searchSeqRef.current) {
-        setSlowMessage('Live flight services are taking a little longer than usual.');
-      }
-    }, 8000);
+    }, 2000);
 
     try {
-      const res = await flightService.searchFlights(searchParamsObj, {
-        signal: abortController.signal,
-      });
-
-      clearTimeout(stage1Timer);
-      clearTimeout(stage2Timer);
+      const res = await flightService.searchFlights(searchParamsObj);
       if (seq !== searchSeqRef.current) return;
-      setSlowMessage(null);
 
-      if (res.success && res.data?.content) {
-        setFlights(res.data.content);
-        setLastUpdated(new Date());
-        // Calculate max price from results
-        const highestPrice = Math.max(
-          ...res.data.content.map((f) => {
+      const items = res.data.content || [];
+      setFlights(items);
+      setLastUpdated(new Date());
+
+      // Compute dynamic max budget
+      if (items.length > 0) {
+        const highestFare = Math.max(
+          ...items.map((f) => {
             const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
             return inv ? inv.totalPrice : f.basePrice;
-          }),
-          10000
+          })
         );
-        setMaxPrice(highestPrice);
-        setPriceLimit(highestPrice);
-      } else {
-        setFlights([]);
+        const roundedMax = Math.ceil(highestFare / 1000) * 1000 + 2000;
+        setMaxPrice(roundedMax);
+        setPriceLimit(roundedMax);
       }
+      setError(null);
     } catch (err: any) {
-      clearTimeout(stage1Timer);
-      clearTimeout(stage2Timer);
-      if (seq !== searchSeqRef.current) return;
-      setSlowMessage(null);
-
-      // Do not display errors for cleanly cancelled search requests
-      if (err?.error === 'REQUEST_ABORTED' || err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
+      if (err?.name === 'CanceledError' || err?.code === 'ERR_CANCELED') {
         return;
       }
-
-      const rawMsg = err?.message || '';
-      if (rawMsg.toLowerCase().includes('not found') || rawMsg.toLowerCase().includes('search')) {
-        setError('No direct flights found matching your selected date and route. Try modifying your dates or departure filters.');
-      } else {
-        setError(rawMsg || 'Unable to retrieve live flight schedules. Please check your network connection.');
-      }
+      if (seq !== searchSeqRef.current) return;
       if (!cached) {
-        setFlights([]);
+        setError(err.message || 'Unable to retrieve live flight schedules.');
       }
     } finally {
+      clearTimeout(slowTimer);
       if (seq === searchSeqRef.current) {
         setLoading(false);
+        setSlowMessage(null);
       }
     }
   }, [origin, destination, departureDate, cabinClass, passengers]);
 
   useEffect(() => {
     fetchFlights();
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
   }, [fetchFlights]);
 
-  // Extract unique airlines
-  const availableAirlines = Array.from(new Set(flights.map((f) => f.airline)));
-
-  // Client-side filtering & sorting
-  const filteredFlights = flights
-    .filter((flight) => {
-      // Airline filter
-      if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.airline)) {
-        return false;
-      }
-
-      // Non-stop filter
-      if (nonStopOnly && flight.stops > 0) {
-        return false;
-      }
-
-      // Price filter
-      const inv = flight.cabinInventories?.find((c) => c.cabinClass === cabinClass);
-      const price = inv ? inv.totalPrice : flight.basePrice;
-      if (price > priceLimit) {
-        return false;
-      }
-
-      // Time Window filter
-      if (timeWindow !== 'ALL') {
-        const depHour = new Date(flight.departureTime).getUTCHours();
-        if (timeWindow === 'MORNING' && (depHour < 6 || depHour >= 12)) return false;
-        if (timeWindow === 'AFTERNOON' && (depHour < 12 || depHour >= 18)) return false;
-        if (timeWindow === 'EVENING' && (depHour < 18 || depHour >= 24)) return false;
-        if (timeWindow === 'NIGHT' && (depHour < 0 || depHour >= 6)) return false;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      const getPrice = (f: Flight) => {
-        const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
-        return inv ? inv.totalPrice : f.basePrice;
-      };
-
-      if (sortBy === 'CHEAPEST') return getPrice(a) - getPrice(b);
-      if (sortBy === 'FASTEST') return a.durationMinutes - b.durationMinutes;
-      if (sortBy === 'EARLIEST_DEPARTURE')
-        return new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime();
-      if (sortBy === 'LATEST_DEPARTURE')
-        return new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime();
-      return 0;
-    });
+  // Extract available airlines
+  const availableAirlines = Array.from(new Set(flights.map((f) => f.airline))).filter(Boolean);
 
   const handleAirlineToggle = (airline: string) => {
     setSelectedAirlines((prev) =>
@@ -239,18 +166,57 @@ export const FlightSearchPage: React.FC = () => {
     setSortBy('CHEAPEST');
   };
 
+  // Filter & Sort Logic
+  const filteredFlights = flights
+    .filter((f) => {
+      const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
+      const price = (inv ? inv.totalPrice : f.basePrice) * passengers;
+
+      if (price > priceLimit) return false;
+      if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
+      if (nonStopOnly && f.stops > 0) return false;
+
+      // Time Window filtering
+      if (timeWindow !== 'ALL') {
+        const depHour = new Date(f.departureTime).getHours();
+        if (timeWindow === 'MORNING' && (depHour < 6 || depHour >= 12)) return false;
+        if (timeWindow === 'AFTERNOON' && (depHour < 12 || depHour >= 18)) return false;
+        if (timeWindow === 'EVENING' && (depHour < 18 || depHour >= 24)) return false;
+        if (timeWindow === 'NIGHT' && (depHour < 0 || depHour >= 6)) return false;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      const invA = a.cabinInventories?.find((c) => c.cabinClass === cabinClass);
+      const priceA = invA ? invA.totalPrice : a.basePrice;
+
+      const invB = b.cabinInventories?.find((c) => c.cabinClass === cabinClass);
+      const priceB = invB ? invB.totalPrice : b.basePrice;
+
+      if (sortBy === 'CHEAPEST') return priceA - priceB;
+      if (sortBy === 'FASTEST') return a.durationMinutes - b.durationMinutes;
+      if (sortBy === 'EARLIEST_DEPARTURE') {
+        return new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime();
+      }
+      if (sortBy === 'LATEST_DEPARTURE') {
+        return new Date(b.departureTime).getTime() - new Date(a.departureTime).getTime();
+      }
+      return 0;
+    });
+
   return (
-    <div className="space-y-6 py-2">
-      {/* 1. TOP SUMMARY & MODIFY SEARCH BAR */}
-      <section className="rounded-3xl bg-slate-900/90 border border-slate-800 p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
+    <div className="space-y-6 pb-16">
+      {/* 1. TOP ROUTE SUMMARY HEADER */}
+      <section className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-              <Plane className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold shadow-sm">
+              <Plane className="w-5 h-5 text-secondary transform rotate-45" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                <h1 className="text-lg sm:text-xl font-black text-primary tracking-tight">
                   {origin} ➔ {destination}
                 </h1>
                 <button
@@ -265,17 +231,18 @@ export const FlightSearchPage: React.FC = () => {
                       passengers: passengers.toString(),
                     });
                   }}
-                  className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 transition-transform active:rotate-180 duration-300"
+                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-secondary transition-transform active:rotate-180 duration-300"
                 >
                   <ArrowLeftRight className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                <span className="text-xs font-bold text-secondary bg-secondary/10 px-2.5 py-0.5 rounded-full border border-secondary/20">
                   {cabinClass.replace('_', ' ')}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-slate-400 mt-0.5">
+
+              <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   {new Date(departureDate).toLocaleDateString('en-US', {
                     weekday: 'short',
                     month: 'short',
@@ -285,7 +252,7 @@ export const FlightSearchPage: React.FC = () => {
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-slate-500" />
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
                   {passengers} {passengers === 1 ? 'Traveler' : 'Travelers'}
                 </span>
               </div>
@@ -296,18 +263,18 @@ export const FlightSearchPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowModifySearch(!showModifySearch)}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition shadow-sm"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primary text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition"
             >
-              <Edit3 className="w-3.5 h-3.5 text-sky-400" />
+              <Edit3 className="w-3.5 h-3.5 text-secondary" />
               <span>{showModifySearch ? 'Hide Search Form' : 'Modify Search'}</span>
               {showModifySearch ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
 
-        {/* Expandable Modify Search Widget */}
+        {/* Expandable Search Widget */}
         {showModifySearch && (
-          <div className="mt-4 pt-4 border-t border-slate-800 animate-slide-up">
+          <div className="mt-4 pt-4 border-t border-slate-100 animate-slide-up">
             <FlightSearchWidget
               compact
               initialOrigin={origin}
@@ -330,7 +297,7 @@ export const FlightSearchPage: React.FC = () => {
         )}
       </section>
 
-      {/* 2. MAIN RESULTS LAYOUT */}
+      {/* 2. RESULTS & FILTERS GRID */}
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         {/* Left Filter Sidebar (Desktop) */}
         <aside className="hidden xl:block xl:col-span-3">
@@ -354,34 +321,34 @@ export const FlightSearchPage: React.FC = () => {
         {/* Right Flight List Column */}
         <main className="xl:col-span-9 space-y-4">
           {/* Header Controls Bar */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-white text-base">
+                <h2 className="font-black text-primary text-base">
                   Available Flights
                 </h2>
-                <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+                <span className="text-xs font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20">
                   {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
                 </span>
                 {timeAgoText && (
-                  <span className="text-[11px] text-emerald-400/90 font-medium bg-emerald-950/40 border border-emerald-800/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     {timeAgoText}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                All fares shown in Indian Rupees (₹) with airport taxes included
+              <p className="text-xs text-slate-500 mt-0.5">
+                All fares in INR (₹) with airport taxes and mandatory fees included upfront
               </p>
             </div>
 
-            {/* Mobile Filter Toggle Button */}
+            {/* Mobile Filter Toggle */}
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="xl:hidden px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-2 border border-slate-700 shadow-sm"
+              className="xl:hidden px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-primary text-xs font-bold flex items-center gap-2 border border-slate-200"
             >
-              <SlidersHorizontal className="w-4 h-4 text-sky-400" />
+              <SlidersHorizontal className="w-4 h-4 text-secondary" />
               <span>Filters ({selectedAirlines.length + (nonStopOnly ? 1 : 0)})</span>
             </button>
           </div>
@@ -411,9 +378,9 @@ export const FlightSearchPage: React.FC = () => {
           {loading ? (
             <div className="space-y-4 py-2">
               {slowMessage && (
-                <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs flex items-center gap-3 animate-fade-in shadow-lg transition-all">
-                  <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
-                  <div className="flex-1 font-medium text-sky-200">
+                <div className="p-4 rounded-2xl bg-secondary/10 border border-secondary/20 text-secondary text-xs flex items-center gap-3 animate-fade-in shadow-sm">
+                  <div className="w-2.5 h-2.5 rounded-full bg-secondary animate-ping shrink-0" />
+                  <div className="flex-1 font-semibold">
                     {slowMessage}
                   </div>
                 </div>
@@ -423,40 +390,39 @@ export const FlightSearchPage: React.FC = () => {
               ))}
             </div>
           ) : error ? (
-            <div className="p-10 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-4 shadow-xl">
-              <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
-                <AlertCircle className="w-7 h-7" />
+            <div className="p-10 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
+              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-white text-lg">Unable to Load Flights</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">{error}</p>
+              <h3 className="font-bold text-primary text-lg">Unable to Load Flights</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">{error}</p>
               <button
                 onClick={fetchFlights}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-bold inline-flex items-center gap-2 transition"
+                className="px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-hover text-xs font-bold inline-flex items-center gap-2 transition"
               >
                 <RefreshCw className="w-4 h-4" />
                 Retry Search
               </button>
             </div>
           ) : filteredFlights.length === 0 ? (
-            <div className="p-12 rounded-3xl bg-slate-900/90 border border-slate-800 text-center space-y-5 shadow-xl">
-              <div className="w-16 h-16 rounded-3xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center mx-auto shadow-lg">
-                <Plane className="w-8 h-8 transform -rotate-45" />
+            <div className="p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center mx-auto">
+                <Plane className="w-7 h-7 transform -rotate-45" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-black text-white text-xl">No Flights Found</h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                  No flights match your filters between <strong className="text-white">{origin}</strong> and{' '}
-                  <strong className="text-white">{destination}</strong> on {departureDate}.
+                <h3 className="font-black text-primary text-lg">No Flights Found</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                  No flights match your filters between <strong className="text-primary">{origin}</strong> and{' '}
+                  <strong className="text-primary">{destination}</strong> on {departureDate}.
                 </p>
               </div>
-              <div className="pt-2">
-                <button
-                  onClick={handleResetFilters}
-                  className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold transition border border-slate-700"
-                >
-                  Reset All Filters
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition"
+              >
+                Reset All Filters
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -475,4 +441,3 @@ export const FlightSearchPage: React.FC = () => {
     </div>
   );
 };
-

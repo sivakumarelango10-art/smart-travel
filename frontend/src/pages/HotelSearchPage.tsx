@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Hotel as HotelIcon, Search, Star, MapPin, ArrowRight } from 'lucide-react';
+import { Building2, Search, Star, MapPin, ArrowRight, ShieldCheck, Coffee } from 'lucide-react';
 import { Hotel } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { StarRating } from '../components/StarRating';
@@ -30,57 +30,52 @@ export const HotelSearchPage: React.FC = () => {
     setSlowMessage(null);
 
     const stage1Timer = setTimeout(() => {
-      if (isCurrent) setSlowMessage('Connecting to live hotel services…');
-    }, 3500);
+      if (isCurrent) setSlowMessage('Connecting to live hotel inventory…');
+    }, 2500);
 
-    const stage2Timer = setTimeout(() => {
-      if (isCurrent) setSlowMessage('Live hotel services are taking a little longer than usual.');
-    }, 8000);
+    hotelService
+      .searchHotels({
+        city: city.trim() || undefined,
+        minStars,
+        maxPrice,
+        page,
+        size: 9,
+      })
+      .then((res) => {
+        if (isCurrent) {
+          clearTimeout(stage1Timer);
+          setSlowMessage(null);
+          setHotels(res.content);
+          setTotalCount(res.totalElements);
+          setTotalPages(res.totalPages);
 
-    hotelService.searchHotels({
-      city: city.trim() || undefined,
-      minStars,
-      maxPrice,
-      page,
-      size: 9,
-    }).then((res) => {
-      if (isCurrent) {
-        clearTimeout(stage1Timer);
-        clearTimeout(stage2Timer);
-        setSlowMessage(null);
-        setHotels(res.content);
-        setTotalCount(res.totalElements);
-        setTotalPages(res.totalPages);
-
-        if (city.trim()) {
-          recommendationService.trackActivity({
-            activityType: 'SEARCH_HOTEL',
-            targetId: city.trim(),
-            targetType: 'HOTEL',
-            metadata: { city: city.trim() },
-          });
+          if (city.trim()) {
+            recommendationService.trackActivity({
+              activityType: 'SEARCH_HOTEL',
+              targetId: city.trim(),
+              targetType: 'HOTEL',
+              metadata: { city: city.trim() },
+            });
+          }
         }
-      }
-    }).catch((err) => {
-      if (isCurrent) {
-        clearTimeout(stage1Timer);
-        clearTimeout(stage2Timer);
-        setSlowMessage(null);
-        console.error('Failed to search hotels', err);
-      }
-    }).finally(() => {
-      if (isCurrent) {
-        clearTimeout(stage1Timer);
-        clearTimeout(stage2Timer);
-        setLoading(false);
-        setSlowMessage(null);
-      }
-    });
+      })
+      .catch((err) => {
+        if (isCurrent) {
+          clearTimeout(stage1Timer);
+          console.error('Failed to search hotels', err);
+        }
+      })
+      .finally(() => {
+        if (isCurrent) {
+          clearTimeout(stage1Timer);
+          setLoading(false);
+          setSlowMessage(null);
+        }
+      });
 
     return () => {
       isCurrent = false;
       clearTimeout(stage1Timer);
-      clearTimeout(stage2Timer);
     };
   }, [city, minStars, maxPrice, page]);
 
@@ -93,253 +88,235 @@ export const HotelSearchPage: React.FC = () => {
     setSearchParams(params);
   };
 
-  const cities = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Hyderabad', 'Goa', 'Kolkata'];
+  const cities = ['All Cities', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Hyderabad', 'Goa', 'Kolkata'];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Search Header Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 p-8 mb-10 shadow-lg">
-          <div className="relative z-10 max-w-2xl">
-            <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">
-              <HotelIcon className="w-4 h-4" />
-              <span>Smart Travel Stays</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">
-              Discover Luxury Stays Across India
-            </h1>
-            <p className="text-sm text-slate-400 mt-2">
-              Explore 5-star properties, airport lounges, and boutique resorts with transparent pricing and verified reviews.
-            </p>
+    <div className="space-y-8 pb-16">
+      {/* 1. HERO SEARCH HEADER */}
+      <section className="rounded-3xl bg-primary text-white p-6 sm:p-10 shadow-xl border border-slate-800 space-y-6">
+        <div className="max-w-3xl space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 text-secondary text-xs font-bold">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Luxury Stays & Business Hotels</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            Find & Book Premium Accommodations
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300">
+            Enjoy guaranteed room availability, interactive 3D virtual previews, and instant booking confirmation.
+          </p>
+        </div>
 
-            {/* Quick City Filters */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium mr-1">Popular:</span>
-              {cities.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => {
-                    setCity(c);
-                    setPage(0);
-                  }}
-                  className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
-                    city.toLowerCase() === c.toLowerCase()
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+        {/* Search & Filter Form */}
+        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
+          <div className="sm:col-span-6 relative">
+            <input
+              type="text"
+              placeholder="Search by city, airport or landmark (e.g. Mumbai, Goa)"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 pl-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-secondary transition font-medium"
+            />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
           </div>
 
-          {/* Search Form Bar */}
-          <form onSubmit={handleSearchSubmit} className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div className="sm:col-span-2 relative">
-              <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search by city (e.g. Mumbai, Delhi, Goa)..."
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              />
-            </div>
+          <div className="sm:col-span-4">
+            <select
+              value={minStars || ''}
+              onChange={(e) => setMinStars(e.target.value ? Number(e.target.value) : undefined)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-secondary transition cursor-pointer font-medium"
+            >
+              <option value="">All Star Ratings</option>
+              <option value="5">5-Star Luxury Only</option>
+              <option value="4">4-Star & Above</option>
+              <option value="3">3-Star & Above</option>
+            </select>
+          </div>
 
-            <div>
-              <select
-                value={minStars || ''}
-                onChange={(e) => setMinStars(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3.5 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="">Any Star Rating</option>
-                <option value="5">5-Star Luxury Only</option>
-                <option value="4">4-Star and Above</option>
-                <option value="3">3-Star and Above</option>
-              </select>
-            </div>
-
+          <div className="sm:col-span-2">
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition"
+              className="w-full h-full min-h-[46px] rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <Search className="w-4 h-4" />
-              Search Stays
+              <span>Search</span>
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
 
-        {/* Results Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Quick City Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <span className="text-slate-400 font-semibold shrink-0">Popular:</span>
+          {cities.map((c) => {
+            const isSelected = (c === 'All Cities' && !city) || city.toLowerCase() === c.toLowerCase();
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setCity(c === 'All Cities' ? '' : c);
+                  setPage(0);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition ${
+                  isSelected
+                    ? 'bg-secondary text-white shadow-sm'
+                    : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                }`}
+              >
+                {c}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 2. RESULTS GRID */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-white">
-              {city ? `Hotels in ${city}` : 'All Available Stays'}
+            <h2 className="text-xl font-black text-primary tracking-tight">
+              {city ? `Hotels in ${city}` : 'All Featured Hotels & Resorts'}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {totalCount} {totalCount === 1 ? 'property' : 'properties'} found
+            <p className="text-xs text-slate-500 mt-0.5">
+              Showing {totalCount} verified properties with instant confirmation
             </p>
           </div>
         </div>
 
-        {/* Hotels Grid */}
         {loading ? (
-          <div className="space-y-4">
-            {slowMessage && (
-              <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs flex items-center gap-3 animate-fade-in shadow-lg transition-all">
-                <div className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping shrink-0" />
-                <div className="flex-1 font-medium text-sky-200">
-                  {slowMessage}
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <HotelCardSkeleton key={i} />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <HotelCardSkeleton key={i} />
+            ))}
           </div>
         ) : hotels.length === 0 ? (
-          <div className="py-20 text-center bg-slate-900/40 border border-slate-800 rounded-2xl p-8">
-            <HotelIcon className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white">No Hotels Found</h3>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto mb-4">
-              We couldn't find any stays matching your criteria. Try searching for a different city or removing filters.
+          <div className="p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-4 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary border border-secondary/20 flex items-center justify-center mx-auto">
+              <Building2 className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-black text-primary">No Hotels Found</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              No hotels match your search criteria. Try clearing the filter or choosing another destination city.
             </p>
             <button
+              type="button"
               onClick={() => {
                 setCity('');
                 setMinStars(undefined);
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white rounded-xl transition-colors"
+              className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition"
             >
-              Reset Filters
+              Reset Search
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {hotels.map((hotel) => (
-              <div
-                key={hotel.id}
-                className="group bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl overflow-hidden flex flex-col justify-between transition duration-200"
-              >
-                <div>
-                  {/* Hotel Image Card Banner */}
-                  <div className="h-48 relative overflow-hidden">
-                    <ImageWithFallback
-                      src={resolveHotelPhotos(hotel)[0]}
-                      alt={`${hotel.name} luxury facade`}
-                      containerClassName="w-full h-full"
-                      className="group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent p-4 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-amber-500/20 shadow-md">
-                          <Star className="w-3 h-3 fill-amber-400" />
-                          {hotel.starRating}-Star Hotel
-                        </span>
-                        {hotel.nearestAirportCode && (
-                          <span className="text-[11px] font-mono text-slate-200 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700">
-                            Near {hotel.nearestAirportCode}
-                          </span>
-                        )}
-                      </div>
+            {hotels.map((hotel) => {
+              const photos = resolveHotelPhotos(hotel);
+              const thumbnail = photos[0];
 
-                      <div>
-                        <h3 className="text-lg font-bold text-white transition-colors">
-                          {hotel.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 mt-0.5">
-                          <MapPin className="w-3 h-3 text-blue-400" />
-                          <span>{hotel.address?.city}, {hotel.address?.state}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Body Details */}
-                  <div className="p-5">
-                    {/* Rating bar */}
-                    <div className="flex items-center justify-between text-xs mb-3 pb-3 border-b border-slate-800">
-                      <div className="flex items-center gap-1.5">
-                        <StarRating rating={hotel.averageRating} size="sm" />
-                        <span className="font-semibold text-white">{hotel.averageRating.toFixed(1)}</span>
-                      </div>
-                      <span className="text-slate-400">
-                        {hotel.totalReviews} {hotel.totalReviews === 1 ? 'review' : 'reviews'}
+              return (
+                <div
+                  key={hotel.id}
+                  className="rounded-2xl bg-white border border-slate-200 hover:border-slate-300 hover:shadow-card overflow-hidden group flex flex-col justify-between transition-all duration-200"
+                >
+                  <div>
+                    {/* Hotel Image with Badges */}
+                    <div className="relative h-48 overflow-hidden bg-slate-100">
+                      <ImageWithFallback
+                        src={thumbnail}
+                        alt={hotel.name}
+                        containerClassName="w-full h-full"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary/85 backdrop-blur-md text-amber-400 text-[11px] font-bold flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-amber-400" />
+                        {hotel.starRating}-Star
                       </span>
-                    </div>
-
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-4">
-                      {hotel.description}
-                    </p>
-
-                    {/* Amenities tags */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {hotel.amenities?.slice(0, 3).map((amenity) => (
-                        <span
-                          key={amenity}
-                          className="text-[11px] font-medium text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700"
-                        >
-                          {amenity}
-                        </span>
-                      ))}
-                      {hotel.amenities && hotel.amenities.length > 3 && (
-                        <span className="text-[11px] text-slate-500 px-1.5 py-0.5">
-                          +{hotel.amenities.length - 3} more
+                      {hotel.nearestAirportCode && (
+                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-slate-900/80 text-white font-mono text-[10px] font-bold border border-white/10">
+                          Near {hotel.nearestAirportCode}
                         </span>
                       )}
                     </div>
+
+                    {/* Content */}
+                    <div className="p-5 space-y-3">
+                      <div>
+                        <h3 className="text-lg font-black text-primary group-hover:text-secondary transition line-clamp-1">
+                          {hotel.name}
+                        </h3>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
+                          <span>
+                            {hotel.address?.city}, {hotel.address?.country}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Amenities Preview */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {hotel.amenities?.slice(0, 3).map((amenity) => (
+                          <span
+                            key={amenity}
+                            className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pricing & CTA Footer */}
+                  <div className="p-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">Starting rate</span>
+                      <div className="text-xl font-black text-primary">
+                        ₹{hotel.baseNightlyRate?.toLocaleString('en-IN')}
+                        <span className="text-xs text-slate-500 font-normal"> / night</span>
+                      </div>
+                    </div>
+
+                    <Link
+                      to={`/hotels/${hotel.id}`}
+                      className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                    >
+                      <span>Select Rooms</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
-
-                {/* Footer Price & CTA */}
-                <div className="p-5 pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">From</span>
-                    <span className="text-lg font-bold text-white">
-                      ₹{hotel.baseNightlyRate?.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-slate-400"> / night</span>
-                  </div>
-
-                  <Link
-                    to={`/hotels/${hotel.id}`}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition"
-                  >
-                    View Rooms
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-2 pt-6">
             <button
+              type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-slate-300 rounded-xl transition-colors"
+              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
             >
               Previous
             </button>
-            <span className="text-xs text-slate-400 px-2">
+            <span className="text-xs font-bold text-slate-600 px-3">
               Page {page + 1} of {totalPages}
             </span>
             <button
+              type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-slate-300 rounded-xl transition-colors"
+              className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 transition"
             >
               Next
             </button>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

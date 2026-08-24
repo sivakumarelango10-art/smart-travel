@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,13 +31,16 @@ public class RefundEligibilityServiceImpl implements RefundEligibilityService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
+    private final CancellationRefundPolicy cancellationRefundPolicy;
 
     public RefundEligibilityServiceImpl(BookingRepository bookingRepository,
                                         PaymentRepository paymentRepository,
-                                        RefundRepository refundRepository) {
+                                        RefundRepository refundRepository,
+                                        CancellationRefundPolicy cancellationRefundPolicy) {
         this.bookingRepository = bookingRepository;
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
+        this.cancellationRefundPolicy = cancellationRefundPolicy;
     }
 
     @Override
@@ -111,22 +115,55 @@ public class RefundEligibilityServiceImpl implements RefundEligibilityService {
                     .build();
         }
 
-        // 3. Calculation of eligible refund amount
+        // 3. Calculate eligible refund amount applying the time-based cancellation policy
         long amountPaise = payment.getAmountPaise() != null ? payment.getAmountPaise() :
                 (payment.getAmount() != null ? payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue() : 0L);
-        BigDecimal amountInr = payment.getAmount() != null ? payment.getAmount() :
-                BigDecimal.valueOf(amountPaise).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
 
-        RefundReason effectiveReason = reason != null ? reason : RefundReason.FLIGHT_CANCELLED;
+        RefundReason effectiveReason = reason != null ? reason : RefundReason.CUSTOMER_CANCELLATION;
+
+        // Retrieve departure time from booking for policy calculation
+        Instant departureTime = booking != null ? booking.getDepartureTime() : null;
+        Instant now = Instant.now();
+
+        // For flight-side disruptions (FLIGHT_CANCELLED, OVERBOOKING, MAJOR_RESCHEDULE)
+        // the policy grants 100% regardless of departure proximity.
+        long refundPaise;
+        BigDecimal refundInr;
+        String refundPercentage;
+        String policyDescription;
+
+        if (effectiveReason == RefundReason.FLIGHT_CANCELLED
+                || effectiveReason == RefundReason.OVERBOOKING
+                || effectiveReason == RefundReason.MAJOR_RESCHEDULE) {
+            // Full refund for airline-initiated disruption
+            refundPaise = amountPaise;
+            refundInr = payment.getAmount() != null ? payment.getAmount() :
+                    BigDecimal.valueOf(amountPaise).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            refundPercentage = "100%";
+            policyDescription = "Full refund: airline-initiated disruption (" + effectiveReason + ")";
+        } else {
+            // Time-based policy for CUSTOMER_CANCELLATION / OTHER
+            refundPaise = cancellationRefundPolicy.calculateRefundAmountPaise(amountPaise, departureTime, now);
+            refundInr = cancellationRefundPolicy.calculateRefundAmountInr(amountPaise, departureTime, now);
+            refundPercentage = cancellationRefundPolicy.getRefundPercentageLabel(departureTime, now);
+            policyDescription = cancellationRefundPolicy.getPolicyDescription(departureTime, now);
+        }
+
+        boolean eligible = refundPaise > 0L;
+        String eligibilityReason = eligible
+                ? ("Eligible for " + refundPercentage + " refund. Policy: " + policyDescription)
+                : ("Not eligible for refund: " + policyDescription);
 
         return RefundEligibilityResponse.builder()
                 .bookingId(bookingId)
                 .paymentId(paymentId)
-                .eligible(true)
-                .reason("Eligible for full refund under policy: " + effectiveReason)
+                .eligible(eligible)
+                .reason(eligibilityReason)
                 .refundReason(effectiveReason)
-                .refundableAmount(amountInr)
-                .refundableAmountPaise(amountPaise)
+                .refundableAmount(refundInr)
+                .refundableAmountPaise(refundPaise)
+                .refundPercentage(refundPercentage)
+                .policyDescription(policyDescription)
                 .alreadyRefunded(false)
                 .build();
     }

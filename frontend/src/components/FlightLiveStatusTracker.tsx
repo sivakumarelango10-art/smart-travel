@@ -5,8 +5,9 @@ import { useFlightStatusWebSocket } from '../hooks/useFlightStatusWebSocket';
 
 interface FlightLiveStatusTrackerProps {
   flightId: string;
-  flightNumber: string;
-  initialStatus: FlightStatus;
+  initialSnapshot?: any;
+  flightNumber?: string;
+  initialStatus?: FlightStatus;
   initialDelayMinutes?: number;
   initialDelayReason?: string;
   scheduledDeparture?: string;
@@ -22,19 +23,20 @@ interface FlightLiveStatusTrackerProps {
 
 export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = ({
   flightId,
-  flightNumber,
-  initialStatus,
-  initialDelayMinutes,
-  initialDelayReason,
-  scheduledDeparture,
-  revisedDeparture,
-  scheduledArrival,
-  estimatedArrival,
-  departureAirportCode,
-  arrivalAirportCode,
-  dataSource = 'SIMULATED',
-  gate,
-  terminal,
+  initialSnapshot,
+  flightNumber = initialSnapshot?.flightNumber || 'FLIGHT',
+  initialStatus = initialSnapshot?.status || 'SCHEDULED',
+  initialDelayMinutes = initialSnapshot?.delayMinutes,
+  initialDelayReason = initialSnapshot?.delayReason,
+  scheduledDeparture = initialSnapshot?.scheduledDeparture,
+  revisedDeparture = initialSnapshot?.revisedDeparture,
+  scheduledArrival = initialSnapshot?.scheduledArrival,
+  estimatedArrival = initialSnapshot?.estimatedArrival,
+  departureAirportCode = initialSnapshot?.departureAirportCode || initialSnapshot?.departureAirport?.code,
+  arrivalAirportCode = initialSnapshot?.arrivalAirportCode || initialSnapshot?.arrivalAirport?.code,
+  dataSource = initialSnapshot?.source || 'SIMULATED',
+  gate = initialSnapshot?.gate,
+  terminal = initialSnapshot?.terminal,
 }) => {
   const [currentStatus, setCurrentStatus] = useState<FlightStatus>(initialStatus);
   const [delayMinutes, setDelayMinutes] = useState<number | undefined>(initialDelayMinutes);
@@ -69,51 +71,51 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
       case 'ON_TIME':
       case 'SCHEDULED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium rounded-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             ON TIME
           </span>
         );
       case 'BOARDING':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium rounded-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             BOARDING
           </span>
         );
       case 'DEPARTED':
       case 'IN_AIR':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium rounded-md">
-            <Plane className="w-3.5 h-3.5 text-blue-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-secondary/10 border border-secondary/20 text-secondary text-xs font-bold rounded-md">
+            <Plane className="w-3.5 h-3.5" />
             IN FLIGHT
           </span>
         );
       case 'ARRIVED':
       case 'LANDED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium rounded-md">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-md">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             ARRIVED
           </span>
         );
       case 'DELAYED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium rounded-md">
-            <AlertTriangle className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-md">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
             DELAYED {delayMinutes ? `(+${delayMinutes}m)` : ''}
           </span>
         );
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium rounded-md">
-            <ShieldAlert className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-md">
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
             CANCELLED
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-800 text-slate-300 text-xs font-medium rounded-md">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-md">
             {status}
           </span>
         );
@@ -121,34 +123,33 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
   };
 
   return (
-    <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
-      <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-slate-800 rounded-md text-blue-400">
-            <Radio className={`w-4 h-4 ${isConnected ? 'text-emerald-400' : 'text-slate-500'}`} />
+    <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
+            <Radio className={`w-4 h-4 ${isConnected ? 'text-emerald-600' : 'text-slate-400'}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white">{flightNumber}</span>
+              <span className="text-sm font-black text-primary">{flightNumber}</span>
               {departureAirportCode && arrivalAirportCode && (
-                <span className="text-[11px] text-slate-400">
+                <span className="text-xs font-semibold text-slate-500">
                   ({departureAirportCode} → {arrivalAirportCode})
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+              <span className="text-[11px] text-slate-500 flex items-center gap-1">
                 {isConnected ? (
-                  <span className="text-emerald-400 font-medium">Live sync active</span>
+                  <span className="text-emerald-600 font-semibold">Live telemetry active</span>
                 ) : (
                   <span>Reconnecting...</span>
                 )}
               </span>
 
-              {/* Data Provenance Badge */}
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                LIVE SIMULATION • SmartTravel Engine
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-secondary/10 text-secondary text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                LIVE SIMULATION • SmartTravel Radar
               </span>
             </div>
           </div>
@@ -157,41 +158,41 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
         <div>{getStatusBadge(currentStatus)}</div>
       </div>
 
-      {/* Delay Banner if delayed */}
+      {/* Delay Banner */}
       {currentStatus === 'DELAYED' && delayReason && (
-        <div className="mt-3 p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-400" />
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-500" />
           <div>
-            <div className="font-semibold">Flight Delay Advisory</div>
-            <p className="text-[11px] text-rose-400/90 mt-0.5">{delayReason}</p>
+            <div className="font-bold">Flight Delay Advisory</div>
+            <p className="text-[11px] text-rose-600 mt-0.5">{delayReason}</p>
           </div>
         </div>
       )}
 
-      {/* Flight Timing & Gate Details */}
-      <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-        <div className="p-2.5 bg-slate-800/40 rounded-xl border border-slate-800">
-          <span className="text-[11px] text-slate-400 block mb-0.5">Departure</span>
-          <span className="font-semibold text-white">
+      {/* Timing & Gate Details */}
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span className="text-[11px] text-slate-500 block mb-0.5">Scheduled Departure</span>
+          <span className="font-bold text-primary text-sm">
             {scheduledDeparture
               ? new Date(scheduledDeparture).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : '—'}
           </span>
           {revisedDep && currentStatus === 'DELAYED' && (
-            <span className="block text-[11px] text-rose-400 font-medium mt-0.5">
+            <span className="block text-[11px] text-rose-600 font-bold mt-0.5">
               Revised: {new Date(revisedDep).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           {currentTerminal && (
-            <span className="block text-[10px] text-slate-400 mt-1 font-mono">
-              Terminal: {currentTerminal}
+            <span className="block text-[10px] text-slate-500 mt-1 font-mono">
+              Terminal: <strong>{currentTerminal}</strong>
             </span>
           )}
         </div>
 
-        <div className="p-2.5 bg-slate-800/40 rounded-xl border border-slate-800">
-          <span className="text-[11px] text-slate-400 block mb-0.5">Arrival (Est.)</span>
-          <span className="font-semibold text-white">
+        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span className="text-[11px] text-slate-500 block mb-0.5">Arrival (Estimated)</span>
+          <span className="font-bold text-primary text-sm">
             {estArr
               ? new Date(estArr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : scheduledArrival
@@ -199,19 +200,19 @@ export const FlightLiveStatusTracker: React.FC<FlightLiveStatusTrackerProps> = (
               : '—'}
           </span>
           {estArr && currentStatus === 'DELAYED' && (
-            <span className="block text-[11px] text-rose-400 font-medium mt-0.5">
+            <span className="block text-[11px] text-rose-600 font-bold mt-0.5">
               Est: {new Date(estArr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           {currentGate && (
-            <span className="block text-[10px] text-slate-400 mt-1 font-mono">
-              Gate: {currentGate}
+            <span className="block text-[10px] text-slate-500 mt-1 font-mono">
+              Gate: <strong>{currentGate}</strong>
             </span>
           )}
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
+      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
         <span>Source: {currentSource}</span>
         <span>Last sync: {lastUpdated.toLocaleTimeString()}</span>
       </div>

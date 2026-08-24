@@ -20,7 +20,6 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   expiresAt,
   appliedFreeze,
 }) => {
-  // Real-time pricing WebSocket subscription (if not locked by freeze)
   const { updatedPrice } = useFlightPricingWebSocket(flight.id, cabinClass);
 
   const cabinInv =
@@ -52,45 +51,44 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   const totalAmount = appliedFreeze ? appliedFreeze.lockedTotalPrice : totalPerPax * passengerCount;
 
   return (
-    <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-6 shadow-2xl space-y-5 sticky top-24 backdrop-blur-xl">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center">
+    <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm space-y-4 sticky top-20">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
             <Receipt className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-extrabold text-white text-base">Fare Summary</h3>
-            <p className="text-[10px] text-slate-400">Authoritative price breakdown</p>
+            <h3 className="font-bold text-primary text-sm">Fare Summary</h3>
           </div>
         </div>
-        <span className="text-[10px] uppercase font-black px-2.5 py-1 rounded-full bg-slate-800 text-sky-300 border border-slate-700">
+        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
           {cabinClass.replace('_', ' ')}
         </span>
       </div>
 
       {/* Breakdown Rows */}
-      <div className="space-y-3 text-xs">
-        <div className="flex items-center justify-between text-slate-300">
+      <div className="space-y-2 text-xs">
+        <div className="flex items-center justify-between text-slate-700">
           <span>
             Base Fare ({passengerCount} {passengerCount === 1 ? 'Traveler' : 'Travelers'})
           </span>
-          <span className="font-bold text-white font-mono">₹{totalBase.toLocaleString('en-IN')}</span>
+          <span className="font-bold text-primary font-mono">₹{totalBase.toLocaleString('en-IN')}</span>
         </div>
 
-        <div className="flex items-center justify-between text-slate-400">
+        <div className="flex items-center justify-between text-slate-500">
           <span>Taxes & GST (18%)</span>
           <span className="font-mono">₹{totalTax.toLocaleString('en-IN')}</span>
         </div>
 
-        <div className="flex items-center justify-between text-slate-400">
-          <span>Airport & User Development Fees</span>
+        <div className="flex items-center justify-between text-slate-500">
+          <span>Airport & User Fees</span>
           <span className="font-mono">₹{totalFee.toLocaleString('en-IN')}</span>
         </div>
 
         {selectedSeats.length > 0 && (
-          <div className="flex items-center justify-between text-slate-300 pt-2.5 border-t border-slate-800/80">
+          <div className="flex items-center justify-between text-slate-700 pt-2 border-t border-slate-100">
             <span className="font-medium">Selected Seats</span>
-            <span className="text-sky-400 font-mono font-bold bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+            <span className="text-secondary font-mono font-bold bg-secondary/10 px-2 py-0.5 rounded border border-secondary/20">
               {selectedSeats.join(', ')}
             </span>
           </div>
@@ -98,36 +96,27 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
       </div>
 
       {/* Total Due */}
-      <div className="pt-4 border-t border-slate-800 flex items-baseline justify-between">
+      <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
         <div>
-          <span className="text-xs text-slate-400 block font-semibold">Total Amount Due</span>
-          <span className="text-[11px] text-emerald-400 font-medium">All taxes & fees included</span>
-        </div>
-        <div className="text-right">
-          <span className="text-3xl font-black text-white tracking-tight">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Fare Payable</span>
+          <span className="text-2xl font-black text-primary tracking-tight">
             ₹{totalAmount.toLocaleString('en-IN')}
           </span>
         </div>
+
+        {appliedFreeze && (
+          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+            <Lock className="w-3 h-3 text-emerald-600" />
+            Locked Fare
+          </span>
+        )}
       </div>
 
-      {/* Expiration or Guarantee Notice */}
-      {appliedFreeze ? (
-        <div className="p-3.5 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center gap-2.5 text-indigo-300 text-xs font-bold shadow-md">
-          <Lock className="w-4 h-4 shrink-0 text-indigo-400" />
-          <span>Price Freeze Applied: Locked at ₹{appliedFreeze.lockedTotalPrice.toLocaleString('en-IN')} (Expires {new Date(appliedFreeze.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})</span>
-        </div>
-      ) : expiresAt ? (
-        <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center gap-2.5 text-amber-300 text-xs font-bold shadow-md">
-          <Clock className="w-4 h-4 shrink-0" />
-          <span>Payment Window: 15-minute concurrency lock active</span>
-        </div>
-      ) : (
-        <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center gap-2.5 text-sky-300 text-xs font-medium">
-          <ShieldCheck className="w-4 h-4 shrink-0 text-sky-400" />
-          <span>Atomic seat inventory lock & real-time fare guarantee.</span>
-        </div>
-      )}
+      {/* Security Guarantee */}
+      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+        <span>Price includes all taxes. 100% Secure Checkout.</span>
+      </div>
     </div>
   );
 };
-

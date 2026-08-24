@@ -8,6 +8,8 @@ import com.smarttravel.modules.booking.dto.BookingCancelRequest;
 import com.smarttravel.modules.booking.dto.BookingCreateRequest;
 import com.smarttravel.modules.booking.dto.BookingResponse;
 import com.smarttravel.modules.booking.service.BookingService;
+import com.smarttravel.modules.payment.refund.dto.RefundResponse;
+import com.smarttravel.modules.payment.refund.service.RefundService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -40,9 +43,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final RefundService refundService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService,
+                             @Autowired(required = false) RefundService refundService) {
         this.bookingService = bookingService;
+        this.refundService = refundService;
     }
 
     @PostMapping
@@ -132,7 +138,7 @@ public class BookingController {
     @PatchMapping("/{id}/cancel")
     @Operation(
             summary = "Cancel Booking & Release Seats",
-            description = "Cancels a confirmed booking, transitions status to CANCELLED, and atomically releases reserved seats back to the original cabin inventory."
+            description = "Cancels a confirmed booking, transitions status to CANCELLED, atomically releases reserved seats back to the original cabin inventory, and automatically initiates a refund based on the time-based cancellation policy."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Booking cancelled and seats released successfully"),
@@ -149,5 +155,27 @@ public class BookingController {
 
         BookingResponse response = bookingService.cancelBooking(id, request, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled successfully", response));
+    }
+
+    @GetMapping("/{id}/refund")
+    @Operation(
+            summary = "Get Refund Status for Booking",
+            description = "Retrieves the refund record associated with a cancelled booking. Only accessible by the booking owner."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Refund details retrieved successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Full authentication is required"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "No refund found for this booking")
+    })
+    public ResponseEntity<ApiResponse<RefundResponse>> getRefundForBooking(
+            @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        if (refundService == null) {
+            return ResponseEntity.ok(ApiResponse.success("Refund service not available", null));
+        }
+        RefundResponse refund = refundService.getRefundByBookingId(id, userId, false);
+        return ResponseEntity.ok(ApiResponse.success("Refund details retrieved successfully", refund));
     }
 }

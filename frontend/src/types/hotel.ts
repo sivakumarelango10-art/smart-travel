@@ -71,3 +71,15 @@ export interface HotelSearchParams {
   page?: number;
   size?: number;
 }
+
+export interface RoomAvailabilityEvent {
+  hotelId: string;
+  roomTypeId: string;
+  roomTypeName?: string;
+  category?: RoomCategory;
+  availableRooms: number;
+  totalRooms: number;
+  nightlyRate?: number;
+  action: string;
+  timestamp?: string;
+}

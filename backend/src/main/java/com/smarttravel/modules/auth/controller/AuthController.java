@@ -122,4 +122,27 @@ public class AuthController {
         authService.deleteAccount(request);
         return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
     }
+
+    @GetMapping({"/preferences", "/preferences/"})
+    @Operation(
+            summary = "Get User Travel Preferences",
+            description = "Retrieves saved seat and room preferences (e.g. WINDOW, AISLE, DELUXE room) for the authenticated user.",
+            security = @SecurityRequirement(name = "BearerAuth")
+    )
+    public ResponseEntity<ApiResponse<com.smarttravel.modules.user.model.UserPreferences>> getPreferences() {
+        com.smarttravel.modules.user.model.UserPreferences preferences = authService.getUserPreferences();
+        return ResponseEntity.ok(ApiResponse.success("User travel preferences retrieved successfully", preferences));
+    }
+
+    @PutMapping({"/preferences", "/preferences/"})
+    @Operation(
+            summary = "Update User Travel Preferences",
+            description = "Saves and persists user seat, room, class, and destination preferences to MongoDB.",
+            security = @SecurityRequirement(name = "BearerAuth")
+    )
+    public ResponseEntity<ApiResponse<com.smarttravel.modules.user.model.UserPreferences>> updatePreferences(
+            @RequestBody com.smarttravel.modules.user.model.UserPreferences preferences) {
+        com.smarttravel.modules.user.model.UserPreferences updated = authService.updateUserPreferences(preferences);
+        return ResponseEntity.ok(ApiResponse.success("User travel preferences updated successfully", updated));
+    }
 }

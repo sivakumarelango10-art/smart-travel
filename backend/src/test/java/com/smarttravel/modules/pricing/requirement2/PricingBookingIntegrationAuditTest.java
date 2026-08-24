@@ -94,7 +94,9 @@ class PricingBookingIntegrationAuditTest {
                 null,
                 null,
                 priceFreezeService,
-                dynamicPricingService
+                dynamicPricingService,
+                null,
+                null
         );
 
         cabinInventory = CabinInventory.builder()

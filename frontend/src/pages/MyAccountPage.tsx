@@ -62,6 +62,7 @@ export const MyAccountPage: React.FC = () => {
   // Travel preferences state
   const [preferredClass, setPreferredClass] = useState(user?.preferences?.preferredClass || 'ECONOMY');
   const [preferredSeatType, setPreferredSeatType] = useState(user?.preferences?.preferredSeatType || 'WINDOW');
+  const [preferredRoomType, setPreferredRoomType] = useState(user?.preferences?.preferredRoomType || 'DELUXE');
   const [dietaryPreference, setDietaryPreference] = useState(user?.preferences?.dietaryPreference || 'VEGETARIAN');
   const [homeAirport, setHomeAirport] = useState(user?.preferences?.homeAirport || 'DEL');
   const [addressLine1, setAddressLine1] = useState(user?.preferences?.addressLine1 || '');
@@ -192,6 +193,7 @@ export const MyAccountPage: React.FC = () => {
       const preferences: UserPreferences = {
         preferredClass,
         preferredSeatType,
+        preferredRoomType,
         dietaryPreference,
         homeAirport: homeAirport.toUpperCase().trim(),
         addressLine1: addressLine1.trim(),
@@ -625,6 +627,22 @@ export const MyAccountPage: React.FC = () => {
                   <option value="AISLE">Aisle Seat</option>
                   <option value="EXTRA_LEGROOM">Extra Legroom (Exit Row)</option>
                   <option value="MIDDLE">Middle Seat</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300">Preferred Hotel Room Category</label>
+                <select
+                  value={preferredRoomType}
+                  onChange={(e) => setPreferredRoomType(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition font-medium"
+                >
+                  <option value="DELUXE">Deluxe Room</option>
+                  <option value="SUITE">Luxury Suite</option>
+                  <option value="STANDARD">Standard Room</option>
+                  <option value="PREMIUM">Premium Room</option>
+                  <option value="EXECUTIVE_SUITE">Executive Suite</option>
+                  <option value="PRESIDENTIAL_SUITE">Presidential Suite</option>
                 </select>
               </div>
 

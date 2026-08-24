@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { AlertCircle, Check } from 'lucide-react';
-import { Seat } from '../types/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AlertCircle, Check, Sparkles, Radio } from 'lucide-react';
+import { Seat, SeatMapUpdateEvent } from '../types/api';
+import { useSeatMapWebSocket } from '../hooks/useSeatMapWebSocket';
+import { useAuth } from '../context/AuthContext';
 
 interface SeatMapProps {
   flightId: string;
@@ -9,20 +11,68 @@ interface SeatMapProps {
   requiredCount: number;
   selectedSeats: string[];
   onSeatSelect: (seats: string[]) => void;
-  onRefreshSeats: () => void;
+  onRefreshSeats?: () => void;
+  preferredSeatType?: string;
 }
 
 export const SeatMap: React.FC<SeatMapProps> = ({
+  flightId,
   cabinClass,
   seats,
   requiredCount,
   selectedSeats = [],
   onSeatSelect,
   onRefreshSeats,
+  preferredSeatType,
 }) => {
+  const { user } = useAuth();
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [localSeats, setLocalSeats] = useState<Seat[]>(seats);
+  const [realtimeNotification, setRealtimeNotification] = useState<string | null>(null);
 
-  // Helper to safely extract row number from seatNumber or row/rowNumber properties
+  // Sync with prop changes
+  useEffect(() => {
+    setLocalSeats(seats);
+  }, [seats]);
+
+  // Effective preferred seat type from props or authenticated user preferences
+  const effectivePreference = preferredSeatType || user?.preferences?.preferredSeatType || '';
+
+  // Real-time WebSocket connection to /topic/seat-map/{flightId}
+  useSeatMapWebSocket({
+    flightId,
+    onSeatUpdate: (event: SeatMapUpdateEvent) => {
+      if (event && event.seatNumbers && event.seatNumbers.length > 0) {
+        setLocalSeats((prev) =>
+          prev.map((s) => {
+            if (event.seatNumbers.includes(s.seatNumber)) {
+              return {
+                ...s,
+                status: event.status,
+                priceAdjustment: event.priceAdjustment !== undefined ? event.priceAdjustment : s.priceAdjustment,
+              };
+            }
+            return s;
+          })
+        );
+
+        // Deselect if another user held the seat
+        if (event.status === 'HELD' || event.status === 'BOOKED') {
+          const conflicting = selectedSeats.filter((num) => event.seatNumbers.includes(num));
+          if (conflicting.length > 0) {
+            onSeatSelect(selectedSeats.filter((num) => !event.seatNumbers.includes(num)));
+            setConflictError(`Seat ${conflicting.join(', ')} was just reserved by another traveler.`);
+          }
+        }
+
+        setRealtimeNotification(`Real-time update: Seats ${event.seatNumbers.join(', ')} updated (${event.status})`);
+        setTimeout(() => setRealtimeNotification(null), 4000);
+      }
+    },
+    enabled: !!flightId,
+  });
+
+  // Helper to safely extract row number
   const getSeatRow = (seat: Seat): number => {
     if (typeof seat.rowNumber === 'number' && !isNaN(seat.rowNumber)) return seat.rowNumber;
     if (typeof seat.row === 'number' && !isNaN(seat.row)) return seat.row;
@@ -33,7 +83,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     return 1;
   };
 
-  // Helper to safely extract column letter from seatNumber or column property
+  // Helper to safely extract column letter
   const getSeatColumn = (seat: Seat): string => {
     if (seat.column && typeof seat.column === 'string') return seat.column.toUpperCase();
     if (seat.seatNumber) {
@@ -43,14 +93,25 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     return 'A';
   };
 
-  // Safely extract seats array whether passed as an array or a SeatMapResponse object
-  const rawSeats: Seat[] = Array.isArray(seats)
-    ? seats
-    : (seats as any)?.seats && Array.isArray((seats as any).seats)
-    ? (seats as any).seats
+  // Helper to check if seat matches preference
+  const isPreferredSeat = (seat: Seat, rowNum: number, col: string): boolean => {
+    if (!effectivePreference) return false;
+    const pref = effectivePreference.toUpperCase();
+    if (pref === 'WINDOW' && (col === 'A' || col === 'F')) return true;
+    if (pref === 'AISLE' && (col === 'C' || col === 'D')) return true;
+    if (pref === 'EXTRA_LEGROOM' && (rowNum === 1 || rowNum === 12 || (seat.priceAdjustment && seat.priceAdjustment > 0))) return true;
+    if (pref === 'MIDDLE' && (col === 'B' || col === 'E')) return true;
+    return false;
+  };
+
+  // Extract raw seats
+  const rawSeats: Seat[] = Array.isArray(localSeats)
+    ? localSeats
+    : (localSeats as any)?.seats && Array.isArray((localSeats as any).seats)
+    ? (localSeats as any).seats
     : [];
 
-  // If no seats array returned, generate standard layout as reliable fallback
+  // Reliable fallback if empty
   const safeSeats: Seat[] = rawSeats.length > 0 ? rawSeats : Array.from({ length: 20 * 6 }, (_, i) => {
     const r = Math.floor(i / 6) + 1;
     const col = ['A', 'B', 'C', 'D', 'E', 'F'][i % 6];
@@ -84,6 +145,18 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 
   const sortedRows = Array.from(rowsMap.keys()).sort((a, b) => a - b);
 
+  // Total seat upsell price calculation
+  const totalSeatUpgradeCost = useMemo(() => {
+    let cost = 0;
+    selectedSeats.forEach((num) => {
+      const s = safeSeats.find((seat) => seat.seatNumber === num);
+      if (s && s.priceAdjustment && s.priceAdjustment > 0) {
+        cost += s.priceAdjustment;
+      }
+    });
+    return cost;
+  }, [selectedSeats, safeSeats]);
+
   const handleSeatClick = (seat: Seat) => {
     if (seat.status !== 'AVAILABLE' && !selectedSeats.includes(seat.seatNumber)) {
       return;
@@ -107,12 +180,37 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Seat Map Legend */}
+      {/* Real-time Indicator & Preference Badge */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-400">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[11px]">
+            <Radio className="w-3 h-3 animate-pulse" /> Live Seat Availability Active
+          </span>
+          {realtimeNotification && (
+            <span className="text-sky-400 font-medium animate-fade-in">{realtimeNotification}</span>
+          )}
+        </div>
+
+        {effectivePreference && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-semibold text-[11px]">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            Highlighting Saved Preference: <strong className="text-white uppercase">{effectivePreference}</strong>
+          </div>
+        )}
+      </div>
+
+      {/* Seat Map Legend & Upselling Summary */}
       <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs shadow-xl backdrop-blur-xl">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-slate-800 border border-slate-700"></div>
-            <span className="text-slate-300 font-semibold">Available</span>
+            <span className="text-slate-300 font-semibold">Standard (₹0)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 flex items-center justify-center text-[10px] text-indigo-300 font-bold">
+              ★
+            </div>
+            <span className="text-slate-300 font-semibold">Extra Legroom (+₹350–₹500)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded-lg bg-sky-500 border border-sky-400 text-white flex items-center justify-center font-bold text-[10px] shadow-sm shadow-sky-500/50">
@@ -124,18 +222,12 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             <div className="w-5 h-5 rounded-lg bg-slate-950 border border-slate-800 opacity-40 cursor-not-allowed"></div>
             <span className="text-slate-500 font-medium">Occupied</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 flex items-center justify-center text-[10px] text-indigo-300 font-bold">
-              ★
-            </div>
-            <span className="text-slate-300 font-semibold">Extra Legroom</span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {cabinClass && (
-            <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px] uppercase">
-              Cabin: {cabinClass.replace('_', ' ')}
+          {totalSeatUpgradeCost > 0 && (
+            <span className="px-3 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 font-bold text-xs">
+              Seat Upgrades: +₹{totalSeatUpgradeCost.toLocaleString()}
             </span>
           )}
           <div className="px-3.5 py-1.5 rounded-full bg-sky-950/60 border border-sky-800/40 text-sky-300 font-black text-xs">
@@ -200,7 +292,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                 <div key={rowNum} className="space-y-1">
                   {isExitRow && (
                     <div className="py-1 text-center text-[9px] uppercase tracking-wider font-bold text-amber-400 bg-amber-500/10 border-y border-amber-500/20 rounded-xl my-2">
-                      ⚠️ Emergency Exit Row
+                      ⚠️ Emergency Exit Row (Extra Legroom +₹350)
                     </div>
                   )}
 
@@ -214,6 +306,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const isSelected = selectedSeats.includes(seat.seatNumber);
                         const isAvailable = seat.status === 'AVAILABLE';
                         const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
+                        const matchesPref = isPreferredSeat(seat, rowNum, col);
 
                         return (
                           <button
@@ -222,19 +315,27 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             disabled={!isAvailable && !isSelected}
                             onClick={() => handleSeatClick(seat)}
                             title={`${seat.seatNumber} • ${seat.cabinClass} ${
-                              isExtraLegroom ? '(Extra Legroom)' : ''
-                            }`}
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center ${
+                              isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
+                            } ${matchesPref ? '• Matches your preference!' : ''}`}
+                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
                               isSelected
                                 ? 'bg-sky-500 border border-sky-400 text-white shadow-lg shadow-sky-500/40 scale-105'
                                 : isAvailable
                                 ? isExtraLegroom
                                   ? 'bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 hover:scale-105'
+                                  : matchesPref
+                                  ? 'bg-slate-800 hover:bg-slate-750 border-2 border-amber-400/80 text-amber-300 hover:scale-105'
                                   : 'bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-slate-200 hover:scale-105'
                                 : 'bg-slate-950 border border-slate-800 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
-                            {isSelected ? <Check className="w-3.5 h-3.5" /> : col}
+                            {isSelected ? (
+                              <Check className="w-3.5 h-3.5" />
+                            ) : matchesPref && isAvailable && !isExtraLegroom ? (
+                              <span className="text-[10px] text-amber-300 font-bold">{col}</span>
+                            ) : (
+                              col
+                            )}
                           </button>
                         );
                       })}
@@ -254,6 +355,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const isSelected = selectedSeats.includes(seat.seatNumber);
                         const isAvailable = seat.status === 'AVAILABLE';
                         const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
+                        const matchesPref = isPreferredSeat(seat, rowNum, col);
 
                         return (
                           <button
@@ -262,19 +364,27 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             disabled={!isAvailable && !isSelected}
                             onClick={() => handleSeatClick(seat)}
                             title={`${seat.seatNumber} • ${seat.cabinClass} ${
-                              isExtraLegroom ? '(Extra Legroom)' : ''
-                            }`}
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center ${
+                              isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
+                            } ${matchesPref ? '• Matches your preference!' : ''}`}
+                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
                               isSelected
                                 ? 'bg-sky-500 border border-sky-400 text-white shadow-lg shadow-sky-500/40 scale-105'
                                 : isAvailable
                                 ? isExtraLegroom
                                   ? 'bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-500/40 text-indigo-300 hover:scale-105'
+                                  : matchesPref
+                                  ? 'bg-slate-800 hover:bg-slate-750 border-2 border-amber-400/80 text-amber-300 hover:scale-105'
                                   : 'bg-slate-800/90 hover:bg-slate-750 border border-slate-700 text-slate-200 hover:scale-105'
                                 : 'bg-slate-950 border border-slate-800 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
-                            {isSelected ? <Check className="w-3.5 h-3.5" /> : col}
+                            {isSelected ? (
+                              <Check className="w-3.5 h-3.5" />
+                            ) : matchesPref && isAvailable && !isExtraLegroom ? (
+                              <span className="text-[10px] text-amber-300 font-bold">{col}</span>
+                            ) : (
+                              col
+                            )}
                           </button>
                         );
                       })}

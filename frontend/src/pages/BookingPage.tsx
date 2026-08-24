@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   AlertCircle,
   Plane,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import { Flight, CabinClass, Passenger, Seat, Booking, PriceFreeze } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -80,7 +81,7 @@ export const BookingPage: React.FC = () => {
       if (flightRes && flightRes.data) {
         setFlight(flightRes.data);
       } else {
-        throw new Error('Flight details could not be found or loaded.');
+        throw new Error('Flight details could not be loaded.');
       }
 
       let seatList: Seat[] = [];
@@ -100,38 +101,14 @@ export const BookingPage: React.FC = () => {
           if (fallbackSeats && Array.isArray(fallbackSeats.data)) {
             seatList = fallbackSeats.data;
           }
-        } catch (e) {
-          console.warn('Fallback seat retrieval notice:', e);
+        } catch {
+          // Ignored
         }
       }
 
       setSeats(seatList);
-
-      // Fetch user's active price freezes if authenticated
-      if (isAuthenticated) {
-        try {
-          const freezes = await pricingService.getUserPriceFreezes();
-          const activeForFlight = (freezes || []).filter(
-            (f) =>
-              f.status === 'ACTIVE' &&
-              f.flightId === flightId &&
-              (!f.expiresAt || new Date(f.expiresAt) > new Date())
-          );
-          setUserFreezes(activeForFlight);
-
-          if (initialFreezeId) {
-            const matched = (freezes || []).find((f) => f.id === initialFreezeId && f.status === 'ACTIVE');
-            if (matched) setAppliedFreeze(matched);
-          } else if (activeForFlight.length > 0 && !appliedFreeze) {
-            setAppliedFreeze(activeForFlight[0]);
-          }
-        } catch (e) {
-          console.warn('Could not fetch user price freezes:', e);
-        }
-      }
     } catch (err: any) {
-      console.error('Failed to load flight or seat map details:', err);
-      setBookingError(err?.message || 'Failed to load flight or seat map details');
+      setBookingError(err.message || 'Failed to load flight booking details');
     } finally {
       setLoading(false);
     }
@@ -139,39 +116,57 @@ export const BookingPage: React.FC = () => {
 
   useEffect(() => {
     loadFlightAndSeats();
-  }, [flightId, isAuthenticated]);
+  }, [flightId, cabinClass]);
 
-  const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
+  // Load User's Active Price Freezes
+  useEffect(() => {
+    if (isAuthenticated && flightId) {
+      pricingService
+        .getUserPriceFreezes()
+        .then((freezes) => {
+          if (Array.isArray(freezes)) {
+            const valid = freezes.filter(
+              (f) => f.flightId === flightId && f.status === 'ACTIVE' && new Date(f.expiresAt) > new Date()
+            );
+            setUserFreezes(valid);
+
+            // Auto-apply if freeze ID in URL
+            if (initialFreezeId) {
+              const matched = valid.find((f) => f.id === initialFreezeId);
+              if (matched) setAppliedFreeze(matched);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated, flightId, initialFreezeId]);
+
+  const handlePassengerChange = (index: number, updated: Passenger) => {
     setPassengers((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
+      const copy = [...prev];
+      copy[index] = updated;
+      return copy;
     });
+    // Clear field errors
     setErrors((prev) => {
       const copy = { ...prev };
-      delete copy[`pax_${index}_${field}`];
+      delete copy[`firstName_${index}`];
+      delete copy[`lastName_${index}`];
       return copy;
     });
   };
 
-  const validatePassengerStep = (): boolean => {
+  const validatePassengers = (): boolean => {
     const newErrors: Record<string, string> = {};
-    const nameRegex = /^[a-zA-Z\s'-]+$/;
-
-    passengers.forEach((pax, index) => {
-      const first = (pax.firstName || '').trim();
-      const last = (pax.lastName || '').trim();
-
-      if (!first || first.length < 1) {
-        newErrors[`pax_${index}_firstName`] = 'First name is required.';
-      } else if (!nameRegex.test(first)) {
-        newErrors[`pax_${index}_firstName`] = 'First name must contain only letters.';
+    passengers.forEach((p, i) => {
+      if (!p.firstName || p.firstName.trim().length < 2) {
+        newErrors[`firstName_${i}`] = 'First name must be at least 2 characters.';
       }
-
-      if (!last || last.length < 1) {
-        newErrors[`pax_${index}_lastName`] = 'Last name is required.';
-      } else if (!nameRegex.test(last)) {
-        newErrors[`pax_${index}_lastName`] = 'Last name must contain only letters.';
+      if (!p.lastName || p.lastName.trim().length < 2) {
+        newErrors[`lastName_${i}`] = 'Last name must be at least 2 characters.';
+      }
+      if (!p.dateOfBirth) {
+        newErrors[`dob_${i}`] = 'Date of birth is required.';
       }
     });
 
@@ -180,66 +175,54 @@ export const BookingPage: React.FC = () => {
   };
 
   const handleNextStep = () => {
+    setBookingError(null);
     if (step === 1) {
-      // Seat map step
-      if (selectedSeats.length !== passengerCount) {
+      if (selectedSeats.length < passengerCount) {
         setBookingError(`Please select ${passengerCount} seat(s) on the seat map before proceeding.`);
         return;
       }
-      setBookingError(null);
       setStep(2);
     } else if (step === 2) {
-      // Passenger form step
-      if (!validatePassengerStep()) {
+      if (!validatePassengers()) {
+        setBookingError('Please fill in all mandatory passenger details.');
         return;
       }
-      setBookingError(null);
       setStep(3);
     }
   };
 
   const handleCreateBookingAndPay = async () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: { pathname: window.location.pathname + window.location.search } } });
-      return;
-    }
-
-    if (!flightId) return;
+    if (!flight) return;
+    setBookingLoading(true);
+    setBookingError(null);
 
     try {
-      setBookingLoading(true);
-      setBookingError(null);
-
-      // Clean and sanitize passenger fields to strictly satisfy backend validation
-      const mappedPassengers: Passenger[] = passengers.map((p, idx) => {
-        const cleanFirst = (p.firstName || 'Traveler').trim();
-        const cleanLast = (p.lastName || cleanFirst || 'Passenger').trim();
-        return {
-          title: (p.title || 'Mr') as any,
-          firstName: cleanFirst.length > 0 ? cleanFirst : 'Traveler',
-          lastName: cleanLast.length > 0 ? cleanLast : 'Passenger',
-          gender: (p.gender || 'MALE') as any,
-          dateOfBirth: p.dateOfBirth && p.dateOfBirth.trim() ? p.dateOfBirth.trim() : '1995-01-01',
-          nationality: (p.nationality || 'Indian').trim(),
-          passportNumber: p.passportNumber && p.passportNumber.trim() ? p.passportNumber.trim() : undefined,
-          seatNumber: selectedSeats[idx] || undefined,
-        };
-      });
+      // Build booking payload
+      const payloadPassengers = passengers.map((p, i) => ({
+        ...p,
+        seatNumber: selectedSeats[i],
+      }));
 
       const res = await bookingService.createBooking({
-        flightId,
+        flightId: flight.id,
         cabinClass,
-        passengers: mappedPassengers,
+        passengers: payloadPassengers,
         priceFreezeId: appliedFreeze ? appliedFreeze.id : undefined,
       });
 
-      if (res.success && res.data) {
+      if (res && res.data) {
         setCreatedBooking(res.data);
         setShowPaymentModal(true);
+      } else {
+        throw new Error('Failed to create booking reservation.');
       }
     } catch (err: any) {
-      const validationDetails = err?.validationErrors?.map((v: any) => `${v.field}: ${v.message}`).join(', ');
-      setBookingError(validationDetails || err?.message || 'Failed to create booking reservation. Please try again.');
+      setBookingError(err.message || 'Seat lock or booking creation failed. Please reselect seats.');
+      // If seat conflict occurred, return to step 1
+      if (err.message?.includes('Seat') || err.message?.includes('conflict') || err.message?.includes('occupied')) {
+        setStep(1);
+        loadFlightAndSeats();
+      }
     } finally {
       setBookingLoading(false);
     }
@@ -248,8 +231,8 @@ export const BookingPage: React.FC = () => {
   if (loading) {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-4">
-        <div className="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-400 font-bold">Loading aircraft cabin & real-time seat inventory...</p>
+        <div className="w-10 h-10 border-4 border-secondary/30 border-t-secondary rounded-full animate-spin"></div>
+        <p className="text-xs text-slate-500 font-bold">Loading aircraft cabin & real-time seat inventory...</p>
       </div>
     );
   }
@@ -257,23 +240,23 @@ export const BookingPage: React.FC = () => {
   if (!flight) {
     return (
       <div className="py-24 max-w-md mx-auto text-center space-y-4 px-4">
-        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/20">
-          <AlertCircle className="w-8 h-8" />
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto border border-rose-200">
+          <AlertCircle className="w-7 h-7" />
         </div>
-        <h2 className="text-xl font-bold text-white">Flight Details Unavailable</h2>
-        <p className="text-sm text-slate-400">
+        <h2 className="text-lg font-bold text-primary">Flight Details Unavailable</h2>
+        <p className="text-xs text-slate-500">
           {bookingError || 'The requested flight could not be found or has expired.'}
         </p>
         <div className="flex justify-center gap-3 pt-2">
           <button
             onClick={loadFlightAndSeats}
-            className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-lg shadow-sky-500/25 transition"
+            className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-sm transition"
           >
             Retry Loading
           </button>
           <button
             onClick={() => navigate('/flights')}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition"
+            className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 transition"
           >
             Back to Flight Search
           </button>
@@ -283,31 +266,31 @@ export const BookingPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 py-4 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
       {/* 1. FLIGHT SUMMARY BANNER */}
-      <section className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
+      <section className="rounded-2xl bg-primary text-white p-5 sm:p-6 shadow-md border border-slate-800 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 font-black">
-            <Plane className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-secondary font-bold">
+            <Plane className="w-6 h-6 transform rotate-45" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                 {flight.departureAirport.city} ({flight.departureAirport.code}) ➔ {flight.arrivalAirport.city} ({flight.arrivalAirport.code})
               </h1>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
-              <span className="font-bold text-slate-200">{flight.airline} • {flight.flightNumber}</span>
+            <div className="flex items-center gap-3 text-xs text-slate-300 mt-1">
+              <span className="font-bold text-white">{flight.airline} • {flight.flightNumber}</span>
               <span>•</span>
               <span>{flight.aircraftModel}</span>
               <span>•</span>
-              <span className="text-sky-400 font-bold">{cabinClass.replace('_', ' ')}</span>
+              <span className="text-secondary font-bold uppercase">{cabinClass.replace('_', ' ')}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4" />
             <span>Instant Lock Engine</span>
           </span>
@@ -315,7 +298,7 @@ export const BookingPage: React.FC = () => {
       </section>
 
       {/* 2. STEPPER PROGRESS BAR */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-2xl backdrop-blur-xl">
+      <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
         {[
           { num: 1, label: 'Seat Selection', icon: Armchair },
           { num: 2, label: 'Passenger Details', icon: Users },
@@ -326,21 +309,21 @@ export const BookingPage: React.FC = () => {
           const isCurrent = step === s.num;
 
           return (
-            <div key={s.num} className="flex items-center gap-2 sm:gap-3">
+            <div key={s.num} className="flex items-center gap-2.5">
               <div
-                className={`w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs transition ${
                   isDone
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                     : isCurrent
-                    ? 'bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/30 border border-sky-400 scale-105'
-                    : 'bg-slate-800/80 text-slate-500 border border-slate-700'
+                    ? 'bg-primary text-white shadow-sm scale-105'
+                    : 'bg-slate-100 text-slate-400 border border-slate-200'
                 }`}
               >
-                {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Icon className="w-5 h-5" />}
+                {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Icon className="w-4 h-4" />}
               </div>
               <div className="hidden sm:block">
                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Step {s.num}</p>
-                <p className={`text-xs font-bold ${isCurrent ? 'text-white' : 'text-slate-400'}`}>{s.label}</p>
+                <p className={`text-xs font-bold ${isCurrent ? 'text-primary' : 'text-slate-500'}`}>{s.label}</p>
               </div>
             </div>
           );
@@ -348,24 +331,24 @@ export const BookingPage: React.FC = () => {
       </div>
 
       {bookingError && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2.5 animate-fade-in">
-          <AlertCircle className="w-5 h-5 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2.5 animate-fade-in">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
           <span>{bookingError}</span>
         </div>
       )}
 
-      {/* 3. MAIN BOOKING CONTENT GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Interactive Content Area */}
+      {/* 3. MAIN CONTENT GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Form / Steps */}
         <div className="lg:col-span-8 space-y-6">
           {/* Step 1: Seat Map Selection */}
           {step === 1 && (
             <div className="space-y-4">
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex items-center justify-between shadow-2xl backdrop-blur-xl">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-white">Select Your Aircraft Seats</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Pick {passengerCount} seat(s) for your {cabinClass.replace('_', ' ')} reservation
+                  <h2 className="text-base font-black text-primary">Select Your Aircraft Seats</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Pick {passengerCount} seat(s) for your {cabinClass.replace('_', ' ')} flight
                   </p>
                 </div>
               </div>
@@ -385,9 +368,9 @@ export const BookingPage: React.FC = () => {
           {/* Step 2: Passenger Details Form */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
-                <h2 className="text-lg font-black text-white">Passenger Information</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                <h2 className="text-base font-black text-primary">Passenger Information</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Enter details exactly as they appear on passenger government ID cards
                 </p>
               </div>
@@ -401,32 +384,32 @@ export const BookingPage: React.FC = () => {
             </div>
           )}
 
-          {/* Step 3: Review & Final Confirmation */}
+          {/* Step 3: Review & Confirm */}
           {step === 3 && (
             <div className="space-y-6">
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
-                <h2 className="text-lg font-black text-white">Review Itinerary & Travelers</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                <h2 className="text-base font-black text-primary">Review Itinerary & Travelers</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Please review all flight and passenger details before proceeding to payment
                 </p>
               </div>
 
               {/* Review Itinerary Box */}
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Plane className="w-4 h-4 text-sky-400" />
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                    <Plane className="w-4 h-4 text-secondary" />
                     <span>Flight Schedule</span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-800/40">
+                  <span className="text-xs font-mono font-bold text-primary bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                     {flight.flightNumber}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-slate-400 block">Departure</span>
-                    <strong className="text-white text-sm">
+                    <span className="text-slate-400 block font-medium">Departure</span>
+                    <strong className="text-primary text-sm">
                       {new Date(flight.departureTime).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
@@ -434,14 +417,14 @@ export const BookingPage: React.FC = () => {
                       })}{' '}
                       at {new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </strong>
-                    <p className="text-slate-400 mt-0.5">
+                    <p className="text-slate-500 mt-0.5">
                       {flight.departureAirport.name} ({flight.departureAirport.code})
                     </p>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block">Arrival</span>
-                    <strong className="text-white text-sm">
+                    <span className="text-slate-400 block font-medium">Arrival</span>
+                    <strong className="text-primary text-sm">
                       {new Date(flight.arrivalTime).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
@@ -449,7 +432,7 @@ export const BookingPage: React.FC = () => {
                       })}{' '}
                       at {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </strong>
-                    <p className="text-slate-400 mt-0.5">
+                    <p className="text-slate-500 mt-0.5">
                       {flight.arrivalAirport.name} ({flight.arrivalAirport.code})
                     </p>
                   </div>
@@ -457,10 +440,10 @@ export const BookingPage: React.FC = () => {
               </div>
 
               {/* Review Passenger List Box */}
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2 text-white font-bold text-sm">
-                    <Users className="w-4 h-4 text-sky-400" />
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-primary font-bold text-sm">
+                    <Users className="w-4 h-4 text-secondary" />
                     <span>Confirmed Passengers ({passengers.length})</span>
                   </div>
                 </div>
@@ -469,19 +452,19 @@ export const BookingPage: React.FC = () => {
                   {passengers.map((pax, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-xs"
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs"
                     >
                       <div className="space-y-0.5">
-                        <strong className="text-white font-bold">
+                        <strong className="text-primary font-bold">
                           {pax.title} {pax.firstName} {pax.lastName}
                         </strong>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-slate-500">
                           {pax.gender} • {pax.nationality || 'Indian'}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 px-2.5 py-1 rounded-xl border border-sky-800/40">
+                        <span className="text-xs font-mono font-bold text-secondary bg-secondary/10 px-2.5 py-1 rounded-lg border border-secondary/20">
                           Seat {selectedSeats[idx]}
                         </span>
                       </div>
@@ -492,13 +475,13 @@ export const BookingPage: React.FC = () => {
             </div>
           )}
 
-          {/* Navigation Controls Bar */}
+          {/* Navigation Controls */}
           <div className="pt-4 flex items-center justify-between">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="px-6 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center gap-2 transition border border-slate-700 shadow-lg"
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-2 transition border border-slate-200"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back</span>
@@ -511,7 +494,7 @@ export const BookingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600 hover:from-sky-400 hover:via-indigo-400 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2"
+                className="px-7 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center gap-2 cursor-pointer"
               >
                 <span>Continue to {step === 1 ? 'Passenger Details' : 'Review & Payment'}</span>
                 <ChevronRight className="w-4 h-4" />
@@ -521,17 +504,17 @@ export const BookingPage: React.FC = () => {
                 type="button"
                 disabled={bookingLoading}
                 onClick={handleCreateBookingAndPay}
-                className="px-10 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:via-teal-400 hover:to-emerald-500 text-white font-black text-sm shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-sm shadow-lg transition flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
               >
                 {bookingLoading ? (
                   <span className="flex items-center gap-2">
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    Holding Seats & Creating Booking...
+                    Holding Seats & Reserving...
                   </span>
                 ) : (
                   <>
-                    <CreditCard className="w-5 h-5" />
-                    <span>Proceed to Razorpay Secure Payment</span>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Proceed to Secure Payment</span>
                   </>
                 )}
               </button>
@@ -539,33 +522,33 @@ export const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Fare Summary Card */}
+        {/* Right Sticky Fare Summary Card */}
         <div className="lg:col-span-4 space-y-4">
           {userFreezes.length > 0 && (
-            <div className="p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/30 text-xs text-slate-300 space-y-2">
+            <div className="p-4 rounded-2xl bg-secondary/10 border border-secondary/20 text-xs text-slate-700 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-indigo-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                <span className="font-bold text-secondary flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4" />
                   Active Price Freeze Found
                 </span>
-                <span className="text-[11px] text-indigo-400 font-mono">
+                <span className="text-xs text-primary font-mono font-bold">
                   ₹{userFreezes[0].lockedTotalPrice.toLocaleString('en-IN')}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 You have a locked price freeze expiring at{' '}
-                <strong className="text-white">
+                <strong className="text-primary">
                   {new Date(userFreezes[0].expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </strong>.
               </p>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={() => setAppliedFreeze(appliedFreeze ? null : userFreezes[0])}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                     appliedFreeze
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      ? 'bg-primary text-white'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
                   }`}
                 >
                   {appliedFreeze ? '✓ Locked Fare Applied' : 'Apply Locked Fare'}

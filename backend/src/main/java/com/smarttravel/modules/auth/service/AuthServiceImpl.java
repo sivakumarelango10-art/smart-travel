@@ -277,4 +277,35 @@ public class AuthServiceImpl implements AuthService {
         }
         return email.trim().toLowerCase(Locale.ROOT);
     }
+
+    @Override
+    public com.smarttravel.modules.user.model.UserPreferences getUserPreferences() {
+        String userId = SecurityUtils.getCurrentUserId()
+                .orElseThrow(() -> new UnauthorizedException("Full authentication is required to access this resource"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        return user.getPreferences() != null ? user.getPreferences() : new com.smarttravel.modules.user.model.UserPreferences();
+    }
+
+    @Override
+    public com.smarttravel.modules.user.model.UserPreferences updateUserPreferences(com.smarttravel.modules.user.model.UserPreferences preferences) {
+        String userId = SecurityUtils.getCurrentUserId()
+                .orElseThrow(() -> new UnauthorizedException("Full authentication is required to access this resource"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (user.getAccountStatus() == AccountStatus.DELETED || !user.isActive()) {
+            throw new ForbiddenException("Cannot update preferences for an inactive or deleted account.");
+        }
+
+        user.setPreferences(preferences != null ? preferences : new com.smarttravel.modules.user.model.UserPreferences());
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+
+        log.info("Travel preferences updated successfully for user ID: {}", userId);
+        return user.getPreferences();
+    }
 }

@@ -58,4 +58,19 @@ public interface AuthService {
      * @param request Optional deletion reason and verification
      */
     void deleteAccount(DeleteAccountRequest request);
+
+    /**
+     * Retrieves the travel preferences for the authenticated user.
+     *
+     * @return UserPreferences entity
+     */
+    com.smarttravel.modules.user.model.UserPreferences getUserPreferences();
+
+    /**
+     * Updates the travel preferences for the authenticated user.
+     *
+     * @param preferences Travel preferences payload
+     * @return Updated UserPreferences entity
+     */
+    com.smarttravel.modules.user.model.UserPreferences updateUserPreferences(com.smarttravel.modules.user.model.UserPreferences preferences);
 }

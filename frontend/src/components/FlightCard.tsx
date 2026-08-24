@@ -123,10 +123,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   return (
     <>
       <div
-        className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+        className={`rounded-2xl border transition-all duration-200 overflow-hidden bg-white ${
           isDisrupted
-            ? 'bg-slate-900/95 border-amber-500/30 shadow-lg shadow-amber-500/5'
-            : 'bg-slate-900/90 hover:bg-slate-900 border-slate-800 hover:border-slate-700/80 shadow-lg hover:shadow-xl'
+            ? 'border-amber-400 shadow-md'
+            : 'border-slate-200 hover:border-slate-300 hover:shadow-card'
         }`}
       >
         {/* Disruption Alert Banner */}
@@ -134,15 +134,15 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           <div
             className={`px-5 py-2 text-xs font-semibold flex items-center gap-2 ${
               flight.status === 'CANCELLED'
-                ? 'bg-rose-500/15 text-rose-400 border-b border-rose-500/20'
-                : 'bg-amber-500/15 text-amber-400 border-b border-amber-500/20'
+                ? 'bg-rose-500/10 text-rose-600 border-b border-rose-200'
+                : 'bg-amber-500/10 text-amber-700 border-b border-amber-200'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
             <span>
               {flight.status === 'CANCELLED'
                 ? `Flight Cancelled: ${flight.cancellationReason || 'Operational constraint'}`
-                : `Flight Delayed by ${flight.delayMinutes || 0} minutes (Revised Departure: ${
+                : `Flight Delayed by ${flight.delayMinutes || 0} mins (Revised Departure: ${
                     flight.revisedDepartureTime
                       ? `${formatTimeParts(new Date(flight.revisedDepartureTime)).time} ${formatTimeParts(new Date(flight.revisedDepartureTime)).period}`
                       : 'TBD'
@@ -151,86 +151,82 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </div>
         )}
 
-        {/* Card Header Strip */}
-        <div className="px-5 sm:px-6 py-2 bg-slate-950/40 border-b border-slate-800/60 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400">
-          <div className="flex items-center gap-4">
+        {/* Card Top Header Strip */}
+        <div className="px-5 sm:px-6 py-2 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 font-medium">
-              <Luggage className="w-3.5 h-3.5 text-slate-500" />
-              Check-in 15kg • Cabin 7kg included
+              <Luggage className="w-3.5 h-3.5 text-slate-400" />
+              Check-in 15kg • Cabin 7kg
             </span>
-            <span className="hidden sm:inline text-slate-700">•</span>
-            <span className="hidden sm:flex items-center gap-1 text-emerald-400/90 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              Instant E-Ticket & Pass
+            <span className="text-slate-300">•</span>
+            <span className="flex items-center gap-1 text-emerald-600 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Instant Boarding Pass
             </span>
           </div>
-          <div className="flex items-center gap-2.5 ml-auto">
+
+          <div className="flex items-center gap-2">
             {flight.dataSource === 'LIVE' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Live Feed
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Radar Feed
               </span>
             )}
-            {flight.dataSource === 'CACHED' && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-medium">
-                Cached
-              </span>
-            )}
-            <span className="font-semibold text-slate-400">
-              Cabin: <strong className="text-blue-400 font-bold uppercase">{selectedCabin}</strong>
+            <span className="font-semibold text-slate-600">
+              Class: <strong className="text-secondary font-bold uppercase">{selectedCabin}</strong>
             </span>
           </div>
         </div>
 
         {/* Main Card Body */}
         <div className="p-5 sm:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 lg:gap-6">
-          {/* 1. Airline & Aircraft Info */}
-          <div className="flex items-center gap-3.5 lg:w-56 shrink-0">
+          {/* 1. Airline Info */}
+          <div className="flex items-center gap-3.5 lg:w-52 shrink-0">
             <AirlineLogo airline={flight.airline} airlineCode={flight.airlineCode} size="lg" />
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-white text-[15px] leading-snug truncate" title={flight.airline}>
+              <h3 className="font-bold text-primary text-[15px] leading-snug truncate" title={flight.airline}>
                 {flight.airline}
               </h3>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5 flex-wrap">
-                <span className="font-mono text-slate-300 font-semibold bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 text-[11px] whitespace-nowrap">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5 flex-wrap">
+                <span className="font-mono text-slate-700 font-bold bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200 text-[11px]">
                   {flight.flightNumber}
                 </span>
-                <span className="text-slate-400 text-[11px] truncate">{flight.aircraftModel}</span>
+                <span className="text-slate-500 text-[11px] truncate">{flight.aircraftModel}</span>
               </div>
             </div>
           </div>
 
-          {/* 2. Route & Timings Visualizer */}
-          <div className="flex-1 flex items-center justify-between gap-3 sm:gap-6 px-1 sm:px-4 py-3 lg:py-0 border-y lg:border-y-0 border-slate-800/70">
+          {/* 2. Route & Times */}
+          <div className="flex-1 flex items-center justify-between gap-3 sm:gap-6 px-1 sm:px-4 py-3 lg:py-0 border-y lg:border-y-0 border-slate-100">
             {/* Departure */}
             <div className="text-left shrink-0">
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-white tracking-tight leading-none">{depTime.time}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase">{depTime.period}</span>
+                <span className="text-2xl font-black text-primary tracking-tight leading-none">{depTime.time}</span>
+                <span className="text-xs font-bold text-slate-500 uppercase">{depTime.period}</span>
               </div>
-              <p className="text-xs font-extrabold text-sky-400 uppercase tracking-wide mt-1.5">{flight.departureAirport.code}</p>
-              <p className="text-xs text-slate-300 font-medium truncate max-w-[110px]">{flight.departureAirport.city}</p>
+              <p className="text-xs font-black text-secondary uppercase tracking-wider mt-1">{flight.departureAirport.code}</p>
+              <p className="text-xs text-slate-600 font-medium truncate max-w-[110px]">{flight.departureAirport.city}</p>
               {flight.departureAirport.terminal && (
-                <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700">
+                <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                   {flight.departureAirport.terminal}
                 </span>
               )}
             </div>
 
-            {/* Duration Graphic */}
+            {/* Duration Visualizer */}
             <div className="flex-1 flex flex-col items-center px-2 max-w-[150px]">
-              <span className="text-xs text-slate-400 font-medium flex items-center gap-1 whitespace-nowrap">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-xs text-slate-500 font-medium flex items-center gap-1 whitespace-nowrap">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
                 {formatDuration(flight.durationMinutes)}
               </span>
               <div className="w-full flex items-center my-2">
-                <div className="h-0.5 w-full bg-slate-700/80 relative">
-                  <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
+                <div className="h-0.5 w-full bg-slate-200 relative">
+                  <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 rounded-full bg-secondary flex items-center justify-center shadow-sm">
                     <Plane className="w-2 h-2 text-white transform rotate-45" />
                   </div>
                 </div>
               </div>
-              <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-wide px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 whitespace-nowrap">
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 whitespace-nowrap">
                 {!flight.stops || flight.stops === 0 ? 'Non-Stop' : flight.stops === 1 ? '1 Stop' : `${flight.stops} Stops`}
               </span>
             </div>
@@ -238,47 +234,49 @@ export const FlightCard: React.FC<FlightCardProps> = ({
             {/* Arrival */}
             <div className="text-right shrink-0">
               <div className="flex items-baseline justify-end gap-1">
-                <span className="text-2xl font-black text-white tracking-tight leading-none">{arrTime.time}</span>
-                <span className="text-xs font-bold text-slate-400 uppercase">{arrTime.period}</span>
+                <span className="text-2xl font-black text-primary tracking-tight leading-none">{arrTime.time}</span>
+                <span className="text-xs font-bold text-slate-500 uppercase">{arrTime.period}</span>
               </div>
-              <p className="text-xs font-bold text-slate-200 uppercase tracking-wide mt-1.5">{flight.arrivalAirport.code}</p>
-              <p className="text-xs text-slate-400 font-normal truncate max-w-[110px]">{flight.arrivalAirport.city}</p>
+              <p className="text-xs font-black text-primary uppercase tracking-wider mt-1">{flight.arrivalAirport.code}</p>
+              <p className="text-xs text-slate-600 font-medium truncate max-w-[110px]">{flight.arrivalAirport.city}</p>
               {flight.arrivalAirport.terminal && (
-                <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
                   {flight.arrivalAirport.terminal}
                 </span>
               )}
             </div>
           </div>
 
-          {/* 3. Fare & Booking Button */}
-          <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 lg:min-w-[210px] shrink-0 lg:pl-6 lg:border-l lg:border-slate-800">
+          {/* 3. Pricing & Select CTA */}
+          <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 lg:min-w-[190px] shrink-0 lg:pl-6 lg:border-l lg:border-slate-100">
             <div className="text-left lg:text-right">
               <div className="flex items-baseline gap-1.5 lg:justify-end">
-                <span className="text-2xl font-bold text-white tracking-tight">
+                <span className="text-2xl font-black text-primary tracking-tight">
                   ₹{totalPrice.toLocaleString('en-IN')}
                 </span>
                 {passengerCount > 1 && (
-                  <span className="text-xs text-slate-400 font-normal">
+                  <span className="text-xs text-slate-500 font-medium">
                     (₹{pricePerPax.toLocaleString('en-IN')}/pax)
                   </span>
                 )}
               </div>
+
               {latestEvent && (
-                <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400 lg:justify-end animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span>Live Fare · {latestEvent.reason || 'Dynamic Price Active'}</span>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 lg:justify-end">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Live Fare Active</span>
                 </div>
               )}
-              <p className="text-[11px] text-slate-400 whitespace-nowrap mt-0.5 flex items-center gap-1.5 lg:justify-end">
+
+              <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5 lg:justify-end">
                 <span>Taxes incl.</span>
-                <span className="text-slate-600">•</span>
+                <span className="text-slate-300">•</span>
                 <span
-                  className={`font-medium flex items-center gap-1 ${
-                    availableSeats < 10 ? 'text-amber-400' : 'text-slate-400'
+                  className={`font-semibold ${
+                    availableSeats < 10 ? 'text-accent' : 'text-slate-500'
                   }`}
                 >
-                  {availableSeats < 10 && <Flame className="w-3 h-3 text-amber-400" />}
+                  {availableSeats < 10 && <Flame className="w-3 h-3 text-accent inline mr-0.5" />}
                   {availableSeats} seats left
                 </span>
               </p>
@@ -288,10 +286,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               type="button"
               onClick={handleSelectFlight}
               disabled={!isBookable}
-              className={`w-full sm:w-auto lg:w-36 px-4 py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              className={`w-full sm:w-auto lg:w-36 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isBookable
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  ? 'bg-primary hover:bg-primary-hover text-white shadow-md'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
               }`}
             >
               <span>{isBookable ? 'Select Flight' : 'Sold Out'}</span>
@@ -300,24 +298,24 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </div>
         </div>
 
-        {/* Feature Action Bar (Price History, Freeze Price, Live Tracking, Fare Breakdown) */}
-        <div className="px-5 sm:px-6 py-2 bg-slate-950/60 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        {/* Feature Action Bar (Price History, Freeze Price, Live Radar, Fare Breakdown) */}
+        <div className="px-5 sm:px-6 py-2.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => setShowPriceHistory(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition duration-150"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition"
             >
-              <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-secondary" />
               <span>Price Trend</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowPriceFreeze(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition duration-150"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition"
             >
-              <Lock className="w-3.5 h-3.5 text-blue-400" />
+              <Lock className="w-3.5 h-3.5 text-accent" />
               <span>Freeze Fare</span>
             </button>
 
@@ -325,48 +323,47 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               type="button"
               onClick={handleTrackFlight}
               disabled={trackingLoading}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition duration-150 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
                 isTracked
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-medium'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
-              <Radio className={`w-3.5 h-3.5 ${isTracked ? 'text-emerald-400' : 'text-slate-400'}`} />
-              <span>{isTracked ? 'Tracking Live' : 'Track Status'}</span>
+              <Radio className={`w-3.5 h-3.5 ${isTracked ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <span>{isTracked ? 'Tracking Active' : 'Track Flight'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => navigate(`/tracked-flights?flight=${flight.flightNumber}`)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-slate-700 transition duration-150"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-secondary border border-slate-200 text-xs font-semibold transition"
             >
-              <Compass className="w-3.5 h-3.5 text-sky-400" />
+              <Compass className="w-3.5 h-3.5 text-secondary" />
               <span>Live Radar</span>
             </button>
 
             {trackMessage && (
-              <span className="text-[11px] text-blue-400 animate-fade-in">{trackMessage}</span>
+              <span className="text-[11px] text-secondary font-semibold animate-fade-in">{trackMessage}</span>
             )}
           </div>
 
           <button
             type="button"
             onClick={() => setShowBreakdown(!showBreakdown)}
-            className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-[11px] font-medium ml-auto"
+            className="text-slate-500 hover:text-primary font-semibold flex items-center gap-1 transition"
           >
-            <span>{showBreakdown ? 'Hide Fare Breakdown' : 'Fare Breakdown'}</span>
+            <span>{showBreakdown ? 'Hide Fare Details' : 'View Fare Breakdown'}</span>
             {showBreakdown ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         </div>
 
-        {/* Collapsible Dynamic Price Breakdown */}
+        {/* Collapsible Fare Breakdown */}
         {showBreakdown && (
-          <div className="p-4 bg-slate-950/90 border-t border-slate-800/80">
+          <div className="p-4 sm:p-5 bg-slate-50/50 border-t border-slate-100 animate-slide-up">
             <PriceBreakdownCard
               flightId={flight.id}
               cabinClass={selectedCabin}
               passengerCount={passengerCount}
-              onFreezeClick={() => setShowPriceFreeze(true)}
             />
           </div>
         )}
@@ -377,7 +374,6 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         <PriceHistoryModal
           flightId={flight.id}
           flightNumber={flight.flightNumber}
-          cabinClass={selectedCabin}
           onClose={() => setShowPriceHistory(false)}
         />
       )}
@@ -388,11 +384,11 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           flightNumber={flight.flightNumber}
           cabinClass={selectedCabin}
           passengerCount={passengerCount}
-          currentPrice={totalPrice}
+          currentPrice={pricePerPax}
           onClose={() => setShowPriceFreeze(false)}
           onFreezeCreated={() => {
             setShowPriceFreeze(false);
-            alert(`Price locked for flight ${flight.flightNumber}! You can use this rate during booking.`);
+            alert(`Fare of ₹${totalPrice.toLocaleString()} locked for 48 hours!`);
           }}
         />
       )}

@@ -45,3 +45,13 @@ export interface SeatMapResponse {
   cabinSeats?: Record<CabinClass, Seat[]>;
 }
 
+export interface SeatMapUpdateEvent {
+  flightId: string;
+  seatNumbers: string[];
+  status: SeatStatus;
+  cabinClass?: CabinClass;
+  priceAdjustment?: number;
+  action: string;
+  timestamp?: string;
+}
+

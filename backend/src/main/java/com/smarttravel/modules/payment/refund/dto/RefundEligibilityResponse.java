@@ -35,12 +35,19 @@ public class RefundEligibilityResponse {
     @Schema(description = "Existing refund ID if already created")
     private String existingRefundId;
 
+    @Schema(description = "Refund percentage applicable under the cancellation policy", example = "50%")
+    private String refundPercentage;
+
+    @Schema(description = "Human-readable policy tier description for audit trail")
+    private String policyDescription;
+
     public RefundEligibilityResponse() {
     }
 
     public RefundEligibilityResponse(String bookingId, String paymentId, boolean eligible, String reason,
                                      RefundReason refundReason, BigDecimal refundableAmount,
-                                     long refundableAmountPaise, boolean alreadyRefunded, String existingRefundId) {
+                                     long refundableAmountPaise, boolean alreadyRefunded, String existingRefundId,
+                                     String refundPercentage, String policyDescription) {
         this.bookingId = bookingId;
         this.paymentId = paymentId;
         this.eligible = eligible;
@@ -50,6 +57,8 @@ public class RefundEligibilityResponse {
         this.refundableAmountPaise = refundableAmountPaise;
         this.alreadyRefunded = alreadyRefunded;
         this.existingRefundId = existingRefundId;
+        this.refundPercentage = refundPercentage;
+        this.policyDescription = policyDescription;
     }
 
     public static Builder builder() {
@@ -83,6 +92,12 @@ public class RefundEligibilityResponse {
     public String getExistingRefundId() { return existingRefundId; }
     public void setExistingRefundId(String existingRefundId) { this.existingRefundId = existingRefundId; }
 
+    public String getRefundPercentage() { return refundPercentage; }
+    public void setRefundPercentage(String refundPercentage) { this.refundPercentage = refundPercentage; }
+
+    public String getPolicyDescription() { return policyDescription; }
+    public void setPolicyDescription(String policyDescription) { this.policyDescription = policyDescription; }
+
     public static class Builder {
         private String bookingId;
         private String paymentId;
@@ -93,6 +108,8 @@ public class RefundEligibilityResponse {
         private long refundableAmountPaise;
         private boolean alreadyRefunded;
         private String existingRefundId;
+        private String refundPercentage;
+        private String policyDescription;
 
         public Builder bookingId(String bookingId) { this.bookingId = bookingId; return this; }
         public Builder paymentId(String paymentId) { this.paymentId = paymentId; return this; }
@@ -103,10 +120,13 @@ public class RefundEligibilityResponse {
         public Builder refundableAmountPaise(long refundableAmountPaise) { this.refundableAmountPaise = refundableAmountPaise; return this; }
         public Builder alreadyRefunded(boolean alreadyRefunded) { this.alreadyRefunded = alreadyRefunded; return this; }
         public Builder existingRefundId(String existingRefundId) { this.existingRefundId = existingRefundId; return this; }
+        public Builder refundPercentage(String refundPercentage) { this.refundPercentage = refundPercentage; return this; }
+        public Builder policyDescription(String policyDescription) { this.policyDescription = policyDescription; return this; }
 
         public RefundEligibilityResponse build() {
             return new RefundEligibilityResponse(bookingId, paymentId, eligible, reason, refundReason,
-                    refundableAmount, refundableAmountPaise, alreadyRefunded, existingRefundId);
+                    refundableAmount, refundableAmountPaise, alreadyRefunded, existingRefundId,
+                    refundPercentage, policyDescription);
         }
     }
 }

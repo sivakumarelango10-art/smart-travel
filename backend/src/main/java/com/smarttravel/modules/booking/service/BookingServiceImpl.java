@@ -20,6 +20,11 @@ import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.repository.FlightRepository;
 import com.smarttravel.modules.flight.service.FareCalculationService;
+import com.smarttravel.modules.payment.model.PaymentStatus;
+import com.smarttravel.modules.payment.refund.dto.RefundProcessRequest;
+import com.smarttravel.modules.payment.refund.model.RefundReason;
+import com.smarttravel.modules.payment.refund.service.RefundService;
+import com.smarttravel.modules.payment.repository.PaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -60,6 +65,8 @@ public class BookingServiceImpl implements BookingService {
     private final com.smarttravel.modules.flight.service.SeatMapService seatMapService;
     private final com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService;
     private final com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService;
+    private final PaymentRepository paymentRepository;
+    private final RefundService refundService;
 
     @org.springframework.beans.factory.annotation.Autowired
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -73,7 +80,9 @@ public class BookingServiceImpl implements BookingService {
                               @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.service.TicketService ticketService,
                               @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.flight.service.SeatMapService seatMapService,
                               @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService,
-                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService) {
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) PaymentRepository paymentRepository,
+                              @org.springframework.beans.factory.annotation.Autowired(required = false) @org.springframework.context.annotation.Lazy RefundService refundService) {
         this.bookingRepository = bookingRepository;
         this.flightRepository = flightRepository;
         this.reservationService = reservationService;
@@ -86,6 +95,8 @@ public class BookingServiceImpl implements BookingService {
         this.seatMapService = seatMapService;
         this.priceFreezeService = priceFreezeService;
         this.dynamicPricingService = dynamicPricingService;
+        this.paymentRepository = paymentRepository;
+        this.refundService = refundService;
     }
 
     public BookingServiceImpl(BookingRepository bookingRepository,
@@ -95,7 +106,7 @@ public class BookingServiceImpl implements BookingService {
                               BookingStateMachine stateMachine,
                               PnrGenerator pnrGenerator,
                               BookingMapper bookingMapper) {
-        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null, null, null);
+        this(bookingRepository, flightRepository, reservationService, fareCalculationService, stateMachine, pnrGenerator, bookingMapper, new BookingProperties(), null, null, null, null, null, null);
     }
 
     @Override
@@ -386,6 +397,27 @@ public class BookingServiceImpl implements BookingService {
                 ticketService.cancelTicketForBooking(booking.getId(), reason);
             } catch (Exception ex) {
                 log.warn("Non-fatal: Failed to update ticket status to CANCELLED for booking ID: {}", booking.getId(), ex);
+            }
+        }
+
+        // 6. Auto-trigger refund for any verified payment (idempotent — safe to retry)
+        if (refundService != null && paymentRepository != null) {
+            try {
+                paymentRepository.findFirstByBookingIdOrderByCreatedAtDesc(booking.getId())
+                        .filter(p -> p.getPaymentStatus() == PaymentStatus.VERIFIED)
+                        .ifPresent(payment -> {
+                            log.info("Auto-triggering refund for cancelled booking PNR: {} (payment: {})",
+                                    booking.getBookingReference(), payment.getId());
+                            refundService.processRefund(
+                                    payment.getId(),
+                                    new RefundProcessRequest(RefundReason.CUSTOMER_CANCELLATION, reason),
+                                    userId
+                            );
+                        });
+            } catch (Exception ex) {
+                // Non-fatal: cancellation is committed; refund can be re-triggered by admin
+                log.error("Non-fatal: Auto-refund initiation failed for booking ID: {}. Admin may need to process manually. Reason: {}",
+                        booking.getId(), ex.getMessage());
             }
         }
 

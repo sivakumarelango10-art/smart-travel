@@ -30,10 +30,19 @@ public class HotelServiceImpl implements HotelService {
 
     private final HotelRepository hotelRepository;
     private final MongoTemplate mongoTemplate;
+    private final com.smarttravel.modules.hotel.websocket.HotelRoomWebSocketPublisher hotelRoomWebSocketPublisher;
 
-    public HotelServiceImpl(HotelRepository hotelRepository, MongoTemplate mongoTemplate) {
+    @org.springframework.beans.factory.annotation.Autowired
+    public HotelServiceImpl(HotelRepository hotelRepository,
+                            MongoTemplate mongoTemplate,
+                            @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.hotel.websocket.HotelRoomWebSocketPublisher hotelRoomWebSocketPublisher) {
         this.hotelRepository = hotelRepository;
         this.mongoTemplate = mongoTemplate;
+        this.hotelRoomWebSocketPublisher = hotelRoomWebSocketPublisher;
+    }
+
+    public HotelServiceImpl(HotelRepository hotelRepository, MongoTemplate mongoTemplate) {
+        this(hotelRepository, mongoTemplate, null);
     }
 
     @Override
@@ -95,10 +104,27 @@ public class HotelServiceImpl implements HotelService {
         if (updated == null) {
             throw new BadRequestException("Insufficient available rooms or room type not found");
         }
-        return updated.getRoomTypes().stream()
+        RoomType heldRoom = updated.getRoomTypes().stream()
                 .filter(rt -> roomTypeId.equals(rt.getId()))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("RoomType", "id", roomTypeId));
+
+        if (hotelRoomWebSocketPublisher != null) {
+            hotelRoomWebSocketPublisher.publishRoomUpdate(
+                    com.smarttravel.modules.hotel.websocket.RoomAvailabilityEvent.builder()
+                            .hotelId(hotelId)
+                            .roomTypeId(roomTypeId)
+                            .roomTypeName(heldRoom.getName())
+                            .category(heldRoom.getCategory())
+                            .availableRooms(heldRoom.getAvailableRooms())
+                            .totalRooms(heldRoom.getTotalRooms())
+                            .nightlyRate(heldRoom.getNightlyRate())
+                            .action("HELD")
+                            .build()
+            );
+        }
+
+        return heldRoom;
     }
 
     @Override
@@ -110,8 +136,30 @@ public class HotelServiceImpl implements HotelService {
                         .and("roomTypes.id").is(roomTypeId)
         );
         Update update = new Update().inc("roomTypes.$.availableRooms", roomCount);
-        mongoTemplate.updateFirst(query, update, Hotel.class);
+        Hotel updated = mongoTemplate.findAndModify(
+                query, update,
+                FindAndModifyOptions.options().returnNew(true),
+                Hotel.class
+        );
         log.info("Released {} room(s) for hotel {} room type {}", roomCount, hotelId, roomTypeId);
+
+        if (hotelRoomWebSocketPublisher != null && updated != null) {
+            updated.getRoomTypes().stream()
+                    .filter(rt -> roomTypeId.equals(rt.getId()))
+                    .findFirst()
+                    .ifPresent(rt -> hotelRoomWebSocketPublisher.publishRoomUpdate(
+                            com.smarttravel.modules.hotel.websocket.RoomAvailabilityEvent.builder()
+                                    .hotelId(hotelId)
+                                    .roomTypeId(roomTypeId)
+                                    .roomTypeName(rt.getName())
+                                    .category(rt.getCategory())
+                                    .availableRooms(rt.getAvailableRooms())
+                                    .totalRooms(rt.getTotalRooms())
+                                    .nightlyRate(rt.getNightlyRate())
+                                    .action("RELEASED")
+                                    .build()
+                    ));
+        }
     }
 
     @Override

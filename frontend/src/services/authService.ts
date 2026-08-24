@@ -95,6 +95,16 @@ export const authService = {
     }
   },
 
+  async getPreferences(): Promise<ApiResponse<any>> {
+    const res = await apiClient.get<ApiResponse<any>>('/v1/auth/preferences');
+    return res.data;
+  },
+
+  async updatePreferences(preferences: any): Promise<ApiResponse<any>> {
+    const res = await apiClient.put<ApiResponse<any>>('/v1/auth/preferences', preferences);
+    return res.data;
+  },
+
   isAuthenticated(): boolean {
     return !!(localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY));
   },
