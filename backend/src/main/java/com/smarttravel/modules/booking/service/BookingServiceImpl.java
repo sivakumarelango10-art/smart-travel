@@ -273,13 +273,19 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingResponse getBookingById(String id, String userId, boolean isAdmin) {
         log.debug("Fetching booking by ID: {} (user: {}, isAdmin: {})", id, userId, isAdmin);
+        if (id == null || id.trim().isEmpty()) {
+            throw new BadRequestException("Booking identifier cannot be empty");
+        }
+        String cleanId = id.trim();
         Booking booking;
         if (isAdmin) {
-            booking = bookingRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+            booking = bookingRepository.findById(cleanId)
+                    .or(() -> bookingRepository.findByBookingReference(cleanId.toUpperCase()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", cleanId));
         } else {
-            booking = bookingRepository.findByIdAndUserId(id, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", id));
+            booking = bookingRepository.findByIdAndUserId(cleanId, userId)
+                    .or(() -> bookingRepository.findByBookingReferenceAndUserId(cleanId.toUpperCase(), userId))
+                    .orElseThrow(() -> new ResourceNotFoundException("Booking", "id", cleanId));
         }
         return bookingMapper.toResponse(booking);
     }
@@ -295,9 +301,11 @@ public class BookingServiceImpl implements BookingService {
         Booking booking;
         if (isAdmin) {
             booking = bookingRepository.findByBookingReference(normalizedRef)
+                    .or(() -> bookingRepository.findById(reference.trim()))
                     .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingReference", normalizedRef));
         } else {
             booking = bookingRepository.findByBookingReferenceAndUserId(normalizedRef, userId)
+                    .or(() -> bookingRepository.findByIdAndUserId(reference.trim(), userId))
                     .orElseThrow(() -> new ResourceNotFoundException("Booking", "bookingReference", normalizedRef));
         }
         return bookingMapper.toResponse(booking);

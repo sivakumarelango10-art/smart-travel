@@ -5,8 +5,21 @@ let isWarm = false;
 let warmupInterval: any = null;
 
 /**
- * Proactively triggers a backend health check to wake up Render/cloud instance
- * as soon as the user opens the application.
+ * Preloads Razorpay checkout script in the background during idle time
+ * so payment modals open instantly with zero network script fetch delay.
+ */
+export const preloadPaymentSdk = () => {
+  if (typeof window === 'undefined' || (window as any).Razorpay) return;
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'script';
+  link.href = 'https://checkout.razorpay.com/v1/checkout.js';
+  document.head.appendChild(link);
+};
+
+/**
+ * Proactively triggers a backend health check to wake up cloud instances
+ * as soon as the user loads the application.
  */
 export const warmupBackend = async (): Promise<boolean> => {
   if (isWarming || isWarm) return isWarm;
@@ -30,12 +43,13 @@ export const warmupBackend = async (): Promise<boolean> => {
 };
 
 /**
- * Starts a 4-minute keep-alive heartbeat while the user is actively browsing
- * to prevent the free-tier backend from spinning down into cold-standby.
+ * Starts a 2.5-minute keep-alive heartbeat while the user is actively browsing
+ * to prevent cloud server instances from sleeping.
  */
 export const startKeepAliveHeartbeat = () => {
-  // Trigger initial warmup immediately
+  // Trigger initial warmup & SDK preloading immediately
   warmupBackend();
+  preloadPaymentSdk();
 
   if (warmupInterval) return;
 
@@ -44,7 +58,7 @@ export const startKeepAliveHeartbeat = () => {
     if (document.visibilityState === 'visible') {
       apiClient.get('/v1/health', { timeout: 15000 }).catch(() => {});
     }
-  }, 4 * 60 * 1000); // every 4 minutes (Render sleeps at 15 mins)
+  }, 2.5 * 60 * 1000); // every 2.5 minutes
 };
 
 export const stopKeepAliveHeartbeat = () => {

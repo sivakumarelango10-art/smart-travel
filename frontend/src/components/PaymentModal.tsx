@@ -149,13 +149,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       });
 
       setPaymentSuccess(true);
-      setTimeout(() => onPaymentSuccess(), 1200);
+      setTimeout(() => onPaymentSuccess(), 350);
     } catch (err: any) {
       try {
         const activeOrder = await ensureActiveOrder();
         await paymentService.simulateWebhookPayment(activeOrder.razorpayOrderId, activeOrder.amount);
         setPaymentSuccess(true);
-        setTimeout(() => onPaymentSuccess(), 1200);
+        setTimeout(() => onPaymentSuccess(), 350);
       } catch (webhookErr: any) {
         setError(webhookErr?.message || err?.message || 'Payment verification failed. Please try again.');
       }

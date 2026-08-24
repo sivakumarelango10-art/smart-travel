@@ -74,6 +74,14 @@ export default function App() {
 
                 {/* Protected Customer Routes */}
                 <Route
+                  path="confirmation/:bookingId"
+                  element={
+                    <ProtectedRoute>
+                      <BookingConfirmationPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="booking-confirmation/:bookingId"
                   element={
                     <ProtectedRoute>

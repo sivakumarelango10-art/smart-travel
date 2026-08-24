@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import {
   CheckCircle2,
   Download,
@@ -18,38 +18,67 @@ import { AirlineLogo } from '../components/AirlineLogo';
 
 export const BookingConfirmationPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
+  const location = useLocation();
+  const initialBooking = (location.state as any)?.booking as Booking | undefined;
 
-  const [booking, setBooking] = useState<Booking | null>(null);
+  const [booking, setBooking] = useState<Booking | null>(initialBooking || null);
   const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!initialBooking);
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBookingAndTicket = async () => {
-      if (!bookingId) return;
-      try {
-        setLoading(true);
-        setError(null);
-        const [bkgRes, tktRes] = await Promise.all([
-          bookingService.getBookingById(bookingId),
-          ticketService.getTicketByBookingId(bookingId).catch(() => ({ success: false, data: null })),
-        ]);
+      if (!bookingId && !initialBooking) return;
+      const targetIdentifier = bookingId || initialBooking?.id || initialBooking?.bookingReference;
+      if (!targetIdentifier) return;
 
-        if (bkgRes.success && bkgRes.data) {
-          setBooking(bkgRes.data);
+      try {
+        if (!initialBooking) {
+          setLoading(true);
         }
-        if (tktRes.success && tktRes.data) {
-          setTicket(tktRes.data);
+        setError(null);
+
+        // Fetch booking by ID with graceful fallback to reference lookup
+        let resolvedBooking: Booking | null = initialBooking || null;
+        if (!resolvedBooking) {
+          try {
+            const res = await bookingService.getBookingById(targetIdentifier);
+            if (res.success && res.data) {
+              resolvedBooking = res.data;
+            }
+          } catch {
+            const refRes = await bookingService.getBookingByReference(targetIdentifier);
+            if (refRes.success && refRes.data) {
+              resolvedBooking = refRes.data;
+            }
+          }
+        }
+
+        if (resolvedBooking) {
+          setBooking(resolvedBooking);
+          // Fetch associated ticket in parallel using the definitive booking ID or PNR
+          const effectiveId = resolvedBooking.id || resolvedBooking.bookingReference;
+          ticketService.getTicketByBookingId(effectiveId)
+            .then((tktRes) => {
+              if (tktRes.success && tktRes.data) {
+                setTicket(tktRes.data);
+              }
+            })
+            .catch(() => {});
+        } else {
+          setError('Booking reservation details could not be found.');
         }
       } catch (err: any) {
-        setError(err?.message || 'Failed to load booking confirmation details');
+        if (!initialBooking) {
+          setError(err?.message || 'Failed to load booking confirmation details');
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchBookingAndTicket();
-  }, [bookingId]);
+  }, [bookingId, initialBooking]);
 
   const handleDownloadPdf = async () => {
     if (!ticket?.id) return;

@@ -590,7 +590,9 @@ export const BookingPage: React.FC = () => {
           booking={createdBooking}
           onPaymentSuccess={() => {
             setShowPaymentModal(false);
-            navigate(`/confirmation/${createdBooking.bookingReference}`);
+            navigate(`/confirmation/${createdBooking.bookingReference}`, {
+              state: { booking: createdBooking }
+            });
           }}
           onClose={() => setShowPaymentModal(false)}
         />
