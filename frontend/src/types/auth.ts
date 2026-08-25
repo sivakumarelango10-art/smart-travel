@@ -24,6 +24,8 @@ export interface User {
   phoneNumber?: string;
   roles: string[];
   accountStatus?: string;
+  authProvider?: string;
+  avatarUrl?: string;
   emailVerified?: boolean;
   preferences?: UserPreferences;
   createdAt?: string;
@@ -37,6 +39,11 @@ export interface AuthResponse {
   tokenType: string;
   expiresIn?: number;
   user: User;
+}
+
+export interface GoogleLoginRequest {
+  credential: string;
+  rememberMe?: boolean;
 }
 
 export interface LoginRequest {

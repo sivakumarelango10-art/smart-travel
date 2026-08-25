@@ -37,6 +37,29 @@ export const authService = {
     return res.data;
   },
 
+  async loginWithGoogle(credential: string, rememberMe: boolean = true): Promise<ApiResponse<AuthResponse>> {
+    const res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
+      credential,
+      rememberMe,
+    });
+    if (res.data.success && res.data.data.accessToken) {
+      const storage = rememberMe ? localStorage : sessionStorage;
+      const altStorage = rememberMe ? sessionStorage : localStorage;
+      altStorage.removeItem(TOKEN_KEY);
+      altStorage.removeItem(REFRESH_TOKEN_KEY);
+      altStorage.removeItem(USER_KEY);
+
+      storage.setItem(TOKEN_KEY, res.data.data.accessToken);
+      if (res.data.data.refreshToken) {
+        storage.setItem(REFRESH_TOKEN_KEY, res.data.data.refreshToken);
+      }
+      if (res.data.data.user) {
+        storage.setItem(USER_KEY, JSON.stringify(res.data.data.user));
+      }
+    }
+    return res.data;
+  },
+
   async getProfile(): Promise<ApiResponse<User>> {
     const res = await apiClient.get<ApiResponse<User>>('/v1/auth/me');
     if (res.data.success && res.data.data) {

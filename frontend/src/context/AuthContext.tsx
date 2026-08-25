@@ -15,6 +15,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  loginWithGoogle: (credential: string, rememberMe?: boolean) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
@@ -73,6 +74,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithGoogle = async (credential: string, rememberMe: boolean = true) => {
+    const res = await authService.loginWithGoogle(credential, rememberMe);
+    if (res.success && res.data?.user) {
+      setUser(res.data.user);
+      try {
+        const profRes = await authService.getProfile();
+        if (profRes.success && profRes.data) {
+          setUser(profRes.data);
+        }
+      } catch {
+        // Fallback to basic user summary from Google login
+      }
+    }
+  };
+
   const register = async (data: RegisterRequest) => {
     const res = await authService.register(data);
     if (res.success) {
@@ -117,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         loading,
         login,
+        loginWithGoogle,
         register,
         logout,
         refreshProfile,

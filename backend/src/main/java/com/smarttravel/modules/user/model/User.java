@@ -14,6 +14,7 @@ import java.util.Set;
 
 /**
  * User MongoDB Document Entity representing travelers, admins, and staff identities.
+ * Supports Local credentials and Google Federated Authentication.
  */
 @Document(collection = "users")
 public class User {
@@ -36,6 +37,13 @@ public class User {
     private String phoneNumber;
     private String phone;
 
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Indexed(unique = false)
+    private String googleSubject;
+
+    private String avatarUrl;
+
     private Set<Role> roles = new HashSet<>();
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
     private boolean active = true;
@@ -55,8 +63,9 @@ public class User {
     }
 
     public User(String id, String email, String normalizedEmail, String passwordHash, String fullName,
-                String firstName, String lastName, String phoneNumber, String phone, Set<Role> roles,
-                AccountStatus accountStatus, boolean active, boolean emailVerified,
+                String firstName, String lastName, String phoneNumber, String phone,
+                AuthProvider authProvider, String googleSubject, String avatarUrl,
+                Set<Role> roles, AccountStatus accountStatus, boolean active, boolean emailVerified,
                 UserPreferences preferences, Instant createdAt, Instant updatedAt, Instant lastLoginAt) {
         this.id = id;
         this.email = email;
@@ -67,6 +76,9 @@ public class User {
         this.lastName = lastName;
         this.phoneNumber = phoneNumber != null ? phoneNumber : phone;
         this.phone = this.phoneNumber;
+        this.authProvider = authProvider != null ? authProvider : AuthProvider.LOCAL;
+        this.googleSubject = googleSubject;
+        this.avatarUrl = avatarUrl;
         this.roles = roles != null ? roles : new HashSet<>();
         this.accountStatus = accountStatus != null ? accountStatus : (active ? AccountStatus.ACTIVE : AccountStatus.INACTIVE);
         this.active = this.accountStatus == AccountStatus.ACTIVE;
@@ -98,6 +110,9 @@ public class User {
         private String lastName;
         private String phoneNumber;
         private String phone;
+        private AuthProvider authProvider = AuthProvider.LOCAL;
+        private String googleSubject;
+        private String avatarUrl;
         private Set<Role> roles = new HashSet<>();
         private AccountStatus accountStatus = AccountStatus.ACTIVE;
         private boolean active = true;
@@ -157,6 +172,21 @@ public class User {
             return this;
         }
 
+        public Builder authProvider(AuthProvider authProvider) {
+            this.authProvider = authProvider;
+            return this;
+        }
+
+        public Builder googleSubject(String googleSubject) {
+            this.googleSubject = googleSubject;
+            return this;
+        }
+
+        public Builder avatarUrl(String avatarUrl) {
+            this.avatarUrl = avatarUrl;
+            return this;
+        }
+
         public Builder roles(Set<Role> roles) {
             this.roles = roles;
             return this;
@@ -201,7 +231,8 @@ public class User {
 
         public User build() {
             return new User(id, email, normalizedEmail, passwordHash, fullName, firstName, lastName,
-                    phoneNumber, phone, roles, accountStatus, active, emailVerified, preferences, createdAt, updatedAt, lastLoginAt);
+                    phoneNumber, phone, authProvider, googleSubject, avatarUrl,
+                    roles, accountStatus, active, emailVerified, preferences, createdAt, updatedAt, lastLoginAt);
         }
     }
 
@@ -283,6 +314,30 @@ public class User {
     public void setPhone(String phone) {
         this.phone = phone;
         this.phoneNumber = phone;
+    }
+
+    public AuthProvider getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getGoogleSubject() {
+        return googleSubject;
+    }
+
+    public void setGoogleSubject(String googleSubject) {
+        this.googleSubject = googleSubject;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public Set<Role> getRoles() {

@@ -59,6 +59,16 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("User authenticated successfully", response));
     }
 
+    @PostMapping({"/google", "/google/"})
+    @Operation(
+            summary = "Google Identity Services Federated Login",
+            description = "Verifies Google ID token, finds or registers user, and issues standard SmartTravel JWT access token."
+    )
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody com.smarttravel.modules.auth.dto.GoogleLoginRequest request) {
+        AuthResponse response = authService.authenticateWithGoogle(request);
+        return ResponseEntity.ok(ApiResponse.success("Google authentication successful", response));
+    }
+
     @PostMapping({"/refresh", "/refresh/", "/refresh-token", "/refresh-token/"})
     @Operation(
             summary = "Refresh JWT Access Token",

@@ -298,6 +298,9 @@ export const PrivacyPolicyPage: React.FC = () => {
                 <p className="text-slate-400 mt-1 text-xs">
                   Full name, email address (and normalized lookup index), securely hashed password (stored exclusively via <code>BCrypt</code> cryptographic one-way hashing; plain passwords are never stored), phone number, account roles, and verification flags.
                 </p>
+                <p className="text-slate-400 mt-1.5 text-xs">
+                  <strong>Google Sign-In & Federated Authentication:</strong> When you choose to authenticate using <em>&quot;Continue with Google&quot;</em>, SmartTravel receives verified identity claims from Google Identity Services (Google LLC), including your unique Google Subject identifier (<code>sub</code>), verified email address, full name, and profile picture URL. We use this data solely to authenticate your identity, safely associate or create your SmartTravel account (<code>authProvider: GOOGLE</code>), and personalize your dashboard. We request only basic profile scopes (<code>openid</code>, <code>email</code>, <code>profile</code>) and never access your Gmail, Google Drive, Calendar, or contacts.
+                </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#181A22] border border-white/5">
@@ -482,6 +485,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             <ul className="list-disc pl-5 space-y-2 text-slate-400">
               <li><strong>Airlines & Travel Operators:</strong> Passenger names, birth dates, passport details, and seat selections are shared with operating carriers (e.g., Air India, IndiGo, SmartTravel Airways) to generate tickets and airport manifests.</li>
               <li><strong>Payment Gateway (Razorpay):</strong> Order totals, PNRs, and traveler contact information are transmitted to Razorpay Software Private Limited for payment processing and automated refund disbursement.</li>
+              <li><strong>Google Identity Services (Google LLC):</strong> For users authenticating via &quot;Continue with Google&quot;, Google processes OAuth credentials and transmits verified identity claims (subject ID, email, name, avatar) to our servers.</li>
               <li><strong>Infrastructure & Hosting:</strong> MongoDB Atlas for encrypted database persistence and cloud server infrastructure.</li>
               <li><strong>OpenStreetMap / Leaflet:</strong> Map tile servers for displaying flight radar visualization (no passenger PII is sent to map tile providers).</li>
               <li><strong>Legal Authorities:</strong> We may disclose data if required by applicable Indian or international law, court order, or airport security regulation.</li>

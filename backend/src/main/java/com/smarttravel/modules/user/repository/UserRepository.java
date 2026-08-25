@@ -13,6 +13,8 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     Optional<User> findByNormalizedEmail(String normalizedEmail);
 
+    Optional<User> findByGoogleSubject(String googleSubject);
+
     boolean existsByEmail(String email);
 
     boolean existsByNormalizedEmail(String normalizedEmail);

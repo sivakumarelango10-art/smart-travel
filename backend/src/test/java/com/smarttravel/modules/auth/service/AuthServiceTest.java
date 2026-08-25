@@ -56,6 +56,9 @@ class AuthServiceTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private GoogleTokenVerifier googleTokenVerifier;
+
     @InjectMocks
     private AuthServiceImpl authService;
 

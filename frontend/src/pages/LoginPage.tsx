@@ -3,11 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LogIn, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from '../components/BrandLogo';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +37,23 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credential: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await loginWithGoogle(credential, rememberMe);
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err?.message || 'Google authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
+
   return (
     <div className="max-w-md mx-auto py-10 sm:py-14 px-4">
       <div className="rounded-3xl bg-[#14161F] border border-white/10 p-7 sm:p-8 shadow-2xl space-y-6">
@@ -53,6 +71,24 @@ export const LoginPage: React.FC = () => {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Google One-Click Federated Sign-In */}
+        <div className="space-y-4">
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            disabled={loading}
+            rememberMe={rememberMe}
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-white/10 w-full" />
+            <span className="bg-[#14161F] px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider relative">
+              Or continue with email
+            </span>
+            <div className="border-t border-white/10 w-full" />
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
@@ -118,14 +154,14 @@ export const LoginPage: React.FC = () => {
             ) : (
               <>
                 <LogIn className="w-4 h-4 text-black" />
-                <span>Sign In</span>
+                <span>Sign In with Email</span>
               </>
             )}
           </button>
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-400">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link to="/register" className="text-amber-400 font-bold hover:underline">
             Register for Free
           </Link>

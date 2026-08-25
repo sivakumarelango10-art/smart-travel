@@ -30,6 +30,14 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
 
     /**
+     * Authenticates or registers a user via verified Google ID Token credential.
+     *
+     * @param request Google login payload containing verified Google ID Token
+     * @return AuthResponse containing the SmartTravel JWT access token and user summary
+     */
+    AuthResponse authenticateWithGoogle(com.smarttravel.modules.auth.dto.GoogleLoginRequest request);
+
+    /**
      * Retrieves the profile of the currently authenticated user from SecurityContext.
      *
      * @return UserResponse with complete profile details

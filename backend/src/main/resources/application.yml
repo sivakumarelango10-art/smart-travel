@@ -29,6 +29,8 @@ app:
     price-freeze-cleanup-interval-ms: 60000 # 1 minute
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
 
 smarttravel:
   flight:

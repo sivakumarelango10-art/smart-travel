@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, User, Lock, Mail, Phone, AlertCircle, Check, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from '../components/BrandLogo';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -17,6 +18,19 @@ export const RegisterPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleGoogleSuccess = async (credential: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await loginWithGoogle(credential, true);
+      navigate('/');
+    } catch (err: any) {
+      setError(err?.message || 'Google registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Real-time password rules
   const hasMinLength = password.length >= 8;
@@ -81,6 +95,24 @@ export const RegisterPage: React.FC = () => {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Google One-Click Federated Sign-Up */}
+        <div className="space-y-4">
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            onError={(msg) => setError(msg)}
+            disabled={loading}
+            text="signup_with"
+          />
+
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-white/10 w-full" />
+            <span className="bg-[#14161F] px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider relative">
+              Or register with email
+            </span>
+            <div className="border-t border-white/10 w-full" />
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">

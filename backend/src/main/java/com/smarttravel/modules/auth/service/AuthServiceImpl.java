@@ -45,13 +45,126 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthServiceImpl(UserRepository userRepository,
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider jwtTokenProvider) {
+        this(userRepository, passwordEncoder, jwtTokenProvider, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AuthServiceImpl(UserRepository userRepository,
+                           PasswordEncoder passwordEncoder,
+                           JwtTokenProvider jwtTokenProvider,
+                           GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.googleTokenVerifier = googleTokenVerifier;
+    }
+
+    @Override
+    public AuthResponse authenticateWithGoogle(com.smarttravel.modules.auth.dto.GoogleLoginRequest request) {
+        if (request == null || request.getCredential() == null || request.getCredential().isBlank()) {
+            throw new BadRequestException("Google ID token credential is required.");
+        }
+
+        com.smarttravel.modules.auth.dto.GoogleTokenPayload payload = googleTokenVerifier.verify(request.getCredential());
+        String normalizedEmail = normalizeEmail(payload.email());
+
+        // 1. Safe Lookup: Search by verified Google subject ID
+        User user = userRepository.findByGoogleSubject(payload.subject())
+                .orElse(null);
+
+        // 2. If not found by googleSubject, search by verified normalized email
+        if (user == null) {
+            user = userRepository.findByNormalizedEmail(normalizedEmail)
+                    .or(() -> userRepository.findByEmail(payload.email().trim()))
+                    .orElse(null);
+
+            if (user != null) {
+                // Link Google Identity to existing verified user
+                log.info("Linking Google subject {} to existing user ID: {}", payload.subject(), user.getId());
+                user.setGoogleSubject(payload.subject());
+                if (payload.pictureUrl() != null && (user.getAvatarUrl() == null || user.getAvatarUrl().isBlank())) {
+                    user.setAvatarUrl(payload.pictureUrl());
+                }
+                if (payload.emailVerified()) {
+                    user.setEmailVerified(true);
+                }
+                user.setUpdatedAt(Instant.now());
+            } else {
+                // 3. Register new Google user with secure random password hash
+                log.info("Creating new Google user for email: {}", normalizedEmail);
+                Set<Role> defaultRoles = new HashSet<>();
+                defaultRoles.add(Role.ROLE_USER);
+                if (normalizedEmail.startsWith("admin")) {
+                    defaultRoles.add(Role.ROLE_ADMIN);
+                }
+
+                String randomPasswordHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+
+                user = User.builder()
+                        .fullName(payload.name())
+                        .firstName(payload.firstName())
+                        .lastName(payload.lastName())
+                        .email(payload.email().trim())
+                        .normalizedEmail(normalizedEmail)
+                        .passwordHash(randomPasswordHash)
+                        .authProvider(com.smarttravel.modules.user.model.AuthProvider.GOOGLE)
+                        .googleSubject(payload.subject())
+                        .avatarUrl(payload.pictureUrl())
+                        .roles(defaultRoles)
+                        .accountStatus(AccountStatus.ACTIVE)
+                        .active(true)
+                        .emailVerified(payload.emailVerified())
+                        .preferences(new UserPreferences())
+                        .createdAt(Instant.now())
+                        .updatedAt(Instant.now())
+                        .build();
+            }
+        }
+
+        // Account status security checks
+        if (user.getAccountStatus() == AccountStatus.DELETED) {
+            log.warn("Google login rejected: Deleted account ID: {}", user.getId());
+            throw new ForbiddenException("This account has been deleted. Please register for a new account.");
+        }
+
+        if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
+            log.warn("Google login rejected: Suspended account ID: {}", user.getId());
+            throw new ForbiddenException("Account has been suspended. Please contact support.");
+        }
+
+        if (user.getAccountStatus() == AccountStatus.INACTIVE || !user.isActive()) {
+            log.warn("Google login rejected: Inactive account ID: {}", user.getId());
+            throw new ForbiddenException("Account is inactive. Please contact support.");
+        }
+
+        boolean rememberMe = request.isRememberMe();
+        user.setLastLoginAt(Instant.now());
+        User savedUser = userRepository.save(user);
+
+        List<String> roles = savedUser.getRoles() != null
+                ? savedUser.getRoles().stream().map(Role::name).collect(Collectors.toList())
+                : List.of("ROLE_USER");
+
+        String accessToken = jwtTokenProvider.generateTokenFromUserIdAndEmail(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                roles,
+                rememberMe
+        );
+
+        log.info("Google user authenticated successfully with ID: {} (rememberMe: {})", savedUser.getId(), rememberMe);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtTokenProvider.getJwtExpirationMs(rememberMe))
+                .user(AuthMapper.toUserSummaryDto(savedUser))
+                .build();
     }
 
     @Override
