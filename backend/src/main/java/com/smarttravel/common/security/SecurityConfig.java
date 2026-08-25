@@ -164,6 +164,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/boarding-passes/verify", "/api/v1/boarding-passes/verify"
                         ).permitAll()
+                        // Public AI Assistant Travel Insights (GET endpoints)
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/v1/ai/**", "/api/v1/ai/**", "/api/ai/**"
+                        ).permitAll()
                         // Public Web Push public key
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/notifications/push/public-key", "/api/v1/notifications/push/public-key"

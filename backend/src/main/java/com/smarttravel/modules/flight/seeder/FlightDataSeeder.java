@@ -40,18 +40,20 @@ public class FlightDataSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         try {
+            if (flightRepository.count() >= 25) {
+                log.info("MongoDB flight collection verified with all flagship flight schedules active.");
+                return;
+            }
             List<Flight> seededFlights = generateInitialFleet();
-            int inserted = 0;
+            List<Flight> toInsert = new ArrayList<>();
             for (Flight f : seededFlights) {
                 if (!flightRepository.existsByFlightNumber(f.getFlightNumber())) {
-                    flightRepository.save(f);
-                    inserted++;
+                    toInsert.add(f);
                 }
             }
-            if (inserted > 0) {
-                log.info("Successfully seeded {} missing flagship flights (e.g. AI-101, 6E-204, UK-955) into MongoDB.", inserted);
-            } else {
-                log.info("MongoDB flight collection verified with all flagship flight schedules active.");
+            if (!toInsert.isEmpty()) {
+                flightRepository.saveAll(toInsert);
+                log.info("Successfully seeded {} flagship flights into MongoDB.", toInsert.size());
             }
         } catch (Exception ex) {
             log.warn("Flight seeding encountered non-fatal error during startup: {}", ex.getMessage());
@@ -99,6 +101,51 @@ public class FlightDataSeeder implements ApplicationRunner {
         fleet.add(buildFlight("BA-112", "British Airways", "BA", "DEL", "LHR", "Boeing 787-9", now.plus(16, ChronoUnit.HOURS), 555, 52000, FlightStatus.SCHEDULED, null, null));
         fleet.add(buildFlight("QR-571", "Qatar Airways", "QR", "DEL", "DOH", "Boeing 777-300ER", now.plus(8, ChronoUnit.HOURS), 250, 28000, FlightStatus.SCHEDULED, null, null));
         fleet.add(buildFlight("EY-205", "Etihad Airways", "EY", "BOM", "AUH", "Boeing 787-9", now.plus(9, ChronoUnit.HOURS), 210, 22500, FlightStatus.SCHEDULED, null, null));
+
+        // 6. Comprehensive Future Schedule: Seed Daily / Weekly Schedules through January 31, 2027
+        // Ensures full search availability across all dates (Diwali, Thanksgiving, Christmas, New Year, and January)
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneOffset.UTC);
+        java.time.LocalDate endDate = java.time.LocalDate.of(today.getYear() + (today.getMonthValue() >= 2 ? 1 : 0), 1, 31);
+        if (endDate.isBefore(today.plusDays(30))) {
+            endDate = java.time.LocalDate.of(today.getYear() + 1, 1, 31);
+        }
+
+        // Seed every 2 days for rich route density without overloading MongoDB collection size
+        for (java.time.LocalDate cur = today.plusDays(1); !cur.isAfter(endDate); cur = cur.plusDays(2)) {
+            String dateSuffix = cur.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+            // Morning DEL -> BOM
+            Instant delBomDep = cur.atTime(8, 0).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("AI-101-" + dateSuffix, "Air India", "AI", "DEL", "BOM", "Boeing 787-8 Dreamliner", delBomDep, 130, 4650, FlightStatus.SCHEDULED, null, null));
+
+            // Afternoon BOM -> DEL
+            Instant bomDelDep = cur.atTime(14, 30).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("AI-102-" + dateSuffix, "Air India", "AI", "BOM", "DEL", "Airbus A350-900", bomDelDep, 135, 4850, FlightStatus.SCHEDULED, null, null));
+
+            // Morning BOM -> BLR
+            Instant bomBlrDep = cur.atTime(9, 15).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("6E-204-" + dateSuffix, "IndiGo", "6E", "BOM", "BLR", "Airbus A321neo", bomBlrDep, 105, 3850, FlightStatus.SCHEDULED, null, null));
+
+            // Evening BLR -> BOM
+            Instant blrBomDep = cur.atTime(17, 45).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("6E-205-" + dateSuffix, "IndiGo", "6E", "BLR", "BOM", "Airbus A320neo", blrBomDep, 110, 3950, FlightStatus.SCHEDULED, null, null));
+
+            // Premium DEL -> BOM
+            Instant vistaraDep = cur.atTime(11, 0).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("UK-955-" + dateSuffix, "Vistara", "UK", "DEL", "BOM", "Boeing 787-9", vistaraDep, 130, 5650, FlightStatus.SCHEDULED, null, null));
+
+            // Vacation DEL -> GOI
+            Instant goaDep = cur.atTime(10, 30).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("6E-101-" + dateSuffix, "IndiGo", "6E", "DEL", "GOI", "Airbus A320neo", goaDep, 150, 5450, FlightStatus.SCHEDULED, null, null));
+
+            // International BOM -> DXB
+            Instant dxbDep = cur.atTime(19, 30).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("EK-500-" + dateSuffix, "Emirates", "EK", "BOM", "DXB", "Boeing 777-300ER", dxbDep, 195, 21500, FlightStatus.SCHEDULED, null, null));
+
+            // International DEL -> LHR
+            Instant lhrDep = cur.atTime(3, 45).toInstant(java.time.ZoneOffset.UTC);
+            fleet.add(buildFlight("BA-112-" + dateSuffix, "British Airways", "BA", "DEL", "LHR", "Boeing 787-9", lhrDep, 555, 52500, FlightStatus.SCHEDULED, null, null));
+        }
 
         return fleet;
     }
