@@ -45,7 +45,7 @@ public class FlightDataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         try {
             long existingCount = flightRepository.count();
-            if (existingCount >= 180) {
+            if (existingCount >= 2500) {
                 log.info("MongoDB flight collection verified with {} active routes.", existingCount);
                 return;
             }
@@ -59,7 +59,7 @@ public class FlightDataSeeder implements ApplicationRunner {
             }
             if (!toInsert.isEmpty()) {
                 flightRepository.saveAll(toInsert);
-                log.info("Successfully seeded {} comprehensive global flights into MongoDB.", toInsert.size());
+                log.info("Successfully seeded {} comprehensive 6-month global flights into MongoDB.", toInsert.size());
             }
         } catch (Exception ex) {
             log.warn("Flight seeding encountered non-fatal error during startup: {}", ex.getMessage());
@@ -132,10 +132,10 @@ public class FlightDataSeeder implements ApplicationRunner {
         fleet.add(buildFlight("QF-068", "Qantas", "QF", "DEL", "SYD", "Airbus A330-200", now.plus(13, ChronoUnit.HOURS), 740, 68000, FlightStatus.SCHEDULED, null, null));
 
         // =========================================================================
-        // 2. COMPREHENSIVE RECURRENT SCHEDULES ACROSS UPCOMING MONTHS (2026-2027)
+        // 2. COMPREHENSIVE RECURRENT SCHEDULES ACROSS 6 MONTHS (180 DAYS)
         // =========================================================================
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        LocalDate endDate = today.plusDays(90);
+        LocalDate endDate = today.plusDays(180);
 
         // Core Route Template Catalog for Daily & Multi-Weekly Generation
         List<RouteTemplate> templates = getRouteTemplates();
