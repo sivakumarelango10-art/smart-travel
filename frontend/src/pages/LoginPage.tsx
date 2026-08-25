@@ -81,9 +81,9 @@ export const LoginPage: React.FC = () => {
             rememberMe={rememberMe}
           />
 
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center my-1">
             <div className="border-t border-white/10 w-full" />
-            <span className="bg-[#14161F] px-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider relative">
+            <span className="bg-[#14161F] px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap relative">
               Or continue with email
             </span>
             <div className="border-t border-white/10 w-full" />
