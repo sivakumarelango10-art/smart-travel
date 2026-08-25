@@ -1,5 +1,7 @@
-﻿import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { toastVariants } from '../../lib/motion';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -46,22 +48,36 @@ export const AdminToastProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
-        {toasts.map(toast => (
-          <div
-            key={toast.id}
-            className={`flex items-start gap-3 p-4 bg-slate-900 border border-slate-700 border-l-4 ${borderClasses[toast.type]} rounded-xl shadow-2xl animate-fade-in`}
-          >
-            <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white">{toast.title}</p>
-              {toast.message && <p className="text-xs text-slate-400 mt-0.5">{toast.message}</p>}
-            </div>
-            <button onClick={() => removeToast(toast.id)} className="text-slate-500 hover:text-white transition">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm pointer-events-none">
+        <AnimatePresence>
+          {toasts.map(toast => (
+            <motion.div
+              key={toast.id}
+              variants={toastVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="pointer-events-auto"
+            >
+              <div
+                className={`flex items-start gap-3 p-4 bg-slate-900 border border-slate-700 border-l-4 ${borderClasses[toast.type]} rounded-xl shadow-2xl`}
+              >
+                <div className="flex-shrink-0 mt-0.5">{icons[toast.type]}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">{toast.title}</p>
+                  {toast.message && <p className="text-xs text-slate-400 mt-0.5">{toast.message}</p>}
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => removeToast(toast.id)}
+                  className="text-slate-500 hover:text-white transition p-0.5 rounded-lg hover:bg-slate-800"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );

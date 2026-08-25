@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star,
   ThumbsUp,
@@ -20,6 +21,7 @@ import { ReviewSkeleton } from './ReviewSkeleton';
 import { Review, ReviewTargetType, ReviewReply } from '../types/api';
 import { reviewService } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
+import { modalBackdropVariants, modalDialogVariants, cardEntranceVariants, staggerContainerVariants } from '../lib/motion';
 
 interface ReviewSectionProps {
   targetType: ReviewTargetType;
@@ -628,149 +630,185 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       )}
 
       {/* Review Creation Modal with Photo Upload */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-1">Share Your Experience</h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Your feedback and photos help fellow travelers choose better trips.
-            </p>
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => {
+                setShowModal(false);
+                setSelectedPhotos([]);
+                setPhotoPreviews([]);
+              }}
+              className="fixed inset-0 bg-black/75 backdrop-blur-md"
+            />
+            <motion.div
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="relative z-10 bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <h3 className="text-lg font-bold text-white mb-1">Share Your Experience</h3>
+              <p className="text-xs text-slate-400 mb-4">
+                Your feedback and photos help fellow travelers choose better trips.
+              </p>
 
-            {error && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {error}
-              </div>
-            )}
+              {error && (
+                <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
 
-            <form onSubmit={handleSubmitReview} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Overall Rating
-                </label>
-                <StarRating rating={rating} interactive={true} onChange={setRating} size="lg" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 p-3 bg-slate-800/40 rounded-xl border border-slate-800">
+              <form onSubmit={handleSubmitReview} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
-                    Cleanliness
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Overall Rating
                   </label>
-                  <StarRating rating={cleanliness} interactive={true} onChange={setCleanliness} size="sm" />
+                  <StarRating rating={rating} interactive={true} onChange={setRating} size="lg" />
                 </div>
+
+                <div className="grid grid-cols-3 gap-3 p-3 bg-slate-800/40 rounded-xl border border-slate-800">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      Cleanliness
+                    </label>
+                    <StarRating rating={cleanliness} interactive={true} onChange={setCleanliness} size="sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      Service
+                    </label>
+                    <StarRating rating={service} interactive={true} onChange={setService} size="sm" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                      Value
+                    </label>
+                    <StarRating rating={value} interactive={true} onChange={setValue} size="sm" />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
-                    Service
-                  </label>
-                  <StarRating rating={service} interactive={true} onChange={setService} size="sm" />
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Exceptional service and smooth flight"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
-                    Value
-                  </label>
-                  <StarRating rating={value} interactive={true} onChange={setValue} size="sm" />
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Review</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Describe your flight or stay in detail (minimum 20 characters)..."
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Exceptional service and smooth flight"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Review</label>
-                <textarea
-                  required
-                  rows={4}
-                  placeholder="Describe your flight or stay in detail (minimum 20 characters)..."
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              {/* Photo Upload Attachment Section */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Attach Photos (Max 5, up to 5MB each)
-                </label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 rounded-xl text-xs font-medium text-slate-300 transition-colors">
-                    <Camera className="w-4 h-4 text-blue-400" />
-                    <span>Choose Photos</span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      multiple
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                    />
+                {/* Photo Upload Attachment Section */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Attach Photos (Max 5, up to 5MB each)
                   </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-dashed border-slate-600 rounded-xl text-xs font-medium text-slate-300 transition-colors">
+                      <Camera className="w-4 h-4 text-amber-400" />
+                      <span>Choose Photos</span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
+                    </label>
 
-                  {photoPreviews.map((preview, idx) => (
-                    <div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-700">
-                      <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(idx)}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-600/80 rounded-full text-white flex items-center justify-center hover:bg-rose-500"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </div>
-                  ))}
+                    {photoPreviews.map((preview, idx) => (
+                      <div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-700">
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(idx)}
+                          className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-600/80 rounded-full text-white flex items-center justify-center hover:bg-rose-500"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setSelectedPhotos([]);
-                    setPhotoPreviews([]);
-                  }}
-                  className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
-                >
-                  {submitting ? 'Submitting...' : 'Submit Review'}
-                </button>
-              </div>
-            </form>
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setSelectedPhotos([]);
+                      setPhotoPreviews([]);
+                    }}
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    type="submit"
+                    disabled={submitting}
+                    className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-bold disabled:opacity-50 text-sm rounded-xl transition shadow-glow-gold"
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Review'}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Enlarged Photo Modal */}
-      {activePhotoUrl && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setActivePhotoUrl(null)}
-        >
-          <div className="relative max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-900">
-            <img src={activePhotoUrl} alt="Enlarged review photo" className="w-full h-full object-contain" />
-            <button
+      <AnimatePresence>
+        {activePhotoUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={modalBackdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
               onClick={() => setActivePhotoUrl(null)}
-              className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/80 rounded-full text-white transition-colors"
+              className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            />
+            <motion.div
+              variants={modalDialogVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="relative z-10 max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-900"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <img src={activePhotoUrl} alt="Enlarged review photo" className="w-full h-full object-contain" />
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setActivePhotoUrl(null)}
+                className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/80 rounded-full text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </motion.button>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

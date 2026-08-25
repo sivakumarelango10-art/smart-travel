@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Sparkles, Plane, Hotel as HotelIcon, ArrowRight, Star, Compass } from 'lucide-react';
 import { RecommendationItem } from '../types/api';
 import { recommendationService } from '../services/recommendationService';
 import { AirlineLogo } from './AirlineLogo';
+import { AnimatedPrice } from './AnimatedPrice';
 import { useAuth } from '../context/AuthContext';
+import { staggerContainerVariants, cardEntranceVariants } from '../lib/motion';
 
 export const RecommendationsSection: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -40,7 +43,13 @@ export const RecommendationsSection: React.FC = () => {
   }
 
   return (
-    <section className="py-12 relative bg-transparent border-t border-white/10">
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="py-12 relative bg-transparent border-t border-white/10"
+    >
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -61,7 +70,8 @@ export const RecommendationsSection: React.FC = () => {
 
           {/* Filter Pills */}
           <div className="flex items-center p-1 bg-[#14161F] border border-white/10 rounded-xl shadow-lg">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={() => setFilter('ALL')}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
                 filter === 'ALL'
@@ -70,8 +80,9 @@ export const RecommendationsSection: React.FC = () => {
               }`}
             >
               All Picks
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={() => setFilter('FLIGHTS')}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 ${
                 filter === 'FLIGHTS'
@@ -81,8 +92,9 @@ export const RecommendationsSection: React.FC = () => {
             >
               <Plane className={`w-3.5 h-3.5 ${filter === 'FLIGHTS' ? 'text-black' : 'text-amber-400'}`} />
               Flights
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={() => setFilter('HOTELS')}
               className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 ${
                 filter === 'HOTELS'
@@ -92,7 +104,7 @@ export const RecommendationsSection: React.FC = () => {
             >
               <HotelIcon className={`w-3.5 h-3.5 ${filter === 'HOTELS' ? 'text-black' : 'text-amber-400'}`} />
               Hotels
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -113,7 +125,12 @@ export const RecommendationsSection: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            variants={staggerContainerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
             {recommendations.map((item) => {
               const isFlight = item.type === 'FLIGHT';
               const isHotel = item.type === 'HOTEL';
@@ -124,9 +141,11 @@ export const RecommendationsSection: React.FC = () => {
                 : `/flights?destination=${encodeURIComponent(item.title)}`;
 
               return (
-                <div
+                <motion.div
                   key={item.id}
-                  className="group relative bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover rounded-2xl p-5 flex flex-col justify-between transition-all duration-300"
+                  variants={cardEntranceVariants}
+                  whileHover={{ y: -4, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+                  className="group relative bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover rounded-2xl p-5 flex flex-col justify-between transition-colors duration-300"
                 >
                   <div>
                     {/* Top Row: Type & Reason Badge */}
@@ -185,25 +204,29 @@ export const RecommendationsSection: React.FC = () => {
                   <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
                     <div>
                       <span className="text-[10px] text-slate-400 block font-medium">Starting from</span>
-                      <span className="text-base font-black text-amber-400">
-                        {item.priceLabel || (item.price ? `₹${item.price.toLocaleString('en-IN')}` : 'Check Price')}
-                      </span>
+                      <div className="text-base font-black text-amber-400">
+                        {item.price ? (
+                          <AnimatedPrice value={item.price} />
+                        ) : (
+                          item.priceLabel || 'Check Price'
+                        )}
+                      </div>
                     </div>
 
                     <Link
                       to={linkTo}
-                      className="p-2 bg-[#1A1C24] group-hover:bg-amber-400 group-hover:text-black text-slate-300 rounded-xl transition shadow-md"
+                      className="p-2 bg-[#1A1C24] group-hover:bg-amber-400 group-hover:text-black text-slate-300 active:scale-90 rounded-xl transition shadow-md"
                       aria-label={`Explore ${item.title}`}
                     >
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 };

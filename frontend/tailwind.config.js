@@ -1,3 +1,5 @@
+import tailwindAnimate from 'tailwindcss-animate';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -114,6 +116,7 @@ export default {
         'fade-in': 'fadeIn 0.2s ease-in-out',
         'slide-up': 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        'shimmer': 'shimmer 1.8s infinite linear',
       },
       keyframes: {
         fadeIn: {
@@ -127,9 +130,13 @@ export default {
         scaleIn: {
           '0%': { opacity: '0', transform: 'scale(0.97)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         }
       }
     },
   },
-  plugins: [],
+  plugins: [tailwindAnimate],
 }

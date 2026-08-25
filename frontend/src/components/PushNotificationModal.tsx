@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell,
   BellRing,
@@ -18,6 +19,7 @@ import {
   Check
 } from 'lucide-react';
 import { pushNotificationService, PlatformInfo } from '../services/pushNotificationService';
+import { modalBackdropVariants, modalDialogVariants } from '../lib/motion';
 
 interface PushNotificationModalProps {
   isOpen: boolean;
@@ -148,17 +150,24 @@ export const PushNotificationModal: React.FC<PushNotificationModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 flex items-center justify-center min-h-screen animate-fade-in"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        className="relative w-full max-w-lg rounded-3xl bg-slate-900 border-2 border-slate-800 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[85vh]"
-        onClick={(e) => e.stopPropagation()}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop */}
+      <motion.div
+        variants={modalBackdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md"
+      />
+
+      {/* Dialog */}
+      <motion.div
+        variants={modalDialogVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="relative z-10 w-full max-w-lg rounded-3xl bg-slate-900 border-2 border-slate-800 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[85vh]"
       >
         {/* Sticky Header with high-visibility close button */}
         <div className="p-4 sm:p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between sticky top-0 z-20 shrink-0">
@@ -363,16 +372,17 @@ export const PushNotificationModal: React.FC<PushNotificationModalProps> = ({
             <span>Encrypted RFC 8291/8292 VAPID Protocol</span>
           </p>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onClose}
             className="w-full sm:w-auto px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             <span>Close Window</span>
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

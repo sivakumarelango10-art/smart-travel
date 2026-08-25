@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { TrendingUp, X, Calendar, Activity } from 'lucide-react';
 import { CabinClass, FlightPriceHistory } from '../types/api';
 import { pricingService } from '../services/pricingService';
+import { modalBackdropVariants, modalDialogVariants } from '../lib/motion';
 
 interface PriceHistoryModalProps {
   flightId: string;
@@ -56,29 +58,47 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        variants={modalBackdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/75 backdrop-blur-md"
+      />
+
+      {/* Dialog */}
+      <motion.div
+        variants={modalDialogVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="relative z-10 bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl"
+      >
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-slate-800 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
+              <TrendingUp className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-white">Price History & Trends</h3>
               <p className="text-xs text-slate-400">{flightNumber} · {cabinClass}</p>
             </div>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
         {loading ? (
           <div className="py-16 text-center text-slate-500">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             Loading price trend data...
           </div>
         ) : history.length === 0 ? (
@@ -93,7 +113,7 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
             <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
               <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
                 <span>Fare Trend</span>
-                <span className="font-semibold text-blue-400">
+                <span className="font-semibold text-amber-400">
                   Latest: ₹{history[history.length - 1]?.finalPrice.toLocaleString()}
                 </span>
               </div>
@@ -130,8 +150,8 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
                   <path
                     d={pathD}
                     fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="2"
+                    stroke="#F59E0B"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                   />
                 )}
@@ -142,8 +162,8 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
                     key={i}
                     cx={p.x}
                     cy={p.y}
-                    r="3.5"
-                    className="fill-blue-500 stroke-slate-900 stroke-2 hover:scale-125 transition-transform cursor-pointer"
+                    r="4"
+                    className="fill-amber-400 stroke-slate-900 stroke-2 hover:scale-125 transition-transform cursor-pointer"
                   >
                     <title>₹{p.price.toLocaleString()} ({p.reason || 'Normal'})</title>
                   </circle>
@@ -159,7 +179,7 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
                   className="flex items-center justify-between p-2.5 bg-slate-800/30 rounded-lg text-xs border border-slate-800/60 hover:bg-slate-800/60 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
                     <span className="text-slate-300">
                       {new Date(h.capturedAt).toLocaleDateString([], {
                         month: 'short',
@@ -180,14 +200,15 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
         )}
 
         <div className="mt-4 pt-3 border-t border-slate-800 flex justify-end">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={onClose}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sm font-semibold text-white rounded-xl transition-colors"
           >
             Close
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

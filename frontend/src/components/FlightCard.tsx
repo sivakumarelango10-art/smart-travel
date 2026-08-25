@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plane,
   Clock,
@@ -20,9 +21,11 @@ import { PriceHistoryModal } from './PriceHistoryModal';
 import { PriceFreezeModal } from './PriceFreezeModal';
 import { PriceBreakdownCard } from './PriceBreakdownCard';
 import { AirlineLogo } from './AirlineLogo';
+import { AnimatedPrice } from './AnimatedPrice';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
 import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
+import { cardEntranceVariants } from '../lib/motion';
 
 interface FlightCardProps {
   flight: Flight;
@@ -122,10 +125,12 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 
   return (
     <>
-      <div
-        className={`rounded-2xl border transition-all duration-300 overflow-hidden bg-[#14161F] ${
+      <motion.div
+        variants={cardEntranceVariants}
+        whileHover={{ y: -4, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+        className={`rounded-2xl border transition-colors duration-300 overflow-hidden bg-[#14161F] shadow-lg ${
           isDisrupted
-            ? 'border-amber-400/80 shadow-lg shadow-amber-500/10'
+            ? 'border-amber-400/80 shadow-amber-500/10'
             : 'border-white/10 hover:border-amber-500/40 hover:shadow-card-hover'
         }`}
       >
@@ -251,9 +256,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-3 lg:min-w-[190px] shrink-0 lg:pl-6 lg:border-l lg:border-white/10">
             <div className="text-left lg:text-right">
               <div className="flex items-baseline gap-1.5 lg:justify-end">
-                <span className="text-2xl font-black text-amber-400 tracking-tight">
-                  ₹{totalPrice.toLocaleString('en-IN')}
-                </span>
+                <AnimatedPrice
+                  value={totalPrice}
+                  className="text-2xl font-black text-amber-400 tracking-tight"
+                />
                 {passengerCount > 1 && (
                   <span className="text-xs text-slate-400 font-medium">
                     (₹{pricePerPax.toLocaleString('en-IN')}/pax)
@@ -262,10 +268,14 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               </div>
 
               {latestEvent && (
-                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 lg:justify-end">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 lg:justify-end mt-0.5"
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span>Live Fare Active</span>
-                </div>
+                </motion.div>
               )}
 
               <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 lg:justify-end">
@@ -282,44 +292,49 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               </p>
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: isBookable ? 1.02 : 1 }}
+              whileTap={{ scale: isBookable ? 0.97 : 1 }}
               type="button"
               onClick={handleSelectFlight}
               disabled={!isBookable}
               className={`w-full sm:w-auto lg:w-36 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 isBookable
                   ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-glow-gold'
-                  : 'bg-[#181A22] text-slate-500 cursor-not-allowed border border-white/5'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
               }`}
             >
               <span>{isBookable ? 'Select Flight' : 'Sold Out'}</span>
-              {isBookable && <ChevronRight className="w-4 h-4 shrink-0 text-black" />}
-            </button>
+              {isBookable && <ChevronRight className="w-4 h-4 text-black" />}
+            </motion.button>
           </div>
         </div>
 
         {/* Feature Action Bar (Price History, Freeze Price, Live Radar, Fare Breakdown) */}
         <div className="px-5 sm:px-6 py-2.5 bg-[#181A22] border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => setShowPriceHistory(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14161F] hover:bg-[#1F222E] text-slate-300 border border-white/10 text-xs font-semibold transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14161F] hover:bg-[#1F222E] text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition"
             >
               <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
               <span>Price Trend</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => setShowPriceFreeze(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14161F] hover:bg-[#1F222E] text-slate-300 border border-white/10 text-xs font-semibold transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14161F] hover:bg-[#1F222E] text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition"
             >
               <Lock className="w-3.5 h-3.5 text-accent" />
               <span>Freeze Fare</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={handleTrackFlight}
               disabled={trackingLoading}
@@ -331,16 +346,17 @@ export const FlightCard: React.FC<FlightCardProps> = ({
             >
               <Radio className={`w-3.5 h-3.5 ${isTracked ? 'text-emerald-400' : 'text-slate-400'}`} />
               <span>{isTracked ? 'Tracking Active' : 'Track Flight'}</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => navigate(`/tracked-flights?flight=${flight.flightNumber}`)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#14161F] hover:bg-[#1F222E] text-amber-400 border border-white/10 text-xs font-semibold transition"
             >
               <Compass className="w-3.5 h-3.5 text-amber-400" />
               <span>Live Radar</span>
-            </button>
+            </motion.button>
 
             {trackMessage && (
               <span className="text-[11px] text-amber-400 font-semibold animate-fade-in">{trackMessage}</span>
@@ -357,41 +373,55 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </button>
         </div>
 
-        {/* Collapsible Fare Breakdown */}
-        {showBreakdown && (
-          <div className="p-4 sm:p-5 bg-[#12131A] border-t border-white/10 animate-slide-up">
-            <PriceBreakdownCard
-              flightId={flight.id}
-              cabinClass={selectedCabin}
-              passengerCount={passengerCount}
-            />
-          </div>
+        {/* Collapsible Fare Breakdown with AnimatePresence */}
+        <AnimatePresence>
+          {showBreakdown && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden border-t border-white/10 bg-[#12131A]"
+            >
+              <div className="p-4 sm:p-5">
+                <PriceBreakdownCard
+                  flightId={flight.id}
+                  cabinClass={selectedCabin}
+                  passengerCount={passengerCount}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Modals with AnimatePresence */}
+      <AnimatePresence>
+        {showPriceHistory && (
+          <PriceHistoryModal
+            flightId={flight.id}
+            flightNumber={flight.flightNumber}
+            onClose={() => setShowPriceHistory(false)}
+          />
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* Modals */}
-      {showPriceHistory && (
-        <PriceHistoryModal
-          flightId={flight.id}
-          flightNumber={flight.flightNumber}
-          onClose={() => setShowPriceHistory(false)}
-        />
-      )}
-
-      {showPriceFreeze && (
-        <PriceFreezeModal
-          flightId={flight.id}
-          flightNumber={flight.flightNumber}
-          cabinClass={selectedCabin}
-          passengerCount={passengerCount}
-          currentPrice={pricePerPax}
-          onClose={() => setShowPriceFreeze(false)}
-          onFreezeCreated={() => {
-            setShowPriceFreeze(false);
-            alert(`Fare of ₹${totalPrice.toLocaleString()} locked for 48 hours!`);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showPriceFreeze && (
+          <PriceFreezeModal
+            flightId={flight.id}
+            flightNumber={flight.flightNumber}
+            cabinClass={selectedCabin}
+            passengerCount={passengerCount}
+            currentPrice={pricePerPax}
+            onClose={() => setShowPriceFreeze(false)}
+            onFreezeCreated={() => {
+              setShowPriceFreeze(false);
+              alert(`Fare of ₹${totalPrice.toLocaleString()} locked for 48 hours!`);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };

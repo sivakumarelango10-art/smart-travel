@@ -47,6 +47,8 @@ const AdminDisruptionsPage = lazy(() => import('./pages/admin/AdminDisruptionsPa
 const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
 const AdminSystemPage = lazy(() => import('./pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })));
 
+import { ScrollToTop } from './components/ScrollToTop';
+
 export default function App() {
   useEffect(() => {
     startKeepAliveHeartbeat();
@@ -57,6 +59,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ErrorBoundary>
         <AuthProvider>
           <NotificationProvider>

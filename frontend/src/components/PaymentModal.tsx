@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard,
   ShieldCheck,
@@ -15,6 +16,8 @@ import {
 } from 'lucide-react';
 import { Booking, PaymentOrder } from '../types/api';
 import { paymentService } from '../services/paymentService';
+import { AnimatedPrice } from './AnimatedPrice';
+import { modalBackdropVariants, modalDialogVariants } from '../lib/motion';
 
 interface PaymentModalProps {
   booking: Booking;
@@ -100,7 +103,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setOrder(res.data);
       return res.data;
     }
-    throw new Error(res.message || 'Unable to generate gateway order');
+    throw new Error(res.message || 'Failed to initialize payment gateway order');
   };
 
   const handleInstantTestPayment = async () => {
@@ -108,14 +111,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setError(null);
     try {
       const activeOrder = await ensureActiveOrder();
-      const res = await paymentService.simulateWebhookPayment(activeOrder.razorpayOrderId, activeOrder.amount);
-      if (res.success) {
+      const mockPayId = `pay_mock_${Date.now()}`;
+      const mockSignature = `sig_mock_${Math.random().toString(36).substring(2)}`;
+
+      const verifyRes = await paymentService.verifyPayment({
+        razorpayOrderId: activeOrder.razorpayOrderId,
+        razorpayPaymentId: mockPayId,
+        razorpaySignature: mockSignature,
+      });
+
+      if (verifyRes.success) {
         setPaymentSuccess(true);
         setTimeout(() => {
           onPaymentSuccess();
-        }, 1500);
+        }, 1200);
       } else {
-        setError(res.message || 'Payment simulation rejected');
+        setError(verifyRes.message || 'Instant payment verification was declined.');
       }
     } catch (err: any) {
       setError(err.message || 'Instant payment failed');
@@ -151,7 +162,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               setPaymentSuccess(true);
               setTimeout(() => {
                 onPaymentSuccess();
-              }, 1500);
+              }, 1200);
             } else {
               setError(verifyRes.message || 'Signature verification failed.');
             }
@@ -186,16 +197,29 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     : 'Lead Traveler';
 
   return (
-    <div
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !paymentSuccess) {
-          onClose();
-        }
-      }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
-    >
-      <div className="w-full max-w-lg rounded-3xl bg-[#14161F] border border-white/10 shadow-2xl p-6 sm:p-7 space-y-5 relative">
-        <button
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop */}
+      <motion.div
+        variants={modalBackdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={() => {
+          if (!paymentSuccess) onClose();
+        }}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md"
+      />
+
+      {/* Dialog */}
+      <motion.div
+        variants={modalDialogVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="relative z-10 w-full max-w-lg rounded-3xl bg-[#14161F] border border-white/10 shadow-2xl p-6 sm:p-7 space-y-5"
+      >
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           type="button"
           onClick={onClose}
           disabled={paymentSuccess}
@@ -203,10 +227,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           aria-label="Close Payment Modal"
         >
           <X className="w-4 h-4" />
-        </button>
+        </motion.button>
 
         {paymentSuccess ? (
-          <div className="py-10 text-center space-y-4 animate-scale-in">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-10 text-center space-y-4"
+          >
             <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-glow-emerald">
               <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
             </div>
@@ -220,7 +248,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <Sparkles className="w-3.5 h-3.5" />
               <span>Issuing E-Ticket & Boarding Pass...</span>
             </div>
-          </div>
+          </motion.div>
         ) : (
           <>
             {/* Modal Header */}
@@ -258,15 +286,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       {booking.departureAirport?.city || 'Delhi'}
                     </div>
                   </div>
-
-                  <div className="flex flex-col items-center px-1">
-                    <span className="text-[10px] font-bold text-amber-400 uppercase">
-                      {booking.flightNumber || 'FLIGHT'}
-                    </span>
-                    <Plane className="w-3.5 h-3.5 text-amber-400 rotate-90 my-0.5" />
-                  </div>
-
-                  <div className="text-right">
+                  <Plane className="w-4 h-4 text-amber-400 rotate-90 mx-1" />
+                  <div className="text-left">
                     <div className="text-lg font-black text-white">
                       {booking.arrivalAirport?.code || 'BOM'}
                     </div>
@@ -276,96 +297,109 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyPnr}
-                  className="flex items-center gap-1.5 bg-[#12131A] hover:bg-[#1F222E] border border-white/10 px-2.5 py-1 rounded-lg text-xs transition"
-                  title="Click to copy PNR"
-                >
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">PNR:</span>
-                  <span className="font-mono font-bold text-amber-400">{booking.bookingReference}</span>
-                  {copiedPnr ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
-                </button>
+                {booking.bookingReference && (
+                  <div className="flex items-center gap-1.5 bg-[#14161F] px-2.5 py-1 rounded-lg border border-white/10">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono">PNR</span>
+                    <span className="text-xs font-mono font-black text-amber-400">{booking.bookingReference}</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyPnr}
+                      className="p-0.5 text-slate-400 hover:text-white transition"
+                      title="Copy PNR"
+                    >
+                      {copiedPnr ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Lead Traveler & Total */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300">Traveler: <strong className="text-white">{leadPassenger}</strong></span>
-                <span className="font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase text-[10px]">
-                  {booking.cabinClass || 'Economy'}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t border-white/5 flex items-baseline justify-between">
+              {/* Itinerary details */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Amount Due</span>
-                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" /> All taxes included
+                  <span className="text-[10px] text-slate-400 uppercase block">Flight</span>
+                  <span className="font-bold text-white">{booking.flightNumber || 'FLIGHT'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase block">Class</span>
+                  <span className="font-bold text-amber-400">{booking.cabinClass || 'ECONOMY'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase block">Passengers</span>
+                  <span className="font-bold text-white">{booking.passengers?.length || 1} Pax</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase block">Seats</span>
+                  <span className="font-bold text-white">
+                    {booking.passengers?.map((p) => p.seatNumber).filter(Boolean).join(', ') || 'Auto-assigned'}
                   </span>
                 </div>
-                <div className="text-2xl font-black text-amber-400">
-                  ₹{booking.totalAmount?.toLocaleString('en-IN')}
+              </div>
+
+              {/* Passenger Name & Total Due */}
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 block font-medium">Passenger</span>
+                  <span className="text-xs font-semibold text-slate-200">{leadPassenger}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 block font-medium">Total Amount Due</span>
+                  <div className="text-lg font-black text-amber-400">
+                    <AnimatedPrice value={booking.totalAmount || 0} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Payment Method Switcher Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#181A22] border border-white/10">
-              <button
+            {/* Error Message Alert */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="font-medium">{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Payment Method Selector Tabs */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-[#181A22] rounded-xl border border-white/10">
+              <motion.button
+                whileTap={{ scale: 0.96 }}
                 type="button"
-                onClick={() => {
-                  setPaymentMethodTab('instant');
-                  setError(null);
-                }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                onClick={() => setPaymentMethodTab('instant')}
+                className={`py-2 px-3 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
                   paymentMethodTab === 'instant'
                     ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <Zap className={`w-3.5 h-3.5 ${paymentMethodTab === 'instant' ? 'text-black' : 'text-amber-400'}`} />
-                <span>Instant 1-Click (Demo)</span>
-              </button>
-
-              <button
+                <Zap className="w-3.5 h-3.5" />
+                <span>Instant 1-Click Pay (Demo)</span>
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
                 type="button"
-                onClick={() => {
-                  setPaymentMethodTab('razorpay');
-                  setError(null);
-                }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                onClick={() => setPaymentMethodTab('razorpay')}
+                className={`py-2 px-3 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
                   paymentMethodTab === 'razorpay'
                     ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold'
-                    : 'text-slate-300 hover:text-white'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <CreditCard className={`w-3.5 h-3.5 ${paymentMethodTab === 'razorpay' ? 'text-black' : 'text-amber-400'}`} />
+                <Lock className="w-3.5 h-3.5" />
                 <span>Razorpay Gateway</span>
-              </button>
+              </motion.button>
             </div>
-
-            {error && (
-              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs space-y-2">
-                <div className="flex items-center gap-2 font-medium">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>{error}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleInstantTestPayment}
-                  disabled={payLoading}
-                  className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs flex items-center justify-center gap-2 transition shadow-glow-gold"
-                >
-                  <Zap className="w-3.5 h-3.5 text-black" />
-                  <span>Complete with 1-Click Instant Demo Payment</span>
-                </button>
-              </div>
-            )}
 
             {/* Action Button */}
             <div className="space-y-2 pt-1">
               {paymentMethodTab === 'instant' ? (
-                <button
+                <motion.button
+                  whileTap={{ scale: payLoading || timeLeft === 0 ? 1 : 0.97 }}
                   type="button"
                   disabled={payLoading || timeLeft === 0}
                   onClick={handleInstantTestPayment}
@@ -382,9 +416,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span>Instant 1-Click Pay ₹{booking.totalAmount?.toLocaleString('en-IN')} (Demo Sandbox)</span>
                     </>
                   )}
-                </button>
+                </motion.button>
               ) : (
-                <button
+                <motion.button
+                  whileTap={{ scale: payLoading || timeLeft === 0 ? 1 : 0.97 }}
                   type="button"
                   disabled={payLoading || timeLeft === 0}
                   onClick={handleRazorpayCheckout}
@@ -401,17 +436,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span>Pay ₹{booking.totalAmount?.toLocaleString('en-IN')} via Razorpay Gateway</span>
                     </>
                   )}
-                </button>
+                </motion.button>
               )}
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 type="button"
                 onClick={onClose}
                 disabled={paymentSuccess}
                 className="w-full py-2.5 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-300 hover:text-white text-xs font-bold transition border border-white/10"
               >
                 Cancel & Review Itinerary
-              </button>
+              </motion.button>
             </div>
 
             {/* Security Badges */}
@@ -427,7 +463,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
           </>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

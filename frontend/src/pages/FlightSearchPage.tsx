@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plane,
   SlidersHorizontal,
@@ -18,6 +19,7 @@ import { FlightSearchWidget } from '../components/FlightSearchWidget';
 import { FlightCard } from '../components/FlightCard';
 import { FlightCardSkeleton } from '../components/FlightCardSkeleton';
 import { FlightFilters } from '../components/FlightFilters';
+import { staggerContainerVariants } from '../lib/motion';
 
 export const FlightSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -390,7 +392,12 @@ export const FlightSearchPage: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <motion.div
+              variants={staggerContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-4"
+            >
               {filteredFlights.map((flight) => (
                 <FlightCard
                   key={flight.id}
@@ -399,7 +406,7 @@ export const FlightSearchPage: React.FC = () => {
                   passengerCount={passengers}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
         </main>
       </section>

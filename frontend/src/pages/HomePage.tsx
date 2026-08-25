@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap,
   RotateCcw,
@@ -20,6 +21,7 @@ import { OptimizedImage } from '../components/OptimizedImage';
 import { LiveAirspaceFeed } from '../components/LiveAirspaceFeed';
 import { healthService } from '../services/healthService';
 import { HealthData } from '../types/api';
+import { staggerContainerVariants, cardEntranceVariants } from '../lib/motion';
 
 const HERO_DESTINATIONS = [
   {
@@ -152,108 +154,147 @@ export const HomePage: React.FC = () => {
     fetchHealth();
   }, []);
 
-  const handleQuickRoute = (from: string, to: string) => {
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-    navigate(`/flights?origin=${from}&destination=${to}&departureDate=${tomorrow}&cabinClass=ECONOMY&passengers=1`);
-  };
-
   const currentHero = HERO_DESTINATIONS[currentHeroIdx];
 
+  const handleQuickRoute = (from: string, to: string) => {
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    const dateStr = nextWeek.toISOString().split('T')[0];
+    navigate(`/flights?origin=${from}&destination=${to}&departureDate=${dateStr}&cabinClass=ECONOMY&passengers=1`);
+  };
+
   return (
-    <div className="w-full">
+    <div className="space-y-0 text-slate-100">
       {/* ======================================================== */}
-      {/* 1. TRUE FULLSCREEN HERO BACKGROUND VIEWPORT              */}
+      {/* 1. FULLSCREEN HERO SECTION                               */}
       {/* ======================================================== */}
       <section
-        className="relative w-full min-h-[94vh] min-h-[94dvh] lg:min-h-screen flex flex-col justify-between px-4 sm:px-6 lg:px-12 pt-6 pb-10 overflow-hidden"
+        className="relative min-h-[92vh] sm:min-h-screen flex flex-col justify-between overflow-hidden bg-black"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        {/* Fullscreen High-Resolution Edge-to-Edge Image Carousel */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {HERO_DESTINATIONS.map((dest, idx) => (
-            <img
-              key={dest.name}
-              src={dest.image}
-              alt={dest.name}
-              className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-1000 ease-in-out ${
-                idx === currentHeroIdx
-                  ? 'opacity-85 scale-100 filter brightness-95'
-                  : 'opacity-0 scale-105 pointer-events-none'
-              }`}
-            />
-          ))}
-          {/* Subtle Glassmorphic Vignette Overlay: Keeps image clear & vibrant while making text readable */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0B0C10]/70 via-[#0B0C10]/30 to-[#0B0C10]" />
-          <div className="absolute inset-0 bg-black/25 pointer-events-none" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/20 to-[#0B0C10]/80 pointer-events-none" />
-        </div>
-
-        {/* Hero Content Top Bar */}
-        <div className="relative z-10 max-w-6xl mx-auto w-full pt-2 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B0C10]/75 backdrop-blur-xl border border-white/15 text-amber-400 text-xs font-bold shadow-2xl">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-              <span>Next-Gen Travel Ecosystem</span>
-            </div>
-
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B0C10]/75 backdrop-blur-xl border border-white/15 text-xs font-semibold text-slate-200 shadow-2xl">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              <span>Featured Destination: <strong className="text-white font-black">{currentHero.name}</strong>, {currentHero.country}</span>
-            </div>
-          </div>
-
-          {/* Headline & Value Proposition */}
-          <div className="text-center space-y-3 pt-2">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-              Explore • Book • Journey
-            </h1>
-            <p className="text-slate-200 text-sm sm:text-base max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
-              Book flights with interactive seat selection, reserve hotels with live room availability, and track journeys with real-time live flight radar.
-            </p>
-          </div>
-
-          {/* Embedded Floating Glassmorphic Search Widget */}
-          <div className="pt-2 text-left">
-            <FlightSearchWidget />
-          </div>
-        </div>
-
-        {/* Carousel Indicators & Controls */}
-        <div className="relative z-10 max-w-6xl mx-auto w-full flex items-center justify-between pt-6 border-t border-white/15 text-xs mt-4">
-          <div className="flex items-center gap-2.5">
-            {HERO_DESTINATIONS.map((d, i) => (
-              <button
-                key={d.name}
-                type="button"
-                onClick={() => setCurrentHeroIdx(i)}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  i === currentHeroIdx ? 'w-10 bg-gradient-to-r from-amber-400 to-amber-500 shadow-glow-gold' : 'w-3 bg-white/40 hover:bg-white/70'
-                }`}
-                aria-label={`View ${d.name}`}
+        {/* Dynamic Background Image with Smooth Cross-Fade */}
+        <div className="absolute inset-0 z-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentHero.image}
+              initial={{ opacity: 0, scale: 1.04 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-0"
+            >
+              <img
+                src={currentHero.image}
+                alt={currentHero.name}
+                className="w-full h-full object-cover object-center"
               />
-            ))}
+            </motion.div>
+          </AnimatePresence>
+          {/* Obsidian Gradient Overlays for High-Contrast Luxury Legibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C10] via-[#0B0C10]/60 to-[#0B0C10]/40" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#0B0C10]/30 to-[#0B0C10]/90" />
+        </div>
+
+        {/* Hero Top Content: Badges & Headings */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-8 w-full text-center space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0B0C10]/80 backdrop-blur-md border border-amber-400/30 text-amber-400 text-xs font-bold shadow-glow-gold"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Next-Gen Smart Travel Platform</span>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.08] max-w-4xl mx-auto"
+          >
+            Seamless Journeys.{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 drop-shadow-sm">
+              Smarter Fares.
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed"
+          >
+            {currentHero.tagline}
+          </motion.p>
+        </div>
+
+        {/* Flight Search Widget Container */}
+        <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <FlightSearchWidget />
+          </motion.div>
+        </div>
+
+        {/* Hero Bottom Bar: Destination Switcher & Quick Book Pill */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full flex flex-wrap items-center justify-between gap-4">
+          {/* Quick Route Shortcut */}
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              type="button"
+              onClick={() => handleQuickRoute(currentHero.from, currentHero.to)}
+              className="px-4 py-2 rounded-xl bg-[#0B0C10]/80 backdrop-blur-md hover:bg-[#14161F] text-xs font-bold text-white border border-white/15 flex items-center gap-2 transition shadow-xl group"
+            >
+              <MapPin className="w-3.5 h-3.5 text-amber-400" />
+              <span>
+                Fly to <strong className="text-amber-400">{currentHero.name}</strong> from ₹{currentHero.price}
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
           </div>
 
+          {/* Carousel Indicators & Controls */}
           <div className="flex items-center gap-2">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               type="button"
-              onClick={() =>
-                setCurrentHeroIdx((prev) => (prev - 1 + HERO_DESTINATIONS.length) % HERO_DESTINATIONS.length)
-              }
+              onClick={() => setCurrentHeroIdx((prev) => (prev - 1 + HERO_DESTINATIONS.length) % HERO_DESTINATIONS.length)}
               className="p-2.5 rounded-xl bg-[#0B0C10]/80 backdrop-blur-md hover:bg-[#1F222E] text-white border border-white/15 transition shadow-2xl"
               aria-label="Previous destination"
             >
               <ChevronLeft className="w-4 h-4 text-amber-400" />
-            </button>
-            <button
+            </motion.button>
+
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0B0C10]/80 backdrop-blur-md border border-white/15">
+              {HERO_DESTINATIONS.map((dest, idx) => (
+                <button
+                  key={dest.name}
+                  type="button"
+                  onClick={() => setCurrentHeroIdx(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    currentHeroIdx === idx ? 'w-6 bg-amber-400 shadow-glow-gold' : 'w-2 bg-white/30 hover:bg-white/60'
+                  }`}
+                  aria-label={`Go to ${dest.name}`}
+                />
+              ))}
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               type="button"
               onClick={() => setCurrentHeroIdx((prev) => (prev + 1) % HERO_DESTINATIONS.length)}
               className="p-2.5 rounded-xl bg-[#0B0C10]/80 backdrop-blur-md hover:bg-[#1F222E] text-white border border-white/15 transition shadow-2xl"
               aria-label="Next destination"
             >
               <ChevronRight className="w-4 h-4 text-amber-400" />
-            </button>
+            </motion.button>
           </div>
         </div>
       </section>
@@ -263,7 +304,14 @@ export const HomePage: React.FC = () => {
       {/* ======================================================== */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-20 pt-12">
         {/* Special Offers & Promotions */}
-        <section id="offers" className="space-y-6">
+        <motion.section
+          id="offers"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="space-y-6"
+        >
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-wider">
@@ -279,9 +327,10 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {OFFERS.map((offer, idx) => (
-              <div
+              <motion.div
                 key={idx}
-                className="rounded-2xl bg-[#14161F] border border-white/10 p-6 flex flex-col justify-between space-y-4 hover:border-amber-500/40 hover:shadow-card-hover transition duration-300 group"
+                whileHover={{ y: -4, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+                className="rounded-2xl bg-[#14161F] border border-white/10 p-6 flex flex-col justify-between space-y-4 hover:border-amber-500/40 hover:shadow-card-hover transition-colors duration-300 group"
               >
                 <div className="space-y-2">
                   <span className="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-400/10 text-amber-400 border border-amber-400/20">
@@ -295,22 +344,29 @@ export const HomePage: React.FC = () => {
                   <div className="px-3 py-1 rounded-lg bg-[#1A1C24] border border-dashed border-amber-500/40 text-xs font-mono font-bold text-amber-400">
                     <span>{offer.code}</span>
                   </div>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
                     type="button"
                     onClick={() => navigate('/flights')}
                     className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition"
                   >
                     <span>Book Flight</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Live Airspace Radar Preview */}
-        <section className="space-y-6">
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="space-y-6"
+        >
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-wider">
@@ -325,14 +381,15 @@ export const HomePage: React.FC = () => {
               </p>
             </div>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={() => navigate('/live-tracker')}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold flex items-center gap-1.5 transition shadow-glow-gold"
             >
               <span>Open Airspace Radar</span>
               <ArrowRight className="w-3.5 h-3.5 text-black" />
-            </button>
+            </motion.button>
           </div>
 
           <LiveAirspaceFeed
@@ -340,10 +397,17 @@ export const HomePage: React.FC = () => {
             limit={6}
             onSelectFlight={(flightNumber) => navigate(`/tracked-flights?flight=${flightNumber}`)}
           />
-        </section>
+        </motion.section>
 
         {/* Popular Destinations */}
-        <section id="destinations" className="space-y-6">
+        <motion.section
+          id="destinations"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="space-y-6"
+        >
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-wider">
@@ -358,22 +422,31 @@ export const HomePage: React.FC = () => {
               </p>
             </div>
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={() => navigate('/flights')}
               className="px-4 py-2 rounded-xl bg-[#14161F] hover:bg-[#1F222E] text-slate-200 border border-white/10 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
             >
               <span>View All Flights</span>
               <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
-            </button>
+            </motion.button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            variants={staggerContainerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
             {POPULAR_DESTINATIONS.map((dest, i) => (
-              <div
+              <motion.div
                 key={i}
+                variants={cardEntranceVariants}
+                whileHover={{ y: -5, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
                 onClick={() => handleQuickRoute(dest.from, dest.to)}
-                className="rounded-2xl bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover overflow-hidden cursor-pointer group flex flex-col justify-between transition-all duration-300"
+                className="rounded-2xl bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover overflow-hidden cursor-pointer group flex flex-col justify-between transition-colors duration-300"
               >
                 <div className="relative h-44 overflow-hidden bg-[#1A1C24]">
                   <OptimizedImage
@@ -407,16 +480,22 @@ export const HomePage: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </section>
+          </motion.div>
+        </motion.section>
 
         {/* Personalized Recommendations */}
         <RecommendationsSection />
 
         {/* Trust & Enterprise Architecture Pillars */}
-        <section className="rounded-3xl bg-[#12131A] text-white border border-white/10 p-8 sm:p-12 shadow-2xl space-y-8">
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-3xl bg-[#12131A] text-white border border-white/10 p-8 sm:p-12 shadow-2xl space-y-8"
+        >
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
               Enterprise Architecture & Reliability
@@ -430,7 +509,10 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-            <div className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5">
+            <motion.div
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5 transition-colors"
+            >
               <div className="w-10 h-10 rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center shadow-glow-gold">
                 <Zap className="w-5 h-5" />
               </div>
@@ -438,9 +520,12 @@ export const HomePage: React.FC = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 Interactive physical aircraft seat maps and hotel room reservations with 15-minute concurrency hold locks.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5">
+            <motion.div
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5 transition-colors"
+            >
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center shadow-glow-emerald">
                 <RotateCcw className="w-5 h-5" />
               </div>
@@ -448,9 +533,12 @@ export const HomePage: React.FC = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 Automated flight schedule monitoring with direct payment gateway refund reconciliation on cancellations.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5">
+            <motion.div
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="p-6 rounded-2xl bg-[#1A1C24] border border-white/10 space-y-2.5 transition-colors"
+            >
               <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent border border-accent/20 flex items-center justify-center shadow-glow-coral">
                 <Lock className="w-5 h-5" />
               </div>
@@ -458,9 +546,9 @@ export const HomePage: React.FC = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 Lock in current fares for 48 hours to protect your travel plans from surge pricing spikes.
               </p>
-            </div>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Live Platform Health & Status Badge */}
         <section className="max-w-md mx-auto">

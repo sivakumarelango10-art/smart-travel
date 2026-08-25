@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Plane, BookmarkCheck, RotateCcw,
   Ticket, UserCheck, Zap, Bell, Activity, Shield,
@@ -8,6 +9,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { AdminToastProvider } from '../components/admin/AdminToast';
 import { BrandLogo } from '../components/BrandLogo';
+import { PageTransition } from '../components/PageTransition';
 
 interface NavItem {
   label: string;
@@ -171,7 +173,11 @@ export const AdminLayout: React.FC = () => {
 
           {/* Page Content */}
           <main className="flex-1 overflow-auto p-4 lg:p-6">
-            <Outlet />
+            <AnimatePresence mode="wait" initial={false}>
+              <PageTransition key={location.pathname}>
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
           </main>
         </div>
       </div>

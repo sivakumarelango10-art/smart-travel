@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, Check, Sparkles, Radio } from 'lucide-react';
 import { Seat, SeatMapUpdateEvent } from '../types/api';
 import { useSeatMapWebSocket } from '../hooks/useSeatMapWebSocket';
@@ -236,12 +237,19 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         </div>
       </div>
 
-      {conflictError && (
-        <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{conflictError}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {conflictError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{conflictError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Airplane Fuselage Layout */}
       <div className="max-w-md mx-auto p-6 sm:p-8 rounded-[40px] bg-[#12131A] border-2 border-white/10 shadow-2xl relative">
@@ -271,13 +279,14 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             <p className="text-sm font-semibold text-slate-300">Loading physical seat configuration...</p>
             <p className="text-xs text-slate-500">Retrieving real-time seat inventory for this aircraft.</p>
             {onRefreshSeats && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={onRefreshSeats}
                 className="mt-2 px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-400 border border-amber-400/30 text-xs font-bold transition inline-flex items-center gap-1.5"
               >
                 Refresh Seat Layout
-              </button>
+              </motion.button>
             )}
           </div>
         ) : (
@@ -309,23 +318,27 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const matchesPref = isPreferredSeat(seat, rowNum, col);
 
                         return (
-                          <button
+                          <motion.button
                             key={seat.seatNumber}
                             type="button"
                             disabled={!isAvailable && !isSelected}
                             onClick={() => handleSeatClick(seat)}
+                            whileHover={{ scale: isAvailable || isSelected ? 1.1 : 1 }}
+                            whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
+                            animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
+                            transition={{ duration: 0.2 }}
                             title={`${seat.seatNumber} • ${seat.cabinClass} ${
                               isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
                             } ${matchesPref ? '• Matches your preference!' : ''}`}
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
+                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
                               isSelected
-                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold scale-105'
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
                                 : isAvailable
                                 ? isExtraLegroom
-                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 hover:scale-105'
+                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
                                   : matchesPref
-                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300 hover:scale-105'
-                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200 hover:scale-105'
+                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300'
+                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200'
                                 : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
@@ -336,7 +349,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             ) : (
                               col
                             )}
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </div>
@@ -358,23 +371,27 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const matchesPref = isPreferredSeat(seat, rowNum, col);
 
                         return (
-                          <button
+                          <motion.button
                             key={seat.seatNumber}
                             type="button"
                             disabled={!isAvailable && !isSelected}
                             onClick={() => handleSeatClick(seat)}
+                            whileHover={{ scale: isAvailable || isSelected ? 1.1 : 1 }}
+                            whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
+                            animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
+                            transition={{ duration: 0.2 }}
                             title={`${seat.seatNumber} • ${seat.cabinClass} ${
                               isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
                             } ${matchesPref ? '• Matches your preference!' : ''}`}
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-all duration-150 flex items-center justify-center relative ${
+                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
                               isSelected
-                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold scale-105'
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
                                 : isAvailable
                                 ? isExtraLegroom
-                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 hover:scale-105'
+                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
                                   : matchesPref
-                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300 hover:scale-105'
-                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200 hover:scale-105'
+                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300'
+                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200'
                                 : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
                             }`}
                           >
@@ -385,7 +402,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             ) : (
                               col
                             )}
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </div>

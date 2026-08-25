@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Building2, Search, Star, MapPin, ArrowRight } from 'lucide-react';
 import { Hotel } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { HotelCardSkeleton } from '../components/HotelCardSkeleton';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { AnimatedPrice } from '../components/AnimatedPrice';
 import { recommendationService } from '../services/recommendationService';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
+import { staggerContainerVariants, cardEntranceVariants } from '../lib/motion';
 
 export const HotelSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -209,15 +212,22 @@ export const HotelSearchPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            variants={staggerContainerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {hotels.map((hotel) => {
               const photos = resolveHotelPhotos(hotel);
               const thumbnail = photos[0];
 
               return (
-                <div
+                <motion.div
                   key={hotel.id}
-                  className="rounded-2xl bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover overflow-hidden group flex flex-col justify-between transition-all duration-300"
+                  variants={cardEntranceVariants}
+                  whileHover={{ y: -4, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+                  className="rounded-2xl bg-[#14161F] border border-white/10 hover:border-amber-500/40 hover:shadow-card-hover overflow-hidden group flex flex-col justify-between transition-colors duration-300"
                 >
                   <div>
                     {/* Hotel Image with Badges */}
@@ -272,23 +282,23 @@ export const HotelSearchPage: React.FC = () => {
                     <div>
                       <span className="text-[10px] text-slate-400 font-medium block">Starting rate</span>
                       <div className="text-xl font-black text-amber-400">
-                        ₹{hotel.baseNightlyRate?.toLocaleString('en-IN')}
+                        <AnimatedPrice value={hotel.baseNightlyRate || 0} />
                         <span className="text-xs text-slate-400 font-normal"> / night</span>
                       </div>
                     </div>
 
                     <Link
                       to={`/hotels/${hotel.id}`}
-                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-black flex items-center gap-1.5 transition shadow-glow-gold"
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-95 text-black text-xs font-black flex items-center gap-1.5 transition shadow-glow-gold"
                     >
                       <span>Select Rooms</span>
                       <ArrowRight className="w-3.5 h-3.5 text-black" />
                     </Link>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
         {/* Pagination */}

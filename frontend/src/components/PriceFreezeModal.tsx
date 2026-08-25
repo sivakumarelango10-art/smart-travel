@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Clock, ShieldCheck, AlertCircle, X, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { CabinClass, PriceFreeze } from '../types/api';
 import { pricingService } from '../services/pricingService';
 import { useAuth } from '../context/AuthContext';
+import { AnimatedPrice } from './AnimatedPrice';
+import { modalBackdropVariants, modalDialogVariants } from '../lib/motion';
 
 interface PriceFreezeModalProps {
   flightId: string;
@@ -52,35 +55,64 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        variants={modalBackdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/75 backdrop-blur-md"
+      />
+
+      {/* Dialog */}
+      <motion.div
+        variants={modalDialogVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="relative z-10 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl"
+      >
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-slate-800 rounded-lg">
-              <Lock className="w-5 h-5 text-blue-400" />
+              <Lock className="w-5 h-5 text-amber-400" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-white">Freeze Fare</h3>
               <p className="text-xs text-slate-400">Lock this rate against price surges</p>
             </div>
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
-          </button>
+          </motion.button>
         </div>
 
-        {error && (
-          <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
-          </div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mt-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg text-xs flex items-center gap-2"
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {createdFreeze ? (
-          <div className="mt-6 text-center space-y-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-6 text-center space-y-4"
+          >
             <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-center mx-auto text-emerald-400">
               <CheckCircle2 className="w-6 h-6" />
             </div>
@@ -89,7 +121,7 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
               <p className="text-xs text-slate-400 mt-1">
                 Your fare is locked at{' '}
                 <span className="text-white font-semibold">
-                  ₹{createdFreeze.lockedTotalPrice.toLocaleString()}
+                  <AnimatedPrice value={createdFreeze.lockedTotalPrice} />
                 </span>{' '}
                 until{' '}
                 <span className="text-white font-medium">
@@ -116,16 +148,19 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
               </div>
               <div className="flex justify-between pt-1 border-t border-slate-700">
                 <span className="text-slate-400">Locked Price</span>
-                <span className="font-bold text-white">₹{createdFreeze.lockedTotalPrice.toLocaleString()}</span>
+                <span className="font-bold text-white">
+                  <AnimatedPrice value={createdFreeze.lockedTotalPrice} />
+                </span>
               </div>
             </div>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={onClose}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+              className="w-full py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-sm font-bold rounded-xl transition shadow-glow-gold"
             >
               Done
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         ) : (
           <div className="mt-4 space-y-4">
             <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-3">
@@ -143,13 +178,15 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
               </div>
               <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-700">
                 <span className="text-slate-400">Current Total:</span>
-                <span className="text-base font-bold text-white">₹{currentPrice.toLocaleString()}</span>
+                <div className="text-base font-bold text-white">
+                  <AnimatedPrice value={currentPrice} />
+                </div>
               </div>
             </div>
 
             <div className="space-y-2 text-xs text-slate-400">
               <div className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                 <span>Locks this exact fare for <strong>30 minutes</strong> even if market demand surges.</span>
               </div>
               <div className="flex items-start gap-2">
@@ -159,26 +196,28 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-3">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors"
               >
                 Cancel
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 type="button"
                 onClick={handleCreateFreeze}
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-50 text-black text-sm font-bold rounded-xl transition shadow-glow-gold"
               >
                 {loading ? 'Locking...' : 'Lock Price Now'}
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
