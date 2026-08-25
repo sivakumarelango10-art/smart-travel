@@ -62,15 +62,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.login(credentials);
     if (res.success && res.data?.user) {
       setUser(res.data.user);
-      // Also fetch full profile details
-      try {
-        const profRes = await authService.getProfile();
+      // Asynchronously refresh full profile details in background without delaying navigation
+      authService.getProfile().then((profRes) => {
         if (profRes.success && profRes.data) {
           setUser(profRes.data);
         }
-      } catch {
-        // Fallback to basic user summary from login
-      }
+      }).catch(() => {
+        // Fallback remains user summary from login
+      });
     }
   };
 
@@ -78,14 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.loginWithGoogle(credential, rememberMe);
     if (res.success && res.data?.user) {
       setUser(res.data.user);
-      try {
-        const profRes = await authService.getProfile();
+      // Asynchronously refresh full profile details in background without delaying navigation
+      authService.getProfile().then((profRes) => {
         if (profRes.success && profRes.data) {
           setUser(profRes.data);
         }
-      } catch {
-        // Fallback to basic user summary from Google login
-      }
+      }).catch(() => {
+        // Fallback remains user summary from Google login
+      });
     }
   };
 

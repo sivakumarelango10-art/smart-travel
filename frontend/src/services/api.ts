@@ -33,6 +33,7 @@ apiClient.interceptors.request.use(
     const isPublicAuthEndpoint =
       url.includes('/auth/register') ||
       url.includes('/auth/login') ||
+      url.includes('/auth/google') ||
       url.includes('/auth/refresh') ||
       url.includes('/auth/refresh-token') ||
       url.includes('/auth/forgot-password') ||
