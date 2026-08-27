@@ -142,26 +142,42 @@ public class SecurityConfig {
                         ).permitAll()
                         // Public Flight Catalog & Search (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/api/v1/flights/**", "/v1/flights/**", "/api/flights/**", "/flights/**"
+                                "/api/v1/flights", "/api/v1/flights/**",
+                                "/v1/flights", "/v1/flights/**",
+                                "/api/flights", "/api/flights/**",
+                                "/flights", "/flights/**"
                         ).permitAll()
                         // Public Hotel Search & Catalog (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/v1/hotels/**", "/api/v1/hotels/**"
+                                "/api/v1/hotels", "/api/v1/hotels/**",
+                                "/v1/hotels", "/v1/hotels/**",
+                                "/api/hotels", "/api/hotels/**",
+                                "/hotels", "/hotels/**"
                         ).permitAll()
                         // Public Reviews (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/v1/reviews/**", "/api/v1/reviews/**"
+                                "/api/v1/reviews", "/api/v1/reviews/**",
+                                "/v1/reviews", "/v1/reviews/**",
+                                "/api/reviews", "/api/reviews/**",
+                                "/reviews", "/reviews/**"
                         ).permitAll()
                         // Public Recommendations (GET endpoints + POST /track)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/v1/recommendations/**", "/api/v1/recommendations/**"
+                                "/api/v1/recommendations", "/api/v1/recommendations/**",
+                                "/v1/recommendations", "/v1/recommendations/**",
+                                "/api/recommendations", "/api/recommendations/**",
+                                "/recommendations", "/recommendations/**"
                         ).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
-                                "/v1/recommendations/track", "/api/v1/recommendations/track"
+                                "/v1/recommendations/track", "/api/v1/recommendations/track",
+                                "/api/recommendations/track", "/recommendations/track"
                         ).permitAll()
                         // Public Pricing (GET endpoints)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
-                                "/v1/pricing/**", "/api/v1/pricing/**"
+                                "/api/v1/pricing", "/api/v1/pricing/**",
+                                "/v1/pricing", "/v1/pricing/**",
+                                "/api/pricing", "/api/pricing/**",
+                                "/pricing", "/pricing/**"
                         ).permitAll()
                         // Public Boarding Pass Scanner Verification (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
