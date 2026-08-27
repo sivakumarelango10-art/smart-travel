@@ -76,10 +76,16 @@ export default function App() {
                 
                 {/* Live Flight Tracker & Radar Routes (Canonical: /live-tracker) */}
                 <Route path="live-tracker" element={<TrackedFlightsPage />} />
+                <Route path="live tracker" element={<TrackedFlightsPage />} />
+                <Route path="live%20tracker" element={<TrackedFlightsPage />} />
+                <Route path="live_tracker" element={<TrackedFlightsPage />} />
                 <Route path="tracked-flights" element={<TrackedFlightsPage />} />
                 <Route path="tracker" element={<TrackedFlightsPage />} />
                 <Route path="radar" element={<TrackedFlightsPage />} />
                 <Route path="live" element={<TrackedFlightsPage />} />
+                <Route path="live-radar" element={<TrackedFlightsPage />} />
+                <Route path="flight-radar" element={<TrackedFlightsPage />} />
+                <Route path="flight-tracker" element={<TrackedFlightsPage />} />
 
                 {/* Deals & Offers Routes (Canonical: /offers) */}
                 <Route path="offers" element={<OffersPage />} />

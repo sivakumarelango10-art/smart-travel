@@ -48,11 +48,15 @@ class FlightStatusWebSocketManager {
   private isExplicitlyDisconnected: boolean = false;
 
   private getWsUrl(): string {
-    if (WS_BASE_URL) return `${WS_BASE_URL}/ws`;
-    if (API_BASE_URL && API_BASE_URL !== '/api') {
-      return `${API_BASE_URL}/ws`;
+    let base = 'http://localhost:8080';
+    if (WS_BASE_URL) {
+      base = WS_BASE_URL.replace(/\/ws\/?$/i, '');
+    } else if (API_BASE_URL && API_BASE_URL !== '/api') {
+      base = API_BASE_URL.replace(/\/api(\/v1)?\/?$/i, '');
     }
-    return 'http://localhost:8080/ws';
+    // SockJS client requires http/https scheme, never ws/wss
+    const sanitizedBase = base.replace(/^ws:\/\//i, 'http://').replace(/^wss:\/\//i, 'https://');
+    return `${sanitizedBase}/ws`;
   }
 
   /**

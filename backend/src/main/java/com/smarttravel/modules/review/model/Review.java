@@ -103,6 +103,8 @@ public class Review {
         public Builder bookingId(String v) { r.bookingId = v; return this; }
         public Builder verifiedPurchase(boolean v) { r.verifiedPurchase = v; return this; }
         public Builder photos(List<String> v) { r.photos = v != null ? v : new ArrayList<>(); return this; }
+        public Builder createdAt(Instant v) { r.createdAt = v; return this; }
+        public Builder updatedAt(Instant v) { r.updatedAt = v; return this; }
         public Review build() { return r; }
     }
 

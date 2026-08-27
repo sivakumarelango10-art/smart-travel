@@ -57,7 +57,7 @@ export const TrackedFlightsPage: React.FC = () => {
     setSearchLoading(true);
     setSearchError(null);
     try {
-      const cleanNumber = flightNumber.trim().toUpperCase();
+      const cleanNumber = flightNumber.trim().toUpperCase().replace(/\s+/g, '-').replace(/_+/g, '-');
       const res = await flightService.getLiveFlightStatus(cleanNumber);
       if (res.success && res.data) {
         setActiveSnapshot(res.data);

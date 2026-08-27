@@ -66,15 +66,15 @@ public class ReviewController {
     @Operation(summary = "Get reviews for a specific flight or hotel")
     @GetMapping({"", "/target/{targetType}/{targetId}"})
     public ResponseEntity<ApiResponse<Page<Review>>> getReviews(
-            @PathVariable(required = false) ReviewTargetType targetType,
-            @PathVariable(required = false) String targetId,
-            @RequestParam(required = false) ReviewTargetType targetTypeParam,
-            @RequestParam(required = false) String targetIdParam,
+            @PathVariable(name = "targetType", required = false) ReviewTargetType pathTargetType,
+            @PathVariable(name = "targetId", required = false) String pathTargetId,
+            @RequestParam(name = "targetType", required = false) ReviewTargetType queryTargetType,
+            @RequestParam(name = "targetId", required = false) String queryTargetId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        ReviewTargetType effectiveType = targetType != null ? targetType : targetTypeParam;
-        String effectiveId = targetId != null ? targetId : targetIdParam;
+        ReviewTargetType effectiveType = pathTargetType != null ? pathTargetType : queryTargetType;
+        String effectiveId = pathTargetId != null ? pathTargetId : queryTargetId;
 
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
         Page<Review> reviews = (effectiveType != null && effectiveId != null)
