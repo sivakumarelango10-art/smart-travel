@@ -35,13 +35,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.smarttravel.modules.hotel.controller.HotelController;
+import com.smarttravel.modules.hotel.model.Hotel;
+import com.smarttravel.modules.hotel.model.RoomCategory;
+import com.smarttravel.modules.hotel.model.RoomType;
+
 @WebMvcTest(
         controllers = {
                 SecurityAccessTest.ProtectedSampleController.class,
                 HealthController.class,
                 AuthController.class,
                 FlightController.class,
-                AdminFlightController.class
+                AdminFlightController.class,
+                HotelController.class
         },
         excludeAutoConfiguration = { UserDetailsServiceAutoConfiguration.class }
 )
@@ -53,7 +59,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         HealthController.class,
         AuthController.class,
         FlightController.class,
-        AdminFlightController.class
+        AdminFlightController.class,
+        HotelController.class
 })
 class SecurityAccessTest {
 
@@ -258,5 +265,65 @@ class SecurityAccessTest {
         mockMvc.perform(get("/api/v1/admin/dashboard")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Anonymous user can access GET /api/v1/hotels/htl-hyd-01 without authentication")
+    void testAnonymousAccessToHotelDetails() throws Exception {
+        Hotel sample = Hotel.builder()
+                .id("htl-hyd-01")
+                .name("Taj Falaknuma Palace")
+                .nearestAirportCode("HYD")
+                .active(true)
+                .build();
+
+        when(hotelService.getHotelById("htl-hyd-01")).thenReturn(sample);
+
+        mockMvc.perform(get("/api/v1/hotels/htl-hyd-01")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value("htl-hyd-01"))
+                .andExpect(jsonPath("$.data.name").value("Taj Falaknuma Palace"));
+    }
+
+    @Test
+    @DisplayName("Anonymous user can access GET /api/v1/hotels search without authentication")
+    void testAnonymousAccessToHotelSearch() throws Exception {
+        when(hotelService.searchHotels(any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/hotels")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("Anonymous user can access GET /api/v1/hotels/htl-hyd-01/rooms without authentication")
+    void testAnonymousAccessToHotelRooms() throws Exception {
+        RoomType room = RoomType.builder()
+                .id("rm-01")
+                .name("Palace Room")
+                .category(RoomCategory.DELUXE)
+                .build();
+
+        when(hotelService.getRoomTypes("htl-hyd-01")).thenReturn(List.of(room));
+
+        mockMvc.perform(get("/api/v1/hotels/htl-hyd-01/rooms")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].id").value("rm-01"));
+    }
+
+    @Test
+    @DisplayName("Anonymous user attempting POST /api/v1/hotels/htl-hyd-01/hold is rejected with 401 Unauthorized")
+    void testAnonymousHoldRoomRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/hotels/htl-hyd-01/hold")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roomTypeId\":\"rm-01\",\"quantity\":1}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 }

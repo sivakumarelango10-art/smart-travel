@@ -44,6 +44,8 @@ export const HotelDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
+  const [errorCode, setErrorCode] = useState<number | null>(null);
+
   // Room hold state
   const [holdingRoomId, setHoldingRoomId] = useState<string | null>(null);
   const [holdSuccess, setHoldSuccess] = useState<string | null>(null);
@@ -86,6 +88,7 @@ export const HotelDetailsPage: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setErrorCode(null);
     hotelService
       .getHotel(cleanHotelId)
       .then((data) => {
@@ -100,6 +103,8 @@ export const HotelDetailsPage: React.FC = () => {
         });
       })
       .catch((err: any) => {
+        const status = err.status || err.response?.status || err.response?.data?.status || 0;
+        setErrorCode(status);
         const msg = err.response?.data?.message || err.message || 'Hotel property not found in catalog.';
         setError(msg);
       })
@@ -154,20 +159,47 @@ export const HotelDetailsPage: React.FC = () => {
   }
 
   if (error || !hotel) {
+    let title = 'Hotel Not Found';
+    let description = error || 'The requested hotel could not be found in our catalog.';
+
+    if (errorCode === 401) {
+      title = 'Authentication Required';
+      description = 'Please sign in to access this hotel listing.';
+    } else if (errorCode === 403) {
+      title = 'Access Denied';
+      description = 'You do not have permission to access this resource.';
+    } else if (errorCode === 500) {
+      title = 'Server Error';
+      description = 'Unable to load hotel details. Please try again.';
+    } else if (errorCode === 0 || errorCode === 408) {
+      title = 'Connection Error';
+      description = 'Unable to connect to SmartTravel. Please try again.';
+    }
+
     return (
       <div className="max-w-xl mx-auto my-16 p-8 text-center bg-[#14161F] border border-white/10 rounded-3xl shadow-xl space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-bold text-white">Property Unavailable</h2>
-        <p className="text-xs text-slate-400">{error || 'Hotel property not found in catalog.'}</p>
-        <Link
-          to="/hotels"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs shadow-glow-gold"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Return to Hotel Search</span>
-        </Link>
+        <h2 className="text-xl font-bold text-white">{title}</h2>
+        <p className="text-xs text-slate-400">{description}</p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link
+            to="/hotels"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E222D] hover:bg-[#282D3C] text-slate-200 font-bold text-xs border border-white/10 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Return to Hotel Search</span>
+          </Link>
+          {errorCode === 401 && (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold text-xs shadow-glow-gold transition-transform hover:scale-105"
+            >
+              <span>Sign In</span>
+            </Link>
+          )}
+        </div>
       </div>
     );
   }
