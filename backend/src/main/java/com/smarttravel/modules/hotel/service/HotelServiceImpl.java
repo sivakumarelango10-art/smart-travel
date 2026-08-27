@@ -66,8 +66,24 @@ public class HotelServiceImpl implements HotelService {
     @Override
     @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, key = "#hotelId")
     public Hotel getHotelById(String hotelId) {
-        return hotelRepository.findById(hotelId)
-                .orElseThrow(() -> new ResourceNotFoundException("Hotel", "id", hotelId));
+        if (hotelId == null || hotelId.isBlank()) {
+            throw new ResourceNotFoundException("Hotel", "id", hotelId);
+        }
+        String cleanId = hotelId.trim();
+        java.util.Optional<Hotel> hotel = hotelRepository.findById(cleanId);
+        if (hotel.isPresent()) return hotel.get();
+
+        // Check hyphenated format (e.g., htl_rsh_01 or "htl rsh 01" -> htl-rsh-01)
+        String hyphenated = cleanId.replace('_', '-').replace(' ', '-').toLowerCase();
+        hotel = hotelRepository.findById(hyphenated);
+        if (hotel.isPresent()) return hotel.get();
+
+        // Check underscored format
+        String underscored = cleanId.replace('-', '_').replace(' ', '_').toLowerCase();
+        hotel = hotelRepository.findById(underscored);
+        if (hotel.isPresent()) return hotel.get();
+
+        throw new ResourceNotFoundException("Hotel", "id", hotelId);
     }
 
     @Override

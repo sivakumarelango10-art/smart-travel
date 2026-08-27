@@ -152,9 +152,12 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/reviews/**", "/api/v1/reviews/**"
                         ).permitAll()
-                        // Public Recommendations (GET endpoints)
+                        // Public Recommendations (GET endpoints + POST /track)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/v1/recommendations/**", "/api/v1/recommendations/**"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/v1/recommendations/track", "/api/v1/recommendations/track"
                         ).permitAll()
                         // Public Pricing (GET endpoints)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,

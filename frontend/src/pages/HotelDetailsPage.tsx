@@ -77,30 +77,36 @@ export const HotelDetailsPage: React.FC = () => {
     enabled: !!hotelId,
   });
 
+  const cleanHotelId = useMemo(() => {
+    return hotelId ? decodeURIComponent(hotelId).trim() : '';
+  }, [hotelId]);
+
   useEffect(() => {
-    if (!hotelId) return;
+    if (!cleanHotelId) return;
 
     setLoading(true);
+    setError(null);
     hotelService
-      .getHotel(hotelId)
+      .getHotel(cleanHotelId)
       .then((data) => {
         setHotel(data);
         setActivePhotoIndex(0);
         // Track view activity
         recommendationService.trackActivity({
           activityType: 'VIEW_HOTEL',
-          targetId: hotelId,
+          targetId: cleanHotelId,
           targetType: 'HOTEL',
           metadata: { name: data.name, city: data.address?.city },
         });
       })
       .catch((err: any) => {
-        setError(err.message || 'Failed to load hotel details');
+        const msg = err.response?.data?.message || err.message || 'Hotel property not found in catalog.';
+        setError(msg);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [hotelId]);
+  }, [cleanHotelId]);
 
   const handleHoldRoom = async (roomTypeId: string) => {
     if (!hotelId) return;

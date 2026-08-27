@@ -71,11 +71,12 @@ public class RecommendationController {
 
     @Operation(summary = "Track a user activity event (for better recommendations)")
     @PostMapping("/track")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> trackActivity(
             @RequestBody TrackActivityRequest request,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = (authentication != null && authentication.isAuthenticated() && !authentication.getName().equals("anonymousUser"))
+                ? authentication.getName()
+                : "anonymous";
         recommendationService.trackActivity(
                 userId,
                 request.activityType(),
