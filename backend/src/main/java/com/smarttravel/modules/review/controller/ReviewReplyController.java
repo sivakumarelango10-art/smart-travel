@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/reviews/{reviewId}/replies")
+@RequestMapping({"/api/v1/reviews/{reviewId}/replies", "/v1/reviews/{reviewId}/replies", "/api/reviews/{reviewId}/replies"})
 @Tag(name = "Review Replies", description = "Threaded comments and responses to reviews")
 public class ReviewReplyController {
 

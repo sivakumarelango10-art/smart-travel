@@ -17,7 +17,7 @@ import java.util.List;
  * Allows authenticated users to track/untrack flights and view live status.
  */
 @RestController
-@RequestMapping("/v1/flights")
+@RequestMapping({"/api/v1/flights", "/v1/flights", "/api/flights"})
 @Tag(name = "Flight Tracking", description = "User flight tracking and live status subscriptions")
 public class FlightTrackingController {
 

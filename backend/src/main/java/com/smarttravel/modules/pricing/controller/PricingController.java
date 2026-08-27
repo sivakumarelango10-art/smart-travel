@@ -28,7 +28,7 @@ import java.util.List;
  * Exposes dynamic price breakdown and price history for frontend charting.
  */
 @RestController
-@RequestMapping("/v1/pricing")
+@RequestMapping({"/api/v1/pricing", "/v1/pricing", "/api/pricing"})
 @Tag(name = "Pricing", description = "Dynamic pricing engine and price history")
 public class PricingController {
 

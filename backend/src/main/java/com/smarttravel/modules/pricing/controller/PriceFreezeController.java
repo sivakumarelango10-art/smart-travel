@@ -21,7 +21,7 @@ import java.util.List;
  * REST controller for price freeze management.
  */
 @RestController
-@RequestMapping("/v1/price-freezes")
+@RequestMapping({"/api/v1/price-freezes", "/v1/price-freezes", "/api/price-freezes"})
 @Tag(name = "Price Freeze", description = "Lock fares before committing to booking")
 public class PriceFreezeController {
 
