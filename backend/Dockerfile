@@ -13,14 +13,14 @@ WORKDIR /build
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 
-# Make mvnw executable and download dependencies (cached layer if pom unchanged)
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -q
+# Make mvnw executable, normalize line-endings, and download dependencies
+RUN chmod +x mvnw && sed -i 's/\r$//' mvnw && ./mvnw dependency:go-offline -B -q
 
 # Copy source code
 COPY src/ src/
 
-# Build the fat JAR, skip tests (tests run separately in CI)
-RUN ./mvnw clean package -DskipTests -q
+# Build the fat JAR in batch mode, skip tests
+RUN ./mvnw clean package -DskipTests -B -q
 
 # ----- Stage 2: Runtime Stage (JRE 21, non-root) ----------------------------
 FROM eclipse-temurin:21-jre-jammy AS runner
