@@ -15,14 +15,21 @@ import {
   Radio,
   Eye,
   Sparkles,
-  X,
-  Compass
+  Compass,
+  Image as ImageIcon,
+  ShieldCheck,
+  Calendar,
+  Clock,
+  Phone,
+  Mail,
+  ExternalLink,
 } from 'lucide-react';
 import { Hotel, RoomType, RoomAvailabilityEvent } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { StarRating } from '../components/StarRating';
 import { ReviewSection } from '../components/ReviewSection';
 import { ImageWithFallback } from '../components/ImageWithFallback';
+import { Panorama360Viewer } from '../components/Panorama360Viewer';
 import { recommendationService } from '../services/recommendationService';
 import { useAuth } from '../context/AuthContext';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
@@ -30,7 +37,7 @@ import { useHotelRoomWebSocket } from '../hooks/useHotelRoomWebSocket';
 
 export const HotelDetailsPage: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,10 +48,8 @@ export const HotelDetailsPage: React.FC = () => {
   const [holdingRoomId, setHoldingRoomId] = useState<string | null>(null);
   const [holdSuccess, setHoldSuccess] = useState<string | null>(null);
 
-  // 3D Room Preview Modal state
-  const [previewRoom, setPreviewRoom] = useState<RoomType | null>(null);
-  const [is3DMode, setIs3DMode] = useState<boolean>(false);
-  const [rotationAngle, setRotationAngle] = useState<number>(0);
+  // 360 Panorama Modal State
+  const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
 
   // Real-time room availability notification
   const [roomUpdateNotice, setRoomUpdateNotice] = useState<string | null>(null);
@@ -161,6 +166,8 @@ export const HotelDetailsPage: React.FC = () => {
     );
   }
 
+  const hasHotel360 = Boolean(hotel.virtualTour?.enabled && hotel.virtualTour?.panoramaUrl);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Top Navigation & Live Telemetry Banner */}
@@ -181,7 +188,7 @@ export const HotelDetailsPage: React.FC = () => {
         )}
       </div>
 
-      {/* 1. HERO PHOTO SHOWCASE */}
+      {/* 1. HERO PHOTO SHOWCASE WITH 360 LAUNCH BUTTON */}
       <section className="space-y-4">
         <div className="relative h-[340px] sm:h-[480px] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#12131A] group">
           <ImageWithFallback
@@ -199,10 +206,25 @@ export const HotelDetailsPage: React.FC = () => {
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {hotel.starRating}-Star Luxury Property
               </span>
-              {hotel.nearestAirportCode && (
-                <span className="text-xs font-mono text-amber-400 bg-[#0B0C10]/85 px-3 py-1.5 rounded-lg border border-white/10 shadow-md pointer-events-auto">
-                  Near {hotel.nearestAirportCode} Airport
-                </span>
+
+              {/* 360 CTA in Hero Header */}
+              {hasHotel360 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hotel.virtualTour?.panoramaUrl) {
+                      setActive360({
+                        url: hotel.virtualTour.panoramaUrl,
+                        title: hotel.name,
+                        subtitle: 'Drag in 360° to explore the hotel environment',
+                      });
+                    }
+                  }}
+                  className="pointer-events-auto px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs flex items-center gap-2 shadow-glow-gold transition-all duration-200 hover:scale-105 cursor-pointer"
+                >
+                  <Compass className="w-4 h-4 animate-spin-slow text-black" />
+                  <span>Explore in 360° Virtual Tour</span>
+                </button>
               )}
             </div>
 
@@ -245,14 +267,39 @@ export const HotelDetailsPage: React.FC = () => {
         )}
       </section>
 
-      {/* 2. HOTEL INFORMATION & AMENITIES */}
+      {/* 2. HOTEL INFORMATION, POLICIES & AMENITIES */}
       <div className="relative overflow-hidden rounded-3xl bg-[#14161F] border border-white/10 p-8 shadow-2xl backdrop-blur-xl">
         <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl space-y-4">
             <h2 className="text-xl font-extrabold text-white">About the Property</h2>
-            <p className="text-sm text-slate-300 mt-3 leading-relaxed">
+            <p className="text-sm text-slate-300 leading-relaxed">
               {hotel.description}
             </p>
+
+            {/* Check-in / Policy Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+              <div className="p-3 bg-[#181A22] rounded-xl border border-white/5 flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Check-in</span>
+                  <strong className="text-xs text-white">2:00 PM</strong>
+                </div>
+              </div>
+              <div className="p-3 bg-[#181A22] rounded-xl border border-white/5 flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Check-out</span>
+                  <strong className="text-xs text-white">12:00 PM</strong>
+                </div>
+              </div>
+              <div className="p-3 bg-[#181A22] rounded-xl border border-white/5 flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Cancellation</span>
+                  <strong className="text-xs text-emerald-400">Free before 24h</strong>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Card: Quick summary & rating */}
@@ -307,7 +354,7 @@ export const HotelDetailsPage: React.FC = () => {
         </div>
       )}
 
-      {/* 3. ROOM SELECTION GRID */}
+      {/* 3. ROOM SELECTION GRID WITH 360 TOURS */}
       <section>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
@@ -334,6 +381,7 @@ export const HotelDetailsPage: React.FC = () => {
             const isHoldingThis = holdingRoomId === room.id;
             const matchesPref = userPreferredRoomType && room.category === userPreferredRoomType;
             const upgradeDelta = (room.nightlyRate || 0) - baseRoomPrice;
+            const roomPano = room.virtualTour?.panoramaUrl || hotel.virtualTour?.panoramaUrl;
 
             return (
               <div
@@ -411,20 +459,25 @@ export const HotelDetailsPage: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* 3D Preview / Gallery Trigger */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviewRoom(room);
-                          setIs3DMode(false);
-                        }}
-                        className="w-full py-2 px-3 rounded-xl bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-amber-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View 3D Preview & Images</span>
-                      </button>
-                    </div>
+                    {/* 360 Virtual Tour Launch Button */}
+                    {roomPano && (
+                      <div className="pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActive360({
+                              url: roomPano,
+                              title: `${hotel.name} — ${room.name}`,
+                              subtitle: 'Interactive 360° Room Perspective • Drag to look around',
+                            });
+                          }}
+                          className="w-full py-2 px-3 rounded-xl bg-[#181A22] hover:bg-amber-400 hover:text-black border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition hover:scale-[1.02] shadow-glow-gold cursor-pointer"
+                        >
+                          <Compass className="w-4 h-4 animate-spin-slow" />
+                          <span>Explore Room in 360°</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -471,104 +524,15 @@ export const HotelDetailsPage: React.FC = () => {
         targetName={hotel.name}
       />
 
-      {/* 3D ROOM PREVIEW & GALLERY MODAL */}
-      {previewRoom && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#14161F] border border-white/10 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div>
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">{previewRoom.category}</span>
-                <h3 className="text-xl font-bold text-white">{previewRoom.name} — Room Preview</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPreviewRoom(null)}
-                className="p-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-400 hover:text-white transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* 3D / 360 View Toggle & Canvas */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Compass className="w-4 h-4 text-amber-400" />
-                  {is3DMode ? '360° Interactive Virtual Perspective' : 'High-Resolution Room Showcase'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIs3DMode(!is3DMode)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                    is3DMode ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-glow-gold' : 'bg-[#181A22] text-slate-300 hover:bg-[#1F222E]'
-                  }`}
-                >
-                  {is3DMode ? 'Switch to Gallery' : 'Switch to 360° View'}
-                </button>
-              </div>
-
-              <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden border border-white/10 bg-[#0B0C10] flex items-center justify-center">
-                <ImageWithFallback
-                  src={previewRoom.imageUrls?.[0] || photos[0]}
-                  alt={`${previewRoom.name} preview`}
-                  containerClassName="w-full h-full"
-                  className={`w-full h-full object-cover transition-transform duration-300 ${
-                    is3DMode ? 'scale-110' : ''
-                  }`}
-                  style={is3DMode ? { transform: `scale(1.15) rotate(${rotationAngle}deg)` } : {}}
-                />
-
-                {is3DMode && (
-                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between p-3 rounded-xl bg-[#0B0C10]/90 backdrop-blur-md border border-white/10 text-xs">
-                    <span className="text-slate-300 font-medium">Drag or click to rotate view</span>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setRotationAngle((a) => a - 15)}
-                        className="px-2.5 py-1 rounded-lg bg-[#181A22] hover:bg-[#1F222E] text-white font-bold"
-                      >
-                        ↶ Rotate Left
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRotationAngle((a) => a + 15)}
-                        className="px-2.5 py-1 rounded-lg bg-[#181A22] hover:bg-[#1F222E] text-white font-bold"
-                      >
-                        ↷ Rotate Right
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Room Features Summary in Modal */}
-            <div className="grid grid-cols-3 gap-3 text-center text-xs">
-              <div className="p-3 bg-[#181A22] border border-white/10 rounded-xl">
-                <span className="text-slate-400 block text-[10px]">Bed Configuration</span>
-                <strong className="text-white">{previewRoom.bedType}</strong>
-              </div>
-              <div className="p-3 bg-[#181A22] border border-white/10 rounded-xl">
-                <span className="text-slate-400 block text-[10px]">Room Size</span>
-                <strong className="text-white">{previewRoom.sizeInSqFt || 320} sq. ft.</strong>
-              </div>
-              <div className="p-3 bg-[#181A22] border border-white/10 rounded-xl">
-                <span className="text-slate-400 block text-[10px]">Nightly Price</span>
-                <strong className="text-amber-400">₹{previewRoom.totalNightlyRate || previewRoom.nightlyRate}</strong>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setPreviewRoom(null)}
-                className="px-5 py-2.5 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-200 font-bold text-xs transition"
-              >
-                Close Preview
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* 360° EQUIRECTANGULAR PANORAMA VIEWER MODAL */}
+      {active360 && (
+        <Panorama360Viewer
+          isOpen={!!active360}
+          panoramaUrl={active360.url}
+          title={active360.title}
+          subtitle={active360.subtitle}
+          onClose={() => setActive360(null)}
+        />
       )}
     </div>
   );

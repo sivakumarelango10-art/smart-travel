@@ -149,11 +149,16 @@ export function resolveHotelPhotos(hotel?: {
   address?: { city?: string };
   imageUrls?: string[];
 }): string[] {
-  if (!hotel || !hotel.name) {
-    return [HOTEL_PHOTO_REGISTRY['taj exotica goa'].primary];
+  if (!hotel) {
+    return ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'];
   }
 
-  const normalizedName = hotel.name.toLowerCase().trim();
+  // If hotel has custom imageUrls from backend, use them
+  if (hotel.imageUrls && hotel.imageUrls.length > 0) {
+    return hotel.imageUrls;
+  }
+
+  const normalizedName = (hotel.name || '').toLowerCase().trim();
   const match = HOTEL_PHOTO_REGISTRY[normalizedName];
   if (match && match.gallery && match.gallery.length > 0) {
     return match.gallery;
@@ -163,11 +168,6 @@ export function resolveHotelPhotos(hotel?: {
   const city = (hotel.city || hotel.address?.city || '').toLowerCase().trim();
   if (city && CITY_PHOTO_FALLBACKS[city]) {
     return CITY_PHOTO_FALLBACKS[city];
-  }
-
-  // If hotel has custom imageUrls that are valid and non-duplicate, use them
-  if (hotel.imageUrls && hotel.imageUrls.length > 0) {
-    return hotel.imageUrls;
   }
 
   // Fallback distinct photo

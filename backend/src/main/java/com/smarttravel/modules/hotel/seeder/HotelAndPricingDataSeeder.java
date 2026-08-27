@@ -105,167 +105,22 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
     }
 
     private void seedHotels() {
-        log.info("Checking and seeding demo hotel data with distinct high-resolution luxury imagery...");
+        log.info("Checking and seeding comprehensive hotel catalog with 360° virtual tours and multi-cabin room types...");
 
-        List<Hotel> hotels = List.of(
-                // Delhi Hotels
-                buildHotel("The Imperial New Delhi", "Delhi", "DEL", 5,
-                        new BigDecimal("15000"),
-                        "Janpath, New Delhi, 110001", "Delhi",
-                        List.of(
-                                "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Spa", "Fine Dining", "Business Center", "Valet Parking", "Concierge"),
-                        List.of(
-                                buildRoom("rm-01", "Superior Room", RoomCategory.STANDARD, 5000, "Queen", 2, 350),
-                                buildRoom("rm-02", "Deluxe Room", RoomCategory.DELUXE, 8500, "King", 2, 450),
-                                buildRoom("rm-03", "Royal Suite", RoomCategory.SUITE, 25000, "King", 4, 900)
-                        )),
-                buildHotel("Taj Hotel New Delhi", "Delhi", "DEL", 5,
-                        new BigDecimal("12000"),
-                        "1 Mansingh Road, New Delhi", "Delhi",
-                        List.of(
-                                "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Spa", "24hr Room Service", "Gym", "Business Lounge"),
-                        List.of(
-                                buildRoom("rm-01", "Standard Room", RoomCategory.STANDARD, 4500, "Twin", 2, 320),
-                                buildRoom("rm-02", "Premium Room", RoomCategory.PREMIUM, 9000, "King", 2, 480),
-                                buildRoom("rm-03", "Presidential Suite", RoomCategory.PRESIDENTIAL_SUITE, 45000, "King", 6, 1800)
-                        )),
+        List<Hotel> catalog = HotelCatalogGenerator.generateAllHotels();
+        List<Hotel> toInsert = new ArrayList<>();
 
-                // Mumbai Hotels
-                buildHotel("The Oberoi Mumbai", "Mumbai", "BOM", 5,
-                        new BigDecimal("18000"),
-                        "Nariman Point, Mumbai 400021", "Maharashtra",
-                        List.of(
-                                "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Ocean View", "Pool", "Spa", "4 Restaurants", "Helicopter Service"),
-                        List.of(
-                                buildRoom("rm-01", "Luxury Room", RoomCategory.DELUXE, 9000, "King", 2, 420),
-                                buildRoom("rm-02", "Premier Room", RoomCategory.PREMIUM, 14000, "King", 2, 550),
-                                buildRoom("rm-03", "Ambassador Suite", RoomCategory.SUITE, 35000, "King", 4, 1200)
-                        )),
-                buildHotel("ITC Grand Central Mumbai", "Mumbai", "BOM", 5,
-                        new BigDecimal("8500"),
-                        "Dr Babasaheb Ambedkar Road, Mumbai", "Maharashtra",
-                        List.of(
-                                "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Gym", "Spa", "Multi-cuisine Restaurant", "Club Lounge"),
-                        List.of(
-                                buildRoom("rm-01", "Classic Room", RoomCategory.STANDARD, 3500, "Twin", 2, 300),
-                                buildRoom("rm-02", "Superior Room", RoomCategory.DELUXE, 6500, "King", 2, 400),
-                                buildRoom("rm-03", "Executive Suite", RoomCategory.EXECUTIVE_SUITE, 18000, "King", 3, 800)
-                        )),
-
-                // Bangalore Hotels
-                buildHotel("The Leela Palace Bengaluru", "Bangalore", "BLR", 5,
-                        new BigDecimal("14000"),
-                        "23 Airport Road, Bengaluru 560008", "Karnataka",
-                        List.of(
-                                "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Spa", "Rooftop Bar", "Business Center", "24hr Dining"),
-                        List.of(
-                                buildRoom("rm-01", "Deluxe Room", RoomCategory.DELUXE, 7000, "King", 2, 450),
-                                buildRoom("rm-02", "Premier Suite", RoomCategory.SUITE, 22000, "King", 4, 1000),
-                                buildRoom("rm-03", "Royal Villa", RoomCategory.VILLA, 60000, "King", 6, 2500)
-                        )),
-                buildHotel("Marriott Whitefield Bengaluru", "Bangalore", "BLR", 4,
-                        new BigDecimal("6500"),
-                        "8 EPIP Zone, Whitefield, Bengaluru", "Karnataka",
-                        List.of(
-                                "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Gym", "Restaurant", "Business Lounge"),
-                        List.of(
-                                buildRoom("rm-01", "Standard Room", RoomCategory.STANDARD, 3200, "Twin", 2, 300),
-                                buildRoom("rm-02", "Deluxe Room", RoomCategory.DELUXE, 5500, "King", 2, 380)
-                        )),
-
-                // Chennai Hotels
-                buildHotel("The Park Chennai", "Chennai", "MAA", 5,
-                        new BigDecimal("9000"),
-                        "601 Anna Salai, Chennai 600006", "Tamil Nadu",
-                        List.of(
-                                "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Rooftop Pool", "Spa", "Bar", "Fine Dining", "Business Center"),
-                        List.of(
-                                buildRoom("rm-01", "Classic Room", RoomCategory.STANDARD, 4000, "Queen", 2, 320),
-                                buildRoom("rm-02", "Premium Room", RoomCategory.PREMIUM, 7500, "King", 2, 460),
-                                buildRoom("rm-03", "The Suite", RoomCategory.SUITE, 20000, "King", 4, 900)
-                        )),
-
-                // Hyderabad Hotels
-                buildHotel("Taj Falaknuma Palace", "Hyderabad", "HYD", 5,
-                        new BigDecimal("50000"),
-                        "Engine Bowli, Falaknuma, Hyderabad", "Telangana",
-                        List.of(
-                                "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Palace Experience", "Pool", "Spa", "Horse Carriage", "Butler Service"),
-                        List.of(
-                                buildRoom("rm-01", "Palace Room", RoomCategory.DELUXE, 25000, "King", 2, 800),
-                                buildRoom("rm-02", "Grand Suite", RoomCategory.SUITE, 75000, "King", 4, 2000)
-                        )),
-
-                // Goa Hotels
-                buildHotel("Taj Exotica Goa", "Goa", "GOI", 5,
-                        new BigDecimal("22000"),
-                        "Calwaddo, Salcete, Goa 403712", "Goa",
-                        List.of(
-                                "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Private Beach", "Pool", "Spa", "Water Sports", "Tennis Court"),
-                        List.of(
-                                buildRoom("rm-01", "Luxury Room", RoomCategory.DELUXE, 10000, "King", 2, 500),
-                                buildRoom("rm-02", "Sea View Suite", RoomCategory.SUITE, 30000, "King", 4, 1200),
-                                buildRoom("rm-03", "Beach Villa", RoomCategory.VILLA, 80000, "King", 6, 3000)
-                        )),
-
-                // Kolkata Hotels
-                buildHotel("ITC Royal Bengal Kolkata", "Kolkata", "CCU", 5,
-                        new BigDecimal("10000"),
-                        "1, J. B. S. Haldane Avenue, Kolkata", "West Bengal",
-                        List.of(
-                                "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
-                                "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
-                        ),
-                        List.of("Pool", "Spa", "Golf Course View", "24hr Dining", "Business Center"),
-                        List.of(
-                                buildRoom("rm-01", "Welcome Room", RoomCategory.STANDARD, 4200, "Twin", 2, 350),
-                                buildRoom("rm-02", "Executive Room", RoomCategory.DELUXE, 7800, "King", 2, 480),
-                                buildRoom("rm-03", "Presidential Suite", RoomCategory.PRESIDENTIAL_SUITE, 40000, "King", 6, 2000)
-                        ))
-        );
-
-        if (hotelRepository.count() == 0) {
-            hotelRepository.saveAll(hotels);
-            log.info("Seeded {} hotels with rich photo galleries", hotels.size());
-        } else {
-            // Update existing hotels with distinct photo galleries if needed
-            for (Hotel hotel : hotels) {
-                hotelRepository.findByName(hotel.getName()).ifPresent(existing -> {
-                    existing.setImageUrls(hotel.getImageUrls());
-                    hotelRepository.save(existing);
-                });
+        for (Hotel hotel : catalog) {
+            if (!hotelRepository.existsById(hotel.getId())) {
+                toInsert.add(hotel);
             }
-            log.info("Refreshed distinct photo galleries for all existing hotel properties");
+        }
+
+        if (!toInsert.isEmpty()) {
+            hotelRepository.saveAll(toInsert);
+            log.info("Successfully seeded {} unique hotels into MongoDB (Total catalog size: {})", toInsert.size(), hotelRepository.count());
+        } else {
+            log.info("Hotel database catalog verified with {} active properties.", hotelRepository.count());
         }
     }
 

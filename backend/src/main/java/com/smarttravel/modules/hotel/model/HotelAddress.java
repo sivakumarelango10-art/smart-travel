@@ -1,7 +1,7 @@
 package com.smarttravel.modules.hotel.model;
 
 /**
- * Hotel address details.
+ * Hotel address details with geographical coordinates.
  */
 public class HotelAddress {
     private String line1;
@@ -10,6 +10,8 @@ public class HotelAddress {
     private String state;
     private String postalCode;
     private String country = "India";
+    private Double latitude;
+    private Double longitude;
 
     public HotelAddress() {}
 
@@ -22,6 +24,17 @@ public class HotelAddress {
         this.country = country != null ? country : "India";
     }
 
+    public HotelAddress(String line1, String line2, String city, String state, String postalCode, String country, Double latitude, Double longitude) {
+        this.line1 = line1;
+        this.line2 = line2;
+        this.city = city;
+        this.state = state;
+        this.postalCode = postalCode;
+        this.country = country != null ? country : "India";
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
     public static Builder builder() { return new Builder(); }
 
     public static class Builder {
@@ -32,6 +45,8 @@ public class HotelAddress {
         public Builder state(String v) { r.state = v; return this; }
         public Builder postalCode(String v) { r.postalCode = v; return this; }
         public Builder country(String v) { r.country = v; return this; }
+        public Builder latitude(Double v) { r.latitude = v; return this; }
+        public Builder longitude(Double v) { r.longitude = v; return this; }
         public HotelAddress build() { return r; }
     }
 
@@ -47,4 +62,8 @@ public class HotelAddress {
     public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 }

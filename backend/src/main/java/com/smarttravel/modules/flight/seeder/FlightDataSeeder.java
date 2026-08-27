@@ -218,7 +218,7 @@ public class FlightDataSeeder implements ApplicationRunner {
         list.add(new RouteTemplate("IndiGo", "6E", 289, "BOM", "UDR", "Airbus A320neo", 11, 45, 80, 3650));
         list.add(new RouteTemplate("Air India", "AI", 406, "DEL", "VNS", "Airbus A320neo", 14, 0, 80, 3450));
         list.add(new RouteTemplate("IndiGo", "6E", 885, "DEL", "IXZ", "Airbus A321neo", 5, 45, 310, 8950));
-        list.add(new RouteTemplate("Air India", "AI", 018, "DEL", "AMD", "Airbus A320neo", 18, 30, 90, 3550));
+        list.add(new RouteTemplate("Air India", "AI", 18, "DEL", "AMD", "Airbus A320neo", 18, 30, 90, 3550));
 
         // Tropical Vacations (Bali, Maldives, Phuket, Bangkok)
         list.add(new RouteTemplate("Garuda Indonesia", "GA", 850, "DEL", "DPS", "Airbus A330-300", 23, 30, 540, 16999));
@@ -248,7 +248,7 @@ public class FlightDataSeeder implements ApplicationRunner {
         list.add(new RouteTemplate("Swiss International", "LX", 155, "BOM", "ZRH", "Airbus A330-300", 1, 15, 540, 53500));
         list.add(new RouteTemplate("Air India", "AI", 105, "DEL", "JFK", "Boeing 777-300ER", 2, 0, 940, 72500));
         list.add(new RouteTemplate("Air India", "AI", 173, "DEL", "SFO", "Boeing 777-200LR", 4, 0, 970, 78500));
-        list.add(new RouteTemplate("Qantas", "QF", 068, "DEL", "SYD", "Airbus A330-200", 18, 10, 740, 68500));
+        list.add(new RouteTemplate("Qantas", "QF", 68, "DEL", "SYD", "Airbus A330-200", 18, 10, 740, 68500));
 
         return list;
     }

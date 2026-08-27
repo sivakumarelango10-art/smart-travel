@@ -55,6 +55,9 @@ public class Hotel {
 
     private boolean active = true;
 
+    /** 360 virtual tour metadata */
+    private VirtualTour virtualTour;
+
     /** Room types embedded or linked */
     private List<RoomType> roomTypes = new ArrayList<>();
 
@@ -84,6 +87,7 @@ public class Hotel {
         public Builder averageRating(double v) { r.averageRating = v; return this; }
         public Builder totalReviews(int v) { r.totalReviews = v; return this; }
         public Builder active(boolean v) { r.active = v; return this; }
+        public Builder virtualTour(VirtualTour v) { r.virtualTour = v; return this; }
         public Builder roomTypes(List<RoomType> v) { r.roomTypes = v; return this; }
         public Hotel build() { return r; }
     }
@@ -116,6 +120,8 @@ public class Hotel {
     public void setTotalReviews(int totalReviews) { this.totalReviews = totalReviews; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public VirtualTour getVirtualTour() { return virtualTour; }
+    public void setVirtualTour(VirtualTour virtualTour) { this.virtualTour = virtualTour; }
     public List<RoomType> getRoomTypes() { return roomTypes; }
     public void setRoomTypes(List<RoomType> roomTypes) { this.roomTypes = roomTypes; }
     public Instant getCreatedAt() { return createdAt; }

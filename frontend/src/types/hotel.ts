@@ -8,6 +8,15 @@ export type RoomCategory =
   | 'PRESIDENTIAL_SUITE'
   | 'VILLA';
 
+export interface VirtualTour {
+  enabled: boolean;
+  panoramaUrl: string;
+  thumbnailUrl?: string;
+  title?: string;
+  description?: string;
+  roomCategory?: string;
+}
+
 export interface RoomType {
   id: string;
   name: string;
@@ -26,6 +35,7 @@ export interface RoomType {
   imageUrls: string[];
   breakfastIncluded: boolean;
   refundable: boolean;
+  virtualTour?: VirtualTour;
 }
 
 export interface HotelAddress {
@@ -35,6 +45,8 @@ export interface HotelAddress {
   state: string;
   postalCode?: string;
   country: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface HotelContactInfo {
@@ -58,6 +70,7 @@ export interface Hotel {
   averageRating: number;
   totalReviews: number;
   active: boolean;
+  virtualTour?: VirtualTour;
   roomTypes: RoomType[];
   createdAt?: string;
   updatedAt?: string;

@@ -34,6 +34,9 @@ public class RoomType {
     private boolean breakfastIncluded = false;
     private boolean refundable = true;
 
+    /** 360 room-specific virtual tour metadata */
+    private VirtualTour virtualTour;
+
     public RoomType() {}
 
     public static Builder builder() { return new Builder(); }
@@ -57,6 +60,7 @@ public class RoomType {
         public Builder imageUrls(List<String> v) { r.imageUrls = v; return this; }
         public Builder breakfastIncluded(boolean v) { r.breakfastIncluded = v; return this; }
         public Builder refundable(boolean v) { r.refundable = v; return this; }
+        public Builder virtualTour(VirtualTour v) { r.virtualTour = v; return this; }
         public RoomType build() { return r; }
     }
 
@@ -94,4 +98,6 @@ public class RoomType {
     public void setBreakfastIncluded(boolean breakfastIncluded) { this.breakfastIncluded = breakfastIncluded; }
     public boolean isRefundable() { return refundable; }
     public void setRefundable(boolean refundable) { this.refundable = refundable; }
+    public VirtualTour getVirtualTour() { return virtualTour; }
+    public void setVirtualTour(VirtualTour virtualTour) { this.virtualTour = virtualTour; }
 }
