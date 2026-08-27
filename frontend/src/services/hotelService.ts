@@ -44,7 +44,8 @@ export const hotelService = {
    * Get single hotel details.
    */
   async getHotel(hotelId: string): Promise<Hotel> {
-    const response = await apiClient.get<ApiResponse<Hotel>>(`/v1/hotels/${hotelId}`);
+    const cleanId = hotelId ? hotelId.trim().replace(/\s+/g, '-').replace(/_+/g, '-') : '';
+    const response = await apiClient.get<ApiResponse<Hotel>>(`/v1/hotels/${encodeURIComponent(cleanId)}`);
     return response.data.data;
   },
 
@@ -52,7 +53,8 @@ export const hotelService = {
    * Get available room types for a hotel.
    */
   async getRoomTypes(hotelId: string): Promise<RoomType[]> {
-    const response = await apiClient.get<ApiResponse<RoomType[]>>(`/v1/hotels/${hotelId}/rooms`);
+    const cleanId = hotelId ? hotelId.trim().replace(/\s+/g, '-').replace(/_+/g, '-') : '';
+    const response = await apiClient.get<ApiResponse<RoomType[]>>(`/v1/hotels/${encodeURIComponent(cleanId)}/rooms`);
     return response.data.data || [];
   },
 
