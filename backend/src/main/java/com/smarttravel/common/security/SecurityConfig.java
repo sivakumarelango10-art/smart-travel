@@ -147,12 +147,15 @@ public class SecurityConfig {
                                 "/api/flights", "/api/flights/**",
                                 "/flights", "/flights/**"
                         ).permitAll()
-                        // Public Hotel Search & Catalog (GET only)
+                        // Public Hotel Search & Catalog (GET only) + Pricing Calculation (POST)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/v1/hotels", "/api/v1/hotels/**",
                                 "/v1/hotels", "/v1/hotels/**",
                                 "/api/hotels", "/api/hotels/**",
                                 "/hotels", "/hotels/**"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/api/v1/hotels/pricing/calculate", "/v1/hotels/pricing/calculate", "/api/hotels/pricing/calculate"
                         ).permitAll()
                         // Public Reviews (GET only)
                         .requestMatchers(org.springframework.http.HttpMethod.GET,

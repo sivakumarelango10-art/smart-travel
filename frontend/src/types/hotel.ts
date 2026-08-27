@@ -96,3 +96,99 @@ export interface RoomAvailabilityEvent {
   action: string;
   timestamp?: string;
 }
+
+export interface HotelPriceCalculateRequest {
+  hotelId: string;
+  roomTypeId: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+  roomCount: number;
+  couponCode?: string;
+}
+
+export interface HotelPriceCalculateResponse {
+  hotelId: string;
+  hotelName: string;
+  roomTypeId: string;
+  roomTypeName: string;
+  roomCategory: RoomCategory;
+  checkInDate: string;
+  checkOutDate: string;
+  nights: number;
+  guestCount: number;
+  roomCount: number;
+  nightlyRate: number;
+  baseAmount: number;
+  taxAmount: number;
+  taxRatePercentage: number;
+  discountAmount: number;
+  totalAmount: number;
+  currency: string;
+  cancellationPolicy: string;
+  isAvailable: boolean;
+  availableRooms: number;
+}
+
+export interface CreateHotelBookingRequest {
+  hotelId: string;
+  roomTypeId: string;
+  checkInDate: string;
+  checkOutDate: string;
+  guestCount: number;
+  roomCount: number;
+  primaryGuestName: string;
+  primaryGuestEmail: string;
+  primaryGuestPhone?: string;
+  specialRequests?: string;
+  couponCode?: string;
+  paymentMethod?: string;
+}
+
+export interface HotelBooking {
+  id: string;
+  bookingReference: string;
+  userId: string;
+  userEmail: string;
+  hotelId: string;
+  hotelName: string;
+  hotelCity: string;
+  hotelAddress: string;
+  hotelImageUrl: string;
+  roomTypeId: string;
+  roomTypeName: string;
+  roomCategory: RoomCategory;
+  checkInDate: string;
+  checkOutDate: string;
+  nights: number;
+  guestCount: number;
+  roomCount: number;
+  primaryGuestName: string;
+  primaryGuestEmail: string;
+  primaryGuestPhone?: string;
+  specialRequests?: string;
+  nightlyRate: number;
+  baseAmount: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  currency: string;
+  status: 'CONFIRMED' | 'CANCELLED' | 'REFUNDED';
+  paymentId?: string;
+  paymentStatus?: string;
+  cancellationPolicy?: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
+  refundAmount?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface HotelRefundCalculation {
+  bookingReference: string;
+  originalAmount: number;
+  refundAmount: number;
+  refundPercentage: number;
+  policyApplied: string;
+  timelineDescription: string;
+}

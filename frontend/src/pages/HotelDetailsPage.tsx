@@ -23,6 +23,7 @@ import {
   Phone,
   Mail,
   ExternalLink,
+  X,
 } from 'lucide-react';
 import { Hotel, RoomType, RoomAvailabilityEvent } from '../types/api';
 import { hotelService } from '../services/hotelService';
@@ -30,6 +31,7 @@ import { StarRating } from '../components/StarRating';
 import { ReviewSection } from '../components/ReviewSection';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Panorama360Viewer } from '../components/Panorama360Viewer';
+import { HotelReservationModal } from '../components/HotelReservationModal';
 import { recommendationService } from '../services/recommendationService';
 import { useAuth } from '../context/AuthContext';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
@@ -43,12 +45,38 @@ export const HotelDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-
   const [errorCode, setErrorCode] = useState<number | null>(null);
 
-  // Room hold state
-  const [holdingRoomId, setHoldingRoomId] = useState<string | null>(null);
-  const [holdSuccess, setHoldSuccess] = useState<string | null>(null);
+  // Reservation dates & guests state
+  const defaultCheckIn = useMemo(() => {
+    const d = new Date(Date.now() + 86400000);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  const defaultCheckOut = useMemo(() => {
+    const d = new Date(Date.now() + 86400000 * 3);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  const [checkInDate, setCheckInDate] = useState<string>(defaultCheckIn);
+  const [checkOutDate, setCheckOutDate] = useState<string>(defaultCheckOut);
+  const [guestCount, setGuestCount] = useState<number>(2);
+  const [roomCount, setRoomCount] = useState<number>(1);
+
+  const stayNights = useMemo(() => {
+    try {
+      const inMs = new Date(checkInDate).getTime();
+      const outMs = new Date(checkOutDate).getTime();
+      const diff = Math.round((outMs - inMs) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 1;
+    } catch {
+      return 1;
+    }
+  }, [checkInDate, checkOutDate]);
+
+  // Selected room for reservation modal
+  const [selectedRoomForBooking, setSelectedRoomForBooking] = useState<RoomType | null>(null);
+  const [authPromptOpen, setAuthPromptOpen] = useState<boolean>(false);
 
   // 360 Panorama Modal State
   const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
@@ -112,25 +140,6 @@ export const HotelDetailsPage: React.FC = () => {
         setLoading(false);
       });
   }, [cleanHotelId]);
-
-  const handleHoldRoom = async (roomTypeId: string) => {
-    if (!hotelId) return;
-
-    setHoldingRoomId(roomTypeId);
-    setError(null);
-    setHoldSuccess(null);
-
-    try {
-      const res = await hotelService.holdRoom(hotelId, roomTypeId, 1);
-      setHoldSuccess(
-        `Room hold placed successfully for ${res.name || 'room'}! Reserved for 15 minutes.`
-      );
-    } catch (err: any) {
-      setError(err.message || 'Failed to reserve room. It may currently be at full capacity.');
-    } finally {
-      setHoldingRoomId(null);
-    }
-  };
 
   const userPreferredRoomType = user?.preferences?.preferredRoomType;
 
@@ -384,15 +393,111 @@ export const HotelDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Room Hold Advisory */}
-      {holdSuccess && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-sm flex items-center gap-3 animate-fade-in shadow-glow-emerald">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
-          <span>{holdSuccess}</span>
+      {/* 3. INTERACTIVE STAY DATES & GUESTS SELECTION BAR */}
+      <section className="p-6 rounded-3xl bg-[#14161F] border border-white/10 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-amber-400" />
+              <span>Configure Your Stay Dates & Guests</span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Live pricing and room rates automatically adjust based on selected duration and party size.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1E222D] border border-white/10 text-xs font-bold text-amber-400">
+            <Clock className="w-4 h-4" />
+            <span>{stayNights} Night{stayNights > 1 ? 's' : ''} Stay</span>
+          </div>
         </div>
-      )}
 
-      {/* 3. ROOM SELECTION GRID WITH 360 TOURS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          {/* Check-In */}
+          <div className="p-3.5 rounded-2xl bg-[#181A24] border border-white/10">
+            <label className="block text-[11px] font-semibold text-slate-400 mb-1">Check-in Date</label>
+            <input
+              type="date"
+              value={checkInDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                const newIn = e.target.value;
+                setCheckInDate(newIn);
+                if (new Date(checkOutDate) <= new Date(newIn)) {
+                  const nextDay = new Date(new Date(newIn).getTime() + 86400000).toISOString().split('T')[0];
+                  setCheckOutDate(nextDay);
+                }
+              }}
+              className="w-full bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          {/* Check-Out */}
+          <div className="p-3.5 rounded-2xl bg-[#181A24] border border-white/10">
+            <label className="block text-[11px] font-semibold text-slate-400 mb-1">Check-out Date</label>
+            <input
+              type="date"
+              value={checkOutDate}
+              min={new Date(new Date(checkInDate).getTime() + 86400000).toISOString().split('T')[0]}
+              onChange={(e) => setCheckOutDate(e.target.value)}
+              className="w-full bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          {/* Guests */}
+          <div className="p-3.5 rounded-2xl bg-[#181A24] border border-white/10 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400">Total Guests</div>
+              <div className="text-xs text-white font-bold">{guestCount} Guests</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={guestCount <= 1}
+                onClick={() => setGuestCount((g) => Math.max(1, g - 1))}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center disabled:opacity-40"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                disabled={guestCount >= 10}
+                onClick={() => setGuestCount((g) => Math.min(10, g + 1))}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center disabled:opacity-40"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* Rooms */}
+          <div className="p-3.5 rounded-2xl bg-[#181A24] border border-white/10 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400">Number of Rooms</div>
+              <div className="text-xs text-white font-bold">{roomCount} Room{roomCount > 1 ? 's' : ''}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={roomCount <= 1}
+                onClick={() => setRoomCount((r) => Math.max(1, r - 1))}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center disabled:opacity-40"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                disabled={roomCount >= 5}
+                onClick={() => setRoomCount((r) => Math.min(5, r + 1))}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center disabled:opacity-40"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. ROOM SELECTION GRID WITH 360 TOURS & INSTANT RESERVATION */}
       <section>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
@@ -401,7 +506,7 @@ export const HotelDetailsPage: React.FC = () => {
               Select Your Room Category
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Atomic room locking guarantees no double-booking during your checkout flow.
+              Atomic room inventory guarantees instant reservation and zero double-booking.
             </p>
           </div>
 
@@ -416,8 +521,9 @@ export const HotelDetailsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {hotel.roomTypes?.map((room) => {
             const isAvailable = room.availableRooms > 0;
-            const isHoldingThis = holdingRoomId === room.id;
             const matchesPref = userPreferredRoomType && room.category === userPreferredRoomType;
+            const nightlyRate = room.totalNightlyRate || room.nightlyRate || 0;
+            const totalStayEstimated = nightlyRate * stayNights * roomCount;
             const upgradeDelta = (room.nightlyRate || 0) - baseRoomPrice;
             const roomPano = room.virtualTour?.panoramaUrl || hotel.virtualTour?.panoramaUrl;
 
@@ -519,34 +625,38 @@ export const HotelDetailsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Room Pricing & Lock CTA */}
+                {/* Room Pricing & Reserve CTA */}
                 <div className="p-5 bg-[#181A22]/70 flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-[10px] text-slate-400">Nightly Rate</div>
+                    <div className="text-[10px] text-slate-400">
+                      ₹{nightlyRate.toLocaleString()}/night
+                    </div>
                     <div className="text-xl font-black text-amber-400">
-                      ₹{room.totalNightlyRate ? room.totalNightlyRate.toLocaleString() : room.nightlyRate?.toLocaleString()}
+                      ₹{totalStayEstimated.toLocaleString()}
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      {upgradeDelta > 0 ? (
-                        <span className="text-amber-400 font-semibold">+₹{upgradeDelta.toLocaleString()} upgrade</span>
-                      ) : (
-                        <span>Base Rate</span>
-                      )}
+                      For {stayNights} night{stayNights > 1 ? 's' : ''} ({roomCount} room)
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    disabled={!isAvailable || isHoldingThis}
-                    onClick={() => handleHoldRoom(room.id)}
-                    className={`px-4 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition ${
+                    disabled={!isAvailable}
+                    onClick={() => {
+                      if (!user) {
+                        setAuthPromptOpen(true);
+                      } else {
+                        setSelectedRoomForBooking(room);
+                      }
+                    }}
+                    className={`px-5 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition ${
                       isAvailable
-                        ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-glow-gold'
+                        ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black shadow-glow-gold hover:scale-105 cursor-pointer'
                         : 'bg-[#181A22] text-slate-500 cursor-not-allowed'
                     }`}
                   >
                     <Lock className="w-3.5 h-3.5 text-black" />
-                    <span>{isHoldingThis ? 'Reserving...' : 'Reserve Room'}</span>
+                    <span>{isAvailable ? 'Reserve Room' : 'Sold Out'}</span>
                   </button>
                 </div>
               </div>
@@ -555,7 +665,7 @@ export const HotelDetailsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. VERIFIED GUEST REVIEWS */}
+      {/* 5. VERIFIED GUEST REVIEWS */}
       <ReviewSection
         targetId={hotel.id}
         targetType="HOTEL"
@@ -571,6 +681,60 @@ export const HotelDetailsPage: React.FC = () => {
           subtitle={active360.subtitle}
           onClose={() => setActive360(null)}
         />
+      )}
+
+      {/* HOTEL RESERVATION MODAL (LOGGED IN) */}
+      {selectedRoomForBooking && (
+        <HotelReservationModal
+          hotel={hotel}
+          room={selectedRoomForBooking}
+          checkInDate={checkInDate}
+          checkOutDate={checkOutDate}
+          guestCount={guestCount}
+          roomCount={roomCount}
+          onClose={() => setSelectedRoomForBooking(null)}
+        />
+      )}
+
+      {/* GUEST AUTHENTICATION PROMPT MODAL (LOGGED OUT) */}
+      {authPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-[#14161F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-5 text-center">
+            <button
+              onClick={() => setAuthPromptOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-2xl bg-amber-400/15 text-amber-400 border border-amber-400/30 flex items-center justify-center mx-auto shadow-glow-gold">
+              <Lock className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-white">Sign In to Complete Reservation</h3>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Log in to securely book <strong>{hotel.name}</strong>, lock in exclusive member rates, and receive your instant confirmation voucher.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              <Link
+                to={`/login?redirect=/hotels/${encodeURIComponent(cleanHotelId)}`}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold text-xs shadow-glow-gold transition-transform hover:scale-[1.02] flex items-center justify-center gap-2"
+              >
+                <span>Sign In with Email</span>
+                <ArrowLeft className="w-4 h-4 rotate-180" />
+              </Link>
+              <Link
+                to={`/register?redirect=/hotels/${encodeURIComponent(cleanHotelId)}`}
+                className="w-full py-3 rounded-xl bg-[#1E222E] hover:bg-[#282D3C] text-slate-200 font-bold text-xs border border-white/10 transition flex items-center justify-center gap-2"
+              >
+                <span>Create a Free Account</span>
+              </Link>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
