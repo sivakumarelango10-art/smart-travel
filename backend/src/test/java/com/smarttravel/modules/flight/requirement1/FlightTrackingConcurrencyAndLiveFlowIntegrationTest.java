@@ -27,7 +27,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Requirement #1 - Parts 5 & 6: Concurrency & Real-Time Lifecycle Flow Integration Test

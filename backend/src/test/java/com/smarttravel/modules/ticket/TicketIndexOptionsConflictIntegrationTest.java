@@ -3,7 +3,6 @@ package com.smarttravel.modules.ticket;
 import com.smarttravel.common.config.MongoIndexConfig;
 import com.smarttravel.modules.ticket.model.Ticket;
 import com.smarttravel.modules.ticket.model.TicketStatus;
-import com.smarttravel.modules.ticket.repository.TicketRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -53,7 +53,6 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public RazorpayOrderDto createOrder(String receipt, long amountInPaise, String currency, Map<String, String> notes) {
         log.info("Creating Razorpay order for receipt: {}, amount: {} paise, currency: {}", receipt, amountInPaise, currency);
 

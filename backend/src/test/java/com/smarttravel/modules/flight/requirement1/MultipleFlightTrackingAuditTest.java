@@ -150,12 +150,19 @@ class MultipleFlightTrackingAuditTest {
         TrackedFlight tfUserB = TrackedFlight.builder().id("tf-2").userId("user-bob").flightId("fl-BBB").active(true).build();
 
         when(trackedFlightRepository.findByUserIdAndActiveTrue("user-alice")).thenReturn(List.of(tfUserA));
+        when(trackedFlightRepository.findByUserIdAndActiveTrue("user-bob")).thenReturn(List.of(tfUserB));
         when(flightRepository.findById("fl-AAA")).thenReturn(Optional.of(flightA));
+        when(flightRepository.findById("fl-BBB")).thenReturn(Optional.of(flightB));
 
         List<TrackedFlightResponse> aliceFlights = flightTrackingService.getTrackedFlights("user-alice");
+        List<TrackedFlightResponse> bobFlights = flightTrackingService.getTrackedFlights("user-bob");
 
         assertThat(aliceFlights).hasSize(1);
         assertThat(aliceFlights.get(0).getFlightId()).isEqualTo("fl-AAA");
         assertThat(aliceFlights.stream().noneMatch(f -> f.getFlightId().equals("fl-BBB"))).isTrue();
+
+        assertThat(bobFlights).hasSize(1);
+        assertThat(bobFlights.get(0).getFlightId()).isEqualTo(tfUserB.getFlightId());
+        assertThat(bobFlights.stream().noneMatch(f -> f.getFlightId().equals("fl-AAA"))).isTrue();
     }
 }
