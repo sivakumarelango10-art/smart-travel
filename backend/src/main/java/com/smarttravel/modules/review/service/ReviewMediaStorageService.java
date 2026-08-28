@@ -1,4 +1,4 @@
-package com.smarttravel.modules.review.service.storage;
+package com.smarttravel.modules.review.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,17 +26,17 @@ public interface ReviewMediaStorageService {
     byte[] loadPhoto(String filename);
 
     /**
-     * Resolves the MIME content type of a stored photo.
+     * Resolves the MIME content type from the stored photo filename.
      *
-     * @param filename The filename.
-     * @return The MIME type (e.g. image/jpeg, image/png, image/webp).
+     * @param filename The sanitized filename.
+     * @return The MIME string (e.g., image/jpeg).
      */
     String getContentType(String filename);
 
     /**
-     * Deletes a stored photo.
+     * Deletes a previously stored review photo.
      *
-     * @param filename The filename to remove.
+     * @param filename The sanitized filename.
      */
     void deletePhoto(String filename);
 }

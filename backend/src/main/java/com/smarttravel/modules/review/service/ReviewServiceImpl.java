@@ -7,7 +7,6 @@ import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewStatus;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import com.smarttravel.modules.review.repository.ReviewRepository;
-import com.smarttravel.modules.review.service.storage.ReviewMediaStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -189,7 +188,11 @@ public class ReviewServiceImpl implements ReviewService {
             throw new BadRequestException("Maximum of 5 photos allowed per review.");
         }
 
-        String photoUrl = mediaStorageService.storePhoto(reviewId, file);
+        String filename = mediaStorageService.storePhoto(reviewId, file);
+        String photoUrl = (filename.startsWith("http") || filename.startsWith("/api/v1/reviews/photos/"))
+                ? filename
+                : "/api/v1/reviews/photos/" + filename;
+
         if (review.getPhotos() == null) {
             review.setPhotos(new ArrayList<>());
         }
@@ -201,11 +204,13 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public byte[] getPhotoBytes(String filename) {
-        return mediaStorageService.loadPhoto(filename);
+        String cleanName = (filename != null && filename.contains("/")) ? filename.substring(filename.lastIndexOf("/") + 1) : filename;
+        return mediaStorageService.loadPhoto(cleanName);
     }
 
     @Override
     public String getPhotoContentType(String filename) {
-        return mediaStorageService.getContentType(filename);
+        String cleanName = (filename != null && filename.contains("/")) ? filename.substring(filename.lastIndexOf("/") + 1) : filename;
+        return mediaStorageService.getContentType(cleanName);
     }
 }

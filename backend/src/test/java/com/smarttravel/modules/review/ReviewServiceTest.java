@@ -6,7 +6,7 @@ import com.smarttravel.modules.review.model.ReviewStatus;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import com.smarttravel.modules.review.repository.ReviewRepository;
 import com.smarttravel.modules.review.service.ReviewServiceImpl;
-import com.smarttravel.modules.review.service.storage.ReviewMediaStorageService;
+import com.smarttravel.modules.review.service.ReviewMediaStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
