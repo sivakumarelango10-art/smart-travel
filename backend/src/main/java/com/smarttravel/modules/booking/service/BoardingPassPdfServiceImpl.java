@@ -37,9 +37,6 @@ public class BoardingPassPdfServiceImpl implements BoardingPassPdfService {
 
     private static final Logger log = LoggerFactory.getLogger(BoardingPassPdfServiceImpl.class);
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm 'UTC'")
-            .withZone(ZoneId.of("UTC"));
-
     private static final DateTimeFormatter DATE_ONLY_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy")
             .withZone(ZoneId.of("UTC"));
 
@@ -53,11 +50,9 @@ public class BoardingPassPdfServiceImpl implements BoardingPassPdfService {
     private static final Color BG_CARD = new Color(248, 250, 252);
     private static final Color BG_MUTED = new Color(241, 245, 249);
     private static final Color BORDER_GRAY = new Color(203, 213, 225);
-    private static final Color BORDER_ACCENT = new Color(14, 165, 233);
     private static final Color TEXT_DARK = new Color(15, 23, 42);
     private static final Color TEXT_MUTED = new Color(100, 116, 139);
     private static final Color ACCENT_SEAT = new Color(3, 105, 161);
-    private static final Color ACCENT_EMERALD = new Color(5, 150, 105);
 
     @Override
     public byte[] generateBoardingPassPdf(BoardingPass boardingPass) {

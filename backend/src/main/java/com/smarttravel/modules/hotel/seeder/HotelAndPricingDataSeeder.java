@@ -247,57 +247,6 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
     // ── Builders ──────────────────────────────────────────────────────────────
 
-    private Hotel buildHotel(String name, String city, String airportCode, int stars,
-                              BigDecimal baseRate, String addressLine1, String state,
-                              List<String> imageUrls,
-                              List<String> amenities, List<RoomType> roomTypes) {
-        return Hotel.builder()
-                .name(name)
-                .address(HotelAddress.builder()
-                        .line1(addressLine1)
-                        .city(city)
-                        .state(state)
-                        .country("India")
-                        .build())
-                .nearestAirportCode(airportCode)
-                .starRating(stars)
-                .description("Luxury " + stars + "-star hotel in " + city + " offering world-class amenities, award-winning culinary dining, and exceptional personalized service.")
-                .baseNightlyRate(baseRate)
-                .currency("INR")
-                .imageUrls(imageUrls)
-                .amenities(amenities)
-                .contactInfo(new HotelContactInfo("+91-11-12345678", "reservations@hotel.com", null))
-                .averageRating(4.3 + (stars - 4) * 0.3)
-                .totalReviews(140 + stars * 45)
-                .active(true)
-                .roomTypes(roomTypes)
-                .build();
-    }
-
-    private RoomType buildRoom(String id, String name, RoomCategory category,
-                                int nightlyRate, String bedType, int maxOccupancy, int sizeInSqFt) {
-        BigDecimal rate = BigDecimal.valueOf(nightlyRate);
-        BigDecimal tax = rate.multiply(new BigDecimal("0.12")).setScale(2, java.math.RoundingMode.HALF_UP);
-        return RoomType.builder()
-                .id(id)
-                .name(name)
-                .category(category)
-                .description("Elegant " + name + " with modern amenities and premium furnishings.")
-                .totalRooms(15)
-                .availableRooms(12)
-                .maxOccupancy(maxOccupancy)
-                .bedType(bedType)
-                .sizeInSqFt(sizeInSqFt)
-                .nightlyRate(rate)
-                .taxAmount(tax)
-                .totalNightlyRate(rate.add(tax))
-                .currency("INR")
-                .amenities(List.of("Free WiFi", "Mini Bar", "Smart TV", "In-room Safe", "Coffee Maker"))
-                .breakfastIncluded(category == RoomCategory.SUITE || category == RoomCategory.PRESIDENTIAL_SUITE)
-                .refundable(true)
-                .build();
-    }
-
     private DynamicPricingRule buildDemandRule(String name, int priority,
                                                 double pct, Double minOccupancy, Double maxOccupancy,
                                                 String description) {

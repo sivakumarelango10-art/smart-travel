@@ -1,8 +1,6 @@
 package com.smarttravel.modules.booking.requirement4;
 
 import com.smarttravel.modules.flight.config.AircraftSeatLayout;
-import com.smarttravel.modules.flight.dto.SeatDto;
-import com.smarttravel.modules.flight.dto.SeatMapResponse;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.Seat;

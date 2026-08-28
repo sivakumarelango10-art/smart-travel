@@ -2,7 +2,6 @@ package com.smarttravel.modules.hotel;
 
 import com.smarttravel.modules.hotel.model.Hotel;
 import com.smarttravel.modules.hotel.model.RoomType;
-import com.smarttravel.modules.hotel.model.VirtualTour;
 import com.smarttravel.modules.hotel.seeder.HotelCatalogGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

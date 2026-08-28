@@ -1,6 +1,5 @@
 package com.smarttravel.modules.booking.requirement4;
 
-import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.ConflictException;
 import com.smarttravel.modules.flight.config.AircraftSeatLayout;
 import com.smarttravel.modules.flight.model.CabinClass;
@@ -20,7 +19,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;

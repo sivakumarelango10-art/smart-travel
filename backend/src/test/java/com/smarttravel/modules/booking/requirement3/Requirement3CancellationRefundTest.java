@@ -1,6 +1,5 @@
 package com.smarttravel.modules.booking.requirement3;
 
-import com.smarttravel.common.exception.BadRequestException;
 import com.smarttravel.common.exception.ResourceNotFoundException;
 import com.smarttravel.modules.booking.model.Booking;
 import com.smarttravel.modules.booking.model.BookingStatus;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 

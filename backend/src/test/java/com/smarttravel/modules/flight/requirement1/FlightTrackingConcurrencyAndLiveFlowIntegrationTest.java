@@ -1,6 +1,5 @@
 package com.smarttravel.modules.flight.requirement1;
 
-import com.smarttravel.common.response.ApiResponse;
 import com.smarttravel.modules.flight.dto.FlightResponse;
 import com.smarttravel.modules.flight.dto.FlightStatusUpdateRequest;
 import com.smarttravel.modules.flight.model.AirportInfo;
@@ -8,16 +7,10 @@ import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.repository.FlightRepository;
 import com.smarttravel.modules.flight.service.FlightService;
-import com.smarttravel.modules.flight.simulation.engine.FlightSimulationEngine;
-import com.smarttravel.modules.flight.simulation.model.FlightSimulationConfig;
-import com.smarttravel.modules.flight.simulation.model.FlightSimulationEvent;
-import com.smarttravel.modules.flight.simulation.random.RandomProvider;
-import com.smarttravel.modules.flight.simulation.repository.FlightSimulationConfigRepository;
 import com.smarttravel.modules.flight.tracking.dto.TrackedFlightResponse;
 import com.smarttravel.modules.flight.tracking.model.TrackedFlight;
 import com.smarttravel.modules.flight.tracking.repository.TrackedFlightRepository;
 import com.smarttravel.modules.flight.tracking.service.FlightTrackingService;
-import com.smarttravel.modules.flight.websocket.FlightStatusEvent;
 import com.smarttravel.modules.flight.websocket.FlightStatusWebSocketPublisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +27,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -57,9 +48,6 @@ class FlightTrackingConcurrencyAndLiveFlowIntegrationTest {
 
     @Autowired
     private TrackedFlightRepository trackedFlightRepository;
-
-    @Autowired
-    private FlightSimulationConfigRepository configRepository;
 
     @MockBean
     private FlightStatusWebSocketPublisher webSocketPublisher;

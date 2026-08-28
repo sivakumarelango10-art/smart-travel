@@ -45,9 +45,6 @@ class TicketIndexOptionsConflictIntegrationTest {
     @Autowired
     private MongoIndexConfig mongoIndexConfig;
 
-    @Autowired
-    private TicketRepository ticketRepository;
-
     private String testTicketNumber;
 
     @BeforeEach

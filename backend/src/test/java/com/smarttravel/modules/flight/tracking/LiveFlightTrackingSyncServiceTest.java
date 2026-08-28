@@ -1,10 +1,8 @@
 package com.smarttravel.modules.flight.tracking;
 
-import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot;
-import com.smarttravel.modules.flight.repository.FlightRepository;
 import com.smarttravel.modules.flight.tracking.model.TrackedFlight;
 import com.smarttravel.modules.flight.tracking.repository.TrackedFlightRepository;
 import com.smarttravel.modules.flight.tracking.service.LiveFlightTrackingSyncService;
@@ -32,9 +30,6 @@ class LiveFlightTrackingSyncServiceTest {
     private TrackedFlightRepository trackedFlightRepository;
 
     @Mock
-    private FlightRepository flightRepository;
-
-    @Mock
     private FlightStatusProvider flightStatusProvider;
 
     @Mock
@@ -49,7 +44,6 @@ class LiveFlightTrackingSyncServiceTest {
     void setUp() {
         syncService = new LiveFlightTrackingSyncService(
                 trackedFlightRepository,
-                flightRepository,
                 flightStatusProvider,
                 webSocketPublisher,
                 webPushService

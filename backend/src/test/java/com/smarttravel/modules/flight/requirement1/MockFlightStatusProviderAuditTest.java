@@ -3,7 +3,6 @@ package com.smarttravel.modules.flight.requirement1;
 import com.smarttravel.modules.flight.model.AirportInfo;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
-import com.smarttravel.modules.flight.provider.FlightStatusProvider;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot;
 import com.smarttravel.modules.flight.provider.MockFlightStatusProviderImpl;
 import com.smarttravel.modules.flight.repository.FlightRepository;

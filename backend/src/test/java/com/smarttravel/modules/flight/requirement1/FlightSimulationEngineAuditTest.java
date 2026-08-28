@@ -11,7 +11,6 @@ import com.smarttravel.modules.flight.simulation.model.FlightSimulationConfig;
 import com.smarttravel.modules.flight.simulation.model.FlightSimulationEvent;
 import com.smarttravel.modules.flight.simulation.random.RandomProvider;
 import com.smarttravel.modules.flight.simulation.repository.FlightSimulationConfigRepository;
-import com.smarttravel.modules.flight.websocket.FlightStatusEvent;
 import com.smarttravel.modules.flight.websocket.FlightStatusWebSocketPublisher;
 import com.smarttravel.modules.notification.service.WebPushService;
 import org.junit.jupiter.api.BeforeEach;

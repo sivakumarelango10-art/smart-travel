@@ -82,10 +82,11 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
                 }
 
                 HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(reqBody, headers);
-                ResponseEntity<Map> response = restTemplate.postForEntity(
+                ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                         RAZORPAY_ORDERS_URL,
+                        org.springframework.http.HttpMethod.POST,
                         requestEntity,
-                        Map.class
+                        new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
                 );
 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {

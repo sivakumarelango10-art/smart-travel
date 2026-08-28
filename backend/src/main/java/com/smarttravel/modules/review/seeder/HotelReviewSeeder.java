@@ -113,7 +113,6 @@ public class HotelReviewSeeder implements ApplicationRunner {
 
             int needed = (int) (22 - existingCount);
             List<Review> newReviews = new ArrayList<>();
-            double totalRatingSum = 0.0;
 
             for (int i = 0; i < needed; i++) {
                 int reviewerIdx = (i + Math.abs(hotelId.hashCode())) % REVIEWER_NAMES.length;
@@ -125,8 +124,6 @@ public class HotelReviewSeeder implements ApplicationRunner {
                 double cleanliness = 4.7 + (RANDOM.nextInt(4) * 0.1);
                 double service = 4.6 + (RANDOM.nextInt(5) * 0.1);
                 double value = 4.4 + (RANDOM.nextInt(6) * 0.1);
-
-                totalRatingSum += rating;
 
                 int titleIdx = (i + Math.abs(hotelId.hashCode() * 3)) % REVIEW_TITLES.length;
                 int bodyIdx = (i + Math.abs(hotelId.hashCode() * 7)) % REVIEW_BODIES.length;

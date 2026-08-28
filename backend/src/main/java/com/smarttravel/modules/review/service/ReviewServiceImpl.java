@@ -7,6 +7,7 @@ import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewStatus;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import com.smarttravel.modules.review.repository.ReviewRepository;
+import com.smarttravel.modules.review.service.storage.ReviewMediaStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -30,10 +31,10 @@ public class ReviewServiceImpl implements ReviewService {
     private static final int AUTO_FLAG_THRESHOLD = 3;
 
     private final ReviewRepository reviewRepository;
-    private final com.smarttravel.modules.review.service.storage.ReviewMediaStorageService mediaStorageService;
+    private final ReviewMediaStorageService mediaStorageService;
 
     public ReviewServiceImpl(ReviewRepository reviewRepository,
-                             com.smarttravel.modules.review.service.storage.ReviewMediaStorageService mediaStorageService) {
+                             ReviewMediaStorageService mediaStorageService) {
         this.reviewRepository = reviewRepository;
         this.mediaStorageService = mediaStorageService;
     }

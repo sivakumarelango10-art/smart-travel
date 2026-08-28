@@ -1,7 +1,6 @@
 package com.smarttravel.modules.booking.requirement4;
 
 import com.smarttravel.modules.flight.config.AircraftSeatLayout;
-import com.smarttravel.modules.flight.dto.SeatDto;
 import com.smarttravel.modules.flight.dto.SeatMapResponse;
 import com.smarttravel.modules.flight.model.CabinClass;
 import com.smarttravel.modules.flight.model.Flight;
@@ -25,8 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**

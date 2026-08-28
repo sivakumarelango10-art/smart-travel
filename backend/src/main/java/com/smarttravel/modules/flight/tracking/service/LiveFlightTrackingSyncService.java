@@ -1,10 +1,8 @@
 package com.smarttravel.modules.flight.tracking.service;
 
-import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider;
 import com.smarttravel.modules.flight.provider.FlightStatusProvider.FlightStatusSnapshot;
-import com.smarttravel.modules.flight.repository.FlightRepository;
 import com.smarttravel.modules.flight.tracking.model.TrackedFlight;
 import com.smarttravel.modules.flight.tracking.repository.TrackedFlightRepository;
 import com.smarttravel.modules.flight.websocket.FlightStatusEvent;
@@ -31,19 +29,16 @@ public class LiveFlightTrackingSyncService {
     private static final Logger log = LoggerFactory.getLogger(LiveFlightTrackingSyncService.class);
 
     private final TrackedFlightRepository trackedFlightRepository;
-    private final FlightRepository flightRepository;
     private final FlightStatusProvider flightStatusProvider;
     private final FlightStatusWebSocketPublisher webSocketPublisher;
     private final WebPushService webPushService;
 
     @Autowired
     public LiveFlightTrackingSyncService(TrackedFlightRepository trackedFlightRepository,
-                                        FlightRepository flightRepository,
                                         FlightStatusProvider flightStatusProvider,
                                         @Autowired(required = false) FlightStatusWebSocketPublisher webSocketPublisher,
                                         @Autowired(required = false) WebPushService webPushService) {
         this.trackedFlightRepository = trackedFlightRepository;
-        this.flightRepository = flightRepository;
         this.flightStatusProvider = flightStatusProvider;
         this.webSocketPublisher = webSocketPublisher;
         this.webPushService = webPushService;

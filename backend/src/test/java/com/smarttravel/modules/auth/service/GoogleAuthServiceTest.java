@@ -1,7 +1,6 @@
 package com.smarttravel.modules.auth.service;
 
 import com.smarttravel.common.exception.ForbiddenException;
-import com.smarttravel.common.exception.UnauthorizedException;
 import com.smarttravel.common.security.JwtTokenProvider;
 import com.smarttravel.modules.auth.dto.AuthResponse;
 import com.smarttravel.modules.auth.dto.GoogleLoginRequest;
@@ -21,9 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,7 +32,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
