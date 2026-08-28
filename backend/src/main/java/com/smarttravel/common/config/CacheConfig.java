@@ -24,6 +24,9 @@ public class CacheConfig {
     public static final String CACHE_ANALYTICS_DASHBOARD = "analytics_dashboard";
     public static final String CACHE_AIRPORTS = "airports";
     public static final String CACHE_HOTEL_STATIC = "hotel_static";
+    public static final String CACHE_HOTEL_SEARCH = "hotel_search";
+    public static final String CACHE_HOTEL_ROOMS = "hotel_rooms";
+    public static final String CACHE_DYNAMIC_PRICING_RULES = "dynamic_pricing_rules";
     public static final String CACHE_RECOMMENDATIONS = "recommendations";
 
     @Bean
@@ -39,13 +42,16 @@ public class CacheConfig {
                 CACHE_ANALYTICS_DASHBOARD,
                 CACHE_AIRPORTS,
                 CACHE_HOTEL_STATIC,
+                CACHE_HOTEL_SEARCH,
+                CACHE_HOTEL_ROOMS,
+                CACHE_DYNAMIC_PRICING_RULES,
                 CACHE_RECOMMENDATIONS
         );
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .initialCapacity(100)
-                .maximumSize(1000)
-                .expireAfterWrite(15, TimeUnit.SECONDS)
+                .initialCapacity(200)
+                .maximumSize(2000)
+                .expireAfterWrite(60, TimeUnit.SECONDS)
                 .recordStats());
 
         return cacheManager;

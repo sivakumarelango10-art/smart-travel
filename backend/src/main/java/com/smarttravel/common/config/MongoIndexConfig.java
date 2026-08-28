@@ -136,6 +136,30 @@ public class MongoIndexConfig {
                     .on("priority", Sort.Direction.ASC)
                     .named("idx_pricing_rule_type_enabled_prio"));
 
+            // 13. Hotel Bookings collection compound indexes
+            ensureIndexSafely("hotel_bookings", new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_hotel_booking_user_date"));
+            ensureIndexSafely("hotel_bookings", new Index().on("userId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_hotel_booking_user_status_date"));
+            ensureIndexSafely("hotel_bookings", new Index().on("hotelId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_hotel_booking_hotel_date"));
+            ensureUniqueIndexSafely("hotel_bookings", "confirmationNumber", "idx_hotel_booking_conf_unique");
+
+            // 14. Tracked Flights collection compound indexes
+            ensureIndexSafely("tracked_flights", new Index().on("userId", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .named("idx_tracked_flights_user_active"));
+            ensureIndexSafely("tracked_flights", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .named("idx_tracked_flights_flight_active"));
+
+            // 15. Users collection unique email index
+            ensureUniqueIndexSafely("users", "email", "idx_user_email_unique");
+
             log.info("All MongoDB performance indexes successfully verified and initialized.");
         } catch (Exception ex) {
             log.warn("MongoDB index initialization warning (continuing startup): {}", ex.getMessage());

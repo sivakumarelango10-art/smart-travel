@@ -18,14 +18,15 @@ public class MongoConfig {
     public MongoClientSettingsBuilderCustomizer mongoClientSettingsCustomizer() {
         return builder -> builder
                 .applyToConnectionPoolSettings(pool -> pool
-                        .maxSize(50)
-                        .minSize(5)
-                        .maxWaitTime(3000, TimeUnit.MILLISECONDS)
-                        .maxConnectionIdleTime(60000, TimeUnit.MILLISECONDS))
+                        .minSize(15)
+                        .maxSize(100)
+                        .maxWaitTime(2000, TimeUnit.MILLISECONDS)
+                        .maxConnectionIdleTime(30000, TimeUnit.MILLISECONDS)
+                        .maxConnectionLifeTime(30, TimeUnit.MINUTES))
                 .applyToSocketSettings(socket -> socket
-                        .connectTimeout(5000, TimeUnit.MILLISECONDS)
-                        .readTimeout(10000, TimeUnit.MILLISECONDS))
+                        .connectTimeout(3000, TimeUnit.MILLISECONDS)
+                        .readTimeout(5000, TimeUnit.MILLISECONDS))
                 .applyToClusterSettings(cluster -> cluster
-                        .serverSelectionTimeout(3000, TimeUnit.MILLISECONDS));
+                        .serverSelectionTimeout(2000, TimeUnit.MILLISECONDS));
     }
 }

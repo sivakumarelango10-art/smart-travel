@@ -46,6 +46,10 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(
+            value = com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_SEARCH,
+            key = "(#city != null ? #city.toLowerCase().trim() : '') + '_' + (#airportCode != null ? #airportCode.toUpperCase().trim() : '') + '_' + (#minStars != null ? #minStars : '') + '_' + (#maxPrice != null ? #maxPrice : '') + '_' + #pageable.pageNumber + '_' + #pageable.pageSize"
+    )
     public Page<Hotel> searchHotels(String city, String airportCode, Integer minStars,
                                      BigDecimal maxPrice, Pageable pageable) {
         if (airportCode != null && !airportCode.isBlank()) {
@@ -184,11 +188,19 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(
+            value = {com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_SEARCH},
+            allEntries = true
+    )
     public Hotel saveHotel(Hotel hotel) {
         return hotelRepository.save(hotel);
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(
+            value = {com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_SEARCH},
+            allEntries = true
+    )
     public void deleteHotel(String hotelId) {
         Hotel hotel = getHotelById(hotelId);
         hotel.setActive(false);

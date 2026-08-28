@@ -79,7 +79,7 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
         // --- Demand Adjustment ---
         double demandPercent = 0.0;
         String demandReason = null;
-        List<DynamicPricingRule> demandRules = ruleRepository.findByTypeAndEnabledTrue(DynamicPricingRuleType.DEMAND);
+        List<DynamicPricingRule> demandRules = getEnabledDemandRules();
         if (!demandRules.isEmpty()) {
             demandPercent = selectDemandAdjustment(demandRules, occupancyRatio);
             if (demandPercent > 0) {
@@ -99,9 +99,7 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
         double seasonalPercent = 0.0;
         String seasonalReason = null;
         Instant now = Instant.now();
-        List<DynamicPricingRule> seasonalRules =
-                ruleRepository.findByTypeAndEnabledTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        DynamicPricingRuleType.SEASONAL, now, now);
+        List<DynamicPricingRule> seasonalRules = getActiveTimeBoundRules(DynamicPricingRuleType.SEASONAL, now);
         if (!seasonalRules.isEmpty()) {
             DynamicPricingRule bestSeasonal = seasonalRules.get(0);
             seasonalPercent = bestSeasonal.getPercentageAdjustment();
@@ -111,9 +109,7 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
         // --- Holiday Adjustment ---
         double holidayPercent = 0.0;
         String holidayReason = null;
-        List<DynamicPricingRule> holidayRules =
-                ruleRepository.findByTypeAndEnabledTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-                        DynamicPricingRuleType.HOLIDAY, now, now);
+        List<DynamicPricingRule> holidayRules = getActiveTimeBoundRules(DynamicPricingRuleType.HOLIDAY, now);
         if (!holidayRules.isEmpty()) {
             DynamicPricingRule bestHoliday = holidayRules.get(0);
             holidayPercent = bestHoliday.getPercentageAdjustment();
@@ -275,6 +271,15 @@ public class DynamicPricingServiceImpl implements DynamicPricingService {
             reasons.add(breakdown.getHolidayReason());
         }
         return reasons.isEmpty() ? "Standard rate calculation" : String.join(" | ", reasons);
+    }
+
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_DYNAMIC_PRICING_RULES, key = "'demand_rules'")
+    public List<DynamicPricingRule> getEnabledDemandRules() {
+        return ruleRepository.findByTypeAndEnabledTrue(DynamicPricingRuleType.DEMAND);
+    }
+
+    public List<DynamicPricingRule> getActiveTimeBoundRules(DynamicPricingRuleType type, Instant time) {
+        return ruleRepository.findByTypeAndEnabledTrueAndStartDateLessThanEqualAndEndDateGreaterThanEqual(type, time, time);
     }
 }
 
