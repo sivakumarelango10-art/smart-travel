@@ -275,19 +275,25 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 
         {/* Rows Container */}
         {sortedRows.length === 0 ? (
-          <div className="py-12 text-center space-y-3">
-            <p className="text-sm font-semibold text-slate-300">Loading physical seat configuration...</p>
-            <p className="text-xs text-slate-500">Retrieving real-time seat inventory for this aircraft.</p>
-            {onRefreshSeats && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                type="button"
-                onClick={onRefreshSeats}
-                className="mt-2 px-4 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-400 border border-amber-400/30 text-xs font-bold transition inline-flex items-center gap-1.5"
-              >
-                Refresh Seat Layout
-              </motion.button>
-            )}
+          <div className="space-y-3 py-2 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="flex items-center justify-between px-2 py-2 rounded-xl bg-white/[0.02]">
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                </div>
+                <span className="w-6 text-center text-xs font-mono text-slate-600 font-bold">{i}</span>
+                <div className="flex gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                  <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
+                </div>
+              </div>
+            ))}
+            <p className="text-center text-[11px] font-medium text-slate-500 pt-2">
+              Syncing live seat map with airline reservation system...
+            </p>
           </div>
         ) : (
           <div className="space-y-3">

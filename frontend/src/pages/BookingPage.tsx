@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Armchair,
   Users,
@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   AlertCircle,
   Plane,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from 'lucide-react';
 import { Flight, CabinClass, Passenger, Seat, Booking, PriceFreeze } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -21,21 +22,36 @@ import { SeatMap } from '../components/SeatMap';
 import { PassengerForm } from '../components/PassengerForm';
 import { FareSummaryCard } from '../components/FareSummaryCard';
 import { PaymentModal } from '../components/PaymentModal';
+import { AirlineLogo } from '../components/AirlineLogo';
+import { AircraftBadge } from '../components/AircraftBadge';
 
 export const BookingPage: React.FC = () => {
   const { flightId } = useParams<{ flightId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
 
   const cabinClass = (searchParams.get('cabinClass') as CabinClass) || 'ECONOMY';
   const passengerCount = parseInt(searchParams.get('passengers') || '1', 10);
   const initialFreezeId = searchParams.get('priceFreezeId') || searchParams.get('freezeId');
 
+  // Enforce authentication upfront before user starts the booking process
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const returnUrl = `${location.pathname}${location.search}`;
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`, { replace: true });
+    }
+  }, [isAuthenticated, location.pathname, location.search, navigate]);
+
   // Steps: 1: Seats, 2: Passengers, 3: Review & Book
   const [step, setStep] = useState<number>(1);
 
-  const [flight, setFlight] = useState<Flight | null>(null);
+  // Instant 0ms hydration from location state or in-memory flight cache
+  const passedFlight = (location.state as any)?.flight as Flight | undefined;
+  const initialFlight = passedFlight || (flightId ? flightService.getCachedFlightById(flightId) : null);
+
+  const [flight, setFlight] = useState<Flight | null>(initialFlight);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>(() =>
@@ -54,7 +70,8 @@ export const BookingPage: React.FC = () => {
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!initialFlight);
+  const [seatsLoading, setSeatsLoading] = useState<boolean>(true);
   const [bookingLoading, setBookingLoading] = useState<boolean>(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
@@ -66,12 +83,14 @@ export const BookingPage: React.FC = () => {
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
 
-  // Fetch Flight & Seat Map
+  // Fetch Flight & Seat Map with background hydration
   const loadFlightAndSeats = async () => {
     if (!flightId) return;
     try {
-      setLoading(true);
+      if (!flight) setLoading(true);
+      setSeatsLoading(true);
       setBookingError(null);
+
       const [flightRes, seatsRes] = await Promise.all([
         flightService.getFlightById(flightId),
         seatService.getSeatMap(flightId).catch(() => null),
@@ -79,7 +98,7 @@ export const BookingPage: React.FC = () => {
 
       if (flightRes && flightRes.data) {
         setFlight(flightRes.data);
-      } else {
+      } else if (!flight) {
         throw new Error('Flight details could not be loaded.');
       }
 
@@ -115,9 +134,12 @@ export const BookingPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setBookingError(err.message || 'Failed to load flight or seat information.');
+      if (!flight) {
+        setBookingError(err.message || 'Failed to load flight or seat information.');
+      }
     } finally {
       setLoading(false);
+      setSeatsLoading(false);
     }
   };
 
@@ -228,11 +250,21 @@ export const BookingPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !flight) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin"></div>
-        <p className="text-xs text-slate-400 font-bold">Loading aircraft cabin & real-time seat inventory...</p>
+      <div className="space-y-6 pb-16 max-w-7xl mx-auto animate-pulse">
+        <div className="rounded-2xl bg-[#14161F] p-6 h-28 border border-white/10 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-white/5" />
+          <div className="space-y-2 flex-1">
+            <div className="h-5 w-64 bg-white/10 rounded" />
+            <div className="h-3 w-40 bg-white/5 rounded" />
+          </div>
+        </div>
+        <div className="rounded-2xl bg-[#14161F] p-5 h-16 border border-white/10" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-8 rounded-2xl bg-[#14161F] h-[480px] border border-white/10 p-6" />
+          <div className="lg:col-span-4 rounded-2xl bg-[#14161F] h-96 border border-white/10 p-6" />
+        </div>
       </div>
     );
   }
@@ -270,20 +302,19 @@ export const BookingPage: React.FC = () => {
       {/* 1. FLIGHT SUMMARY BANNER */}
       <section className="rounded-2xl bg-[#14161F] text-white p-5 sm:p-6 shadow-xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-[#181A22] border border-white/10 flex items-center justify-center text-amber-400 font-bold shadow-glow-gold">
-            <Plane className="w-6 h-6 transform rotate-45 text-amber-400" />
-          </div>
+          <AirlineLogo airline={flight.airline} airlineCode={flight.airlineCode} size="lg" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
                 {flight.departureAirport.city} ({flight.departureAirport.code}) ➔ {flight.arrivalAirport.city} ({flight.arrivalAirport.code})
               </h1>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
-              <span className="font-bold text-white">{flight.airline} • {flight.flightNumber}</span>
-              <span className="text-white/20">•</span>
-              <span>{flight.aircraftModel}</span>
-              <span className="text-white/20">•</span>
+            <div className="flex items-center gap-3 text-xs text-slate-400 mt-1.5 flex-wrap">
+              <span className="font-bold text-white">{flight.airline}</span>
+              <span className="font-mono text-amber-400 font-bold bg-[#12131A] px-1.5 py-0.5 rounded border border-white/10 text-[11px]">
+                {flight.flightNumber}
+              </span>
+              <AircraftBadge aircraftModel={flight.aircraftModel} />
               <span className="text-amber-400 font-bold uppercase">{cabinClass.replace('_', ' ')}</span>
             </div>
           </div>

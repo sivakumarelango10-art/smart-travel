@@ -95,7 +95,12 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     flight.status !== 'ARRIVED';
 
   const handleSelectFlight = () => {
-    navigate(`/book/${flight.id}?cabinClass=${selectedCabin}&passengers=${passengerCount}`);
+    const targetUrl = `/book/${flight.id}?cabinClass=${selectedCabin}&passengers=${passengerCount}`;
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
+    navigate(targetUrl, { state: { flight } });
   };
 
   const handleTrackFlight = async (e: React.MouseEvent) => {
