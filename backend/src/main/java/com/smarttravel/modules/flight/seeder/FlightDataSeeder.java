@@ -25,11 +25,8 @@ import java.util.Set;
 
 /**
  * Deterministic Production Flight Data Seeder.
- * Populates MongoDB with comprehensive domestic and international flight routes,
- * covering 40+ premier destinations with authentic airline fleets, exact aircraft models
- * (Airbus A320neo, Airbus A321neo, Airbus A320ceo, Boeing 737 MAX 8, Boeing 737-800,
- * ATR 72-600, Airbus A350-900, Boeing 787-9 Dreamliner), rolling daily schedules through 2027,
- * and multi-cabin inventories.
+ * Seeds every domestic and international flight route across rolling daily schedules,
+ * ensuring 100% route coverage for every single calendar day.
  */
 @Component
 public class FlightDataSeeder implements ApplicationRunner {
@@ -45,103 +42,93 @@ public class FlightDataSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         try {
-            LocalDate today = LocalDate.now(ZoneOffset.UTC);
-            Instant startWindow = today.atStartOfDay(ZoneOffset.UTC).toInstant();
-            Instant endWindow = today.plusDays(30).atStartOfDay(ZoneOffset.UTC).toInstant();
-
-            long upcomingFlightsCount = flightRepository.countByDepartureTimeBetweenAndActiveTrue(startWindow, endWindow);
-            log.info("Current upcoming flights in next 30 days: {}", upcomingFlightsCount);
-
-            if (upcomingFlightsCount >= 300) {
-                log.info("MongoDB flight collection verified with active upcoming routes.");
-                return;
-            }
-
-            List<Flight> seededFlights = generateComprehensiveFleet();
-            List<Flight> toInsert = new ArrayList<>();
-            for (Flight f : seededFlights) {
-                if (!flightRepository.existsByFlightNumber(f.getFlightNumber())) {
-                    toInsert.add(f);
-                }
-            }
-            if (!toInsert.isEmpty()) {
-                // Batch insert for maximum performance
-                int batchSize = 500;
-                for (int i = 0; i < toInsert.size(); i += batchSize) {
-                    int end = Math.min(i + batchSize, toInsert.size());
-                    flightRepository.saveAll(toInsert.subList(i, end));
-                }
-                log.info("Successfully seeded {} comprehensive daily global flights into MongoDB.", toInsert.size());
-            }
+            log.info("Starting comprehensive flight schedule seeder across all domestic and international routes...");
+            SeedingStats stats = seedComprehensiveFleet(180);
+            log.info("Flight seeder completed: Inserted {} new flights. Database now contains {} active flights across {} distinct routes for {} days.",
+                    stats.getInsertedCount(), stats.getTotalFlightsInDb(), stats.getDistinctRoutesCount(), stats.getDaysAhead());
         } catch (Exception ex) {
             log.warn("Flight seeding encountered non-fatal error during startup: {}", ex.getMessage());
         }
     }
 
-    public List<Flight> generateComprehensiveFleet() {
+    public static class SeedingStats {
+        private final int insertedCount;
+        private final long totalFlightsInDb;
+        private final int distinctRoutesCount;
+        private final int daysAhead;
+
+        public SeedingStats(int insertedCount, long totalFlightsInDb, int distinctRoutesCount, int daysAhead) {
+            this.insertedCount = insertedCount;
+            this.totalFlightsInDb = totalFlightsInDb;
+            this.distinctRoutesCount = distinctRoutesCount;
+            this.daysAhead = daysAhead;
+        }
+
+        public int getInsertedCount() { return insertedCount; }
+        public long getTotalFlightsInDb() { return totalFlightsInDb; }
+        public int getDistinctRoutesCount() { return distinctRoutesCount; }
+        public int getDaysAhead() { return daysAhead; }
+    }
+
+    public SeedingStats seedComprehensiveFleet(int daysAhead) {
+        List<Flight> seededFlights = generateComprehensiveFleet(daysAhead);
+
+        // Fetch all existing flight numbers in 1 fast projection query
+        List<Flight> existing = flightRepository.findAllFlightNumbersOnly();
+        Set<String> existingNumbers = new HashSet<>(existing != null ? existing.size() : 100);
+        if (existing != null) {
+            for (Flight ef : existing) {
+                if (ef.getFlightNumber() != null) {
+                    existingNumbers.add(ef.getFlightNumber());
+                }
+            }
+        }
+
+        List<Flight> toInsert = new ArrayList<>();
+        for (Flight f : seededFlights) {
+            if (!existingNumbers.contains(f.getFlightNumber())) {
+                toInsert.add(f);
+                existingNumbers.add(f.getFlightNumber());
+            }
+        }
+
+        if (!toInsert.isEmpty()) {
+            int batchSize = 1000;
+            for (int i = 0; i < toInsert.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, toInsert.size());
+                flightRepository.saveAll(toInsert.subList(i, end));
+            }
+        }
+
+        long totalFlightsInDb = flightRepository.count();
+        int distinctRoutes = getRouteTemplates().size();
+
+        return new SeedingStats(toInsert.size(), totalFlightsInDb, distinctRoutes, daysAhead);
+    }
+
+    public List<Flight> generateComprehensiveFleet(int daysAhead) {
         List<Flight> fleet = new ArrayList<>();
         Instant now = Instant.now();
 
         // =========================================================================
-        // 1. LIVE FLIGHTS (DEPARTED, BOARDING, DELAYED, ON_TIME) FOR RADAR & STATUS
+        // 1. LIVE FLIGHTS (RADAR & REALTIME STATUS)
         // =========================================================================
-        fleet.add(buildFlight("AI-101", "Air India", "AI", "DEL", "BOM", "Boeing 787-9 Dreamliner", now.minus(45, ChronoUnit.MINUTES), 130, 4500, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("6E-204", "IndiGo", "6E", "BOM", "BLR", "Airbus A321neo", now.minus(25, ChronoUnit.MINUTES), 105, 3800, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("UK-955", "Vistara", "UK", "DEL", "BOM", "Airbus A321neo", now.plus(20, ChronoUnit.MINUTES), 130, 5600, FlightStatus.BOARDING, null, null));
-        fleet.add(buildFlight("6E-551", "IndiGo", "6E", "DEL", "HYD", "Airbus A320neo", now.plus(1, ChronoUnit.HOURS), 135, 4200, FlightStatus.DELAYED, 40, "Air traffic congestion at New Delhi"));
-        fleet.add(buildFlight("AI-504", "Air India", "AI", "DEL", "BLR", "Airbus A350-900", now.plus(2, ChronoUnit.HOURS), 165, 5200, FlightStatus.ON_TIME, null, null));
-        fleet.add(buildFlight("6E-678", "IndiGo", "6E", "DEL", "MAA", "Airbus A320ceo", now.plus(3, ChronoUnit.HOURS), 170, 4900, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("SG-303", "SpiceJet", "SG", "DEL", "CCU", "Boeing 737-800", now.plus(1, ChronoUnit.HOURS), 135, 3900, FlightStatus.DELAYED, 25, "Incoming aircraft turn-around"));
-        fleet.add(buildFlight("QP-1102", "Akasa Air", "QP", "BOM", "BLR", "Boeing 737 MAX 8", now.plus(4, ChronoUnit.HOURS), 105, 3400, FlightStatus.ON_TIME, null, null));
-        fleet.add(buildFlight("IX-801", "Air India Express", "IX", "DEL", "BOM", "Boeing 737 MAX 8", now.plus(2, ChronoUnit.HOURS), 130, 3900, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("9I-501", "Alliance Air", "9I", "DEL", "IXC", "ATR 72-600", now.plus(1, ChronoUnit.HOURS), 55, 2300, FlightStatus.ON_TIME, null, null));
-
-        // Indian Vacation & Leisure Live Routes
-        fleet.add(buildFlight("6E-101", "IndiGo", "6E", "DEL", "GOI", "Airbus A320neo", now.plus(2, ChronoUnit.HOURS), 150, 5400, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-812", "Air India", "AI", "BOM", "GOI", "Airbus A320ceo", now.plus(1, ChronoUnit.HOURS), 75, 3200, FlightStatus.ON_TIME, null, null));
-        fleet.add(buildFlight("6E-344", "IndiGo", "6E", "DEL", "SXR", "Airbus A321neo", now.plus(3, ChronoUnit.HOURS), 85, 4600, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-409", "Air India", "AI", "DEL", "COK", "Airbus A350-900", now.plus(4, ChronoUnit.HOURS), 190, 6200, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("6E-722", "IndiGo", "6E", "BOM", "COK", "Airbus A320neo", now.plus(5, ChronoUnit.HOURS), 115, 3900, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-491", "Air India", "AI", "DEL", "JAI", "Airbus A320ceo", now.plus(2, ChronoUnit.HOURS), 55, 2900, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("6E-289", "IndiGo", "6E", "BOM", "UDR", "ATR 72-600", now.plus(3, ChronoUnit.HOURS), 80, 3600, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-406", "Air India", "AI", "DEL", "VNS", "Airbus A320neo", now.plus(4, ChronoUnit.HOURS), 80, 3400, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("6E-885", "IndiGo", "6E", "DEL", "IXZ", "Airbus A321neo", now.plus(6, ChronoUnit.HOURS), 310, 8900, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-018", "Air India", "AI", "DEL", "AMD", "Airbus A320ceo", now.plus(3, ChronoUnit.HOURS), 90, 3500, FlightStatus.SCHEDULED, null, null));
-
-        // Tropical Vacations Live
-        fleet.add(buildFlight("GA-850", "Garuda Indonesia", "GA", "DEL", "DPS", "Airbus A330-300", now.minus(90, ChronoUnit.MINUTES), 540, 16999, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("AI-214", "Air India", "AI", "BOM", "DPS", "Boeing 787-9 Dreamliner", now.plus(7, ChronoUnit.HOURS), 525, 17499, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("6E-1121", "IndiGo", "6E", "BOM", "MLE", "Airbus A321neo", now.minus(30, ChronoUnit.MINUTES), 165, 11999, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("AI-263", "Air India", "AI", "DEL", "MLE", "Airbus A320neo", now.plus(5, ChronoUnit.HOURS), 240, 14200, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("TG-316", "Thai Airways", "TG", "DEL", "BKK", "Boeing 777-300ER", now.plus(4, ChronoUnit.HOURS), 260, 13800, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("6E-1073", "IndiGo", "6E", "BOM", "HKT", "Airbus A321neo", now.plus(6, ChronoUnit.HOURS), 285, 12900, FlightStatus.SCHEDULED, null, null));
-
-        // Middle East Flagships Live
-        fleet.add(buildFlight("EK-500", "Emirates", "EK", "BOM", "DXB", "Boeing 777-300ER", now.minus(50, ChronoUnit.MINUTES), 195, 21000, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("EK-512", "Emirates", "EK", "DEL", "DXB", "Airbus A380-800", now.plus(8, ChronoUnit.HOURS), 230, 24000, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("EY-205", "Etihad Airways", "EY", "BOM", "AUH", "Boeing 787-9", now.plus(6, ChronoUnit.HOURS), 210, 22500, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("QR-571", "Qatar Airways", "QR", "DEL", "DOH", "Boeing 777-300ER", now.plus(5, ChronoUnit.HOURS), 250, 28000, FlightStatus.SCHEDULED, null, null));
-
-        // Southeast Asia & Far East Live
-        fleet.add(buildFlight("SQ-402", "Singapore Airlines", "SQ", "DEL", "SIN", "Airbus A350-900", now.plus(9, ChronoUnit.HOURS), 335, 32000, FlightStatus.ON_TIME, null, null));
-        fleet.add(buildFlight("SQ-423", "Singapore Airlines", "SQ", "BOM", "SIN", "Boeing 787-10", now.minus(80, ChronoUnit.MINUTES), 320, 29500, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("UK-115", "Vistara", "UK", "BLR", "SIN", "Airbus A321neo", now.plus(4, ChronoUnit.HOURS), 275, 14299, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("MH-191", "Malaysia Airlines", "MH", "DEL", "KUL", "Airbus A330-300", now.plus(7, ChronoUnit.HOURS), 330, 18500, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("JL-740", "Japan Airlines", "JL", "DEL", "HND", "Boeing 787-9", now.minus(120, ChronoUnit.MINUTES), 485, 46000, FlightStatus.DEPARTED, null, null));
-
-        // Europe & Americas Live
-        fleet.add(buildFlight("BA-112", "British Airways", "BA", "DEL", "LHR", "Boeing 787-9", now.minus(110, ChronoUnit.MINUTES), 555, 52000, FlightStatus.DEPARTED, null, null));
-        fleet.add(buildFlight("AI-112", "Air India", "AI", "BOM", "LHR", "Airbus A350-900", now.plus(10, ChronoUnit.HOURS), 565, 48000, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AF-225", "Air France", "AF", "DEL", "CDG", "Boeing 777-300ER", now.plus(8, ChronoUnit.HOURS), 550, 54000, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("LH-760", "Lufthansa", "LH", "DEL", "FRA", "Boeing 747-8", now.plus(9, ChronoUnit.HOURS), 520, 51000, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-105", "Air India", "AI", "DEL", "JFK", "Boeing 787-9 Dreamliner", now.plus(14, ChronoUnit.HOURS), 940, 72000, FlightStatus.SCHEDULED, null, null));
-        fleet.add(buildFlight("AI-173", "Air India", "AI", "DEL", "SFO", "Airbus A350-900", now.plus(16, ChronoUnit.HOURS), 970, 78000, FlightStatus.SCHEDULED, null, null));
+        fleet.add(buildFlight("AI-101-LIVE", "Air India", "AI", "DEL", "BOM", "Boeing 787-9 Dreamliner", now.minus(45, ChronoUnit.MINUTES), 130, 4500, FlightStatus.DEPARTED, null, null));
+        fleet.add(buildFlight("6E-204-LIVE", "IndiGo", "6E", "BOM", "BLR", "Airbus A321neo", now.minus(25, ChronoUnit.MINUTES), 105, 3800, FlightStatus.DEPARTED, null, null));
+        fleet.add(buildFlight("UK-955-LIVE", "Vistara", "UK", "DEL", "BOM", "Airbus A321neo", now.plus(20, ChronoUnit.MINUTES), 130, 5600, FlightStatus.BOARDING, null, null));
+        fleet.add(buildFlight("6E-551-LIVE", "IndiGo", "6E", "DEL", "HYD", "Airbus A320neo", now.plus(1, ChronoUnit.HOURS), 135, 4200, FlightStatus.DELAYED, 40, "Air traffic congestion at New Delhi"));
+        fleet.add(buildFlight("AI-504-LIVE", "Air India", "AI", "DEL", "BLR", "Airbus A350-900", now.plus(2, ChronoUnit.HOURS), 165, 5200, FlightStatus.ON_TIME, null, null));
+        fleet.add(buildFlight("6E-678-LIVE", "IndiGo", "6E", "DEL", "MAA", "Airbus A320ceo", now.plus(3, ChronoUnit.HOURS), 170, 4900, FlightStatus.SCHEDULED, null, null));
+        fleet.add(buildFlight("SG-303-LIVE", "SpiceJet", "SG", "DEL", "CCU", "Boeing 737-800", now.plus(1, ChronoUnit.HOURS), 135, 3900, FlightStatus.DELAYED, 25, "Incoming aircraft turn-around"));
+        fleet.add(buildFlight("QP-1102-LIVE", "Akasa Air", "QP", "BOM", "BLR", "Boeing 737 MAX 8", now.plus(4, ChronoUnit.HOURS), 105, 3400, FlightStatus.ON_TIME, null, null));
+        fleet.add(buildFlight("IX-801-LIVE", "Air India Express", "IX", "DEL", "BOM", "Boeing 737 MAX 8", now.plus(2, ChronoUnit.HOURS), 130, 3900, FlightStatus.SCHEDULED, null, null));
+        fleet.add(buildFlight("9I-501-LIVE", "Alliance Air", "9I", "DEL", "IXC", "ATR 72-600", now.plus(1, ChronoUnit.HOURS), 55, 2300, FlightStatus.ON_TIME, null, null));
 
         // =========================================================================
-        // 2. COMPREHENSIVE DAILY RECURRENT SCHEDULES ACROSS 180 DAYS
+        // 2. COMPREHENSIVE DAILY RECURRENT SCHEDULES FOR EVERY SINGLE DAY
         // =========================================================================
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        LocalDate endDate = today.plusDays(180);
+        LocalDate endDate = today.plusDays(daysAhead);
 
         List<RouteTemplate> templates = getRouteTemplates();
 
@@ -203,10 +190,10 @@ public class FlightDataSeeder implements ApplicationRunner {
         List<RouteTemplate> list = new ArrayList<>();
 
         // ─────────────────────────────────────────────────────────────────────────
-        // 1. HIGH-FREQUENCY DOMESTIC CORRIDORS (Using exact specified aircraft)
+        // 1. HIGH-FREQUENCY DOMESTIC TRUNK ROUTES (Morning, Afternoon, Evening, Night)
         // ─────────────────────────────────────────────────────────────────────────
         
-        // DEL <-> BOM (Morning, Afternoon, Evening, Night)
+        // DEL <-> BOM (8 daily flights)
         list.add(new RouteTemplate("Air India", "AI", 101, "DEL", "BOM", "Boeing 787-9 Dreamliner", 6, 30, 130, 4650));
         list.add(new RouteTemplate("IndiGo", "6E", 501, "DEL", "BOM", "Airbus A321neo", 8, 45, 125, 4200));
         list.add(new RouteTemplate("Air India", "AI", 805, "DEL", "BOM", "Airbus A350-900", 11, 15, 130, 4950));
@@ -216,7 +203,7 @@ public class FlightDataSeeder implements ApplicationRunner {
         list.add(new RouteTemplate("IndiGo", "6E", 605, "DEL", "BOM", "Airbus A320neo", 21, 0, 125, 4100));
         list.add(new RouteTemplate("Air India", "AI", 103, "DEL", "BOM", "Airbus A320ceo", 22, 45, 130, 4300));
 
-        // BOM <-> DEL (Reciprocal)
+        // BOM <-> DEL (6 daily flights)
         list.add(new RouteTemplate("IndiGo", "6E", 502, "BOM", "DEL", "Airbus A321neo", 7, 0, 130, 4200));
         list.add(new RouteTemplate("Air India", "AI", 102, "BOM", "DEL", "Airbus A350-900", 9, 30, 135, 4850));
         list.add(new RouteTemplate("Air India Express", "IX", 802, "BOM", "DEL", "Boeing 737 MAX 8", 12, 15, 130, 3900));
@@ -287,10 +274,19 @@ public class FlightDataSeeder implements ApplicationRunner {
         // Other Major Metros (HYD, MAA, CCU, VNS, IXZ, AMD, PNQ, ATQ, GAU, TRV)
         list.add(new RouteTemplate("IndiGo", "6E", 551, "DEL", "HYD", "Airbus A320neo", 7, 15, 135, 4250));
         list.add(new RouteTemplate("IndiGo", "6E", 552, "HYD", "DEL", "Airbus A320neo", 10, 30, 135, 4250));
+        list.add(new RouteTemplate("Air India", "AI", 543, "BOM", "HYD", "Airbus A320neo", 12, 0, 85, 3450));
+        list.add(new RouteTemplate("Air India", "AI", 544, "HYD", "BOM", "Airbus A320neo", 15, 0, 85, 3450));
+
         list.add(new RouteTemplate("IndiGo", "6E", 678, "DEL", "MAA", "Airbus A321neo", 10, 0, 170, 4950));
         list.add(new RouteTemplate("IndiGo", "6E", 679, "MAA", "DEL", "Airbus A321neo", 14, 0, 170, 4950));
+        list.add(new RouteTemplate("SpiceJet", "SG", 611, "BOM", "MAA", "Boeing 737-800", 9, 30, 115, 3850));
+        list.add(new RouteTemplate("SpiceJet", "SG", 612, "MAA", "BOM", "Boeing 737-800", 13, 0, 115, 3850));
+
         list.add(new RouteTemplate("SpiceJet", "SG", 303, "DEL", "CCU", "Boeing 737-800", 15, 20, 135, 3950));
         list.add(new RouteTemplate("SpiceJet", "SG", 304, "CCU", "DEL", "Boeing 737-800", 18, 15, 135, 3950));
+        list.add(new RouteTemplate("Air India", "AI", 701, "BOM", "CCU", "Airbus A320neo", 10, 15, 155, 4650));
+        list.add(new RouteTemplate("Air India", "AI", 702, "CCU", "BOM", "Airbus A320neo", 14, 0, 155, 4650));
+
         list.add(new RouteTemplate("Air India", "AI", 406, "DEL", "VNS", "Airbus A320neo", 14, 0, 80, 3450));
         list.add(new RouteTemplate("Air India", "AI", 407, "VNS", "DEL", "Airbus A320neo", 16, 30, 80, 3450));
         list.add(new RouteTemplate("IndiGo", "6E", 885, "DEL", "IXZ", "Airbus A321neo", 5, 45, 310, 8950));
