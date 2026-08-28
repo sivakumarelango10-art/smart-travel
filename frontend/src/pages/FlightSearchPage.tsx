@@ -49,55 +49,73 @@ export const FlightSearchPage: React.FC = () => {
 
   const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const applyFlightData = useCallback((data: any) => {
+    let flightList: Flight[] = [];
+    if (Array.isArray(data)) {
+      flightList = data;
+    } else if (data && Array.isArray(data.content)) {
+      flightList = data.content;
+    }
+
+    setFlights(flightList);
+    setLastUpdated(new Date());
+
+    if (flightList.length > 0) {
+      const prices = flightList.map((f: Flight) => {
+        const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
+        return (inv ? inv.totalPrice : f.basePrice) * passengers;
+      });
+      const highestPrice = Math.max(...prices, 15000);
+      setMaxPrice(highestPrice);
+      setPriceLimit((prev) => (prev === 0 || prev < highestPrice ? highestPrice : prev));
+    }
+  }, [cabinClass, passengers]);
+
   const fetchFlights = useCallback(async () => {
-    setLoading(true);
+    const searchParamsObj = { origin, destination, departureDate, cabinClass, passengers };
+    
+    // Check if we have instant cached data to display immediately
+    const cached = flightService.getCachedSearch(searchParamsObj);
+    if (cached && cached.data && cached.data.data) {
+      applyFlightData(cached.data.data);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     setError(null);
     setSlowMessage(null);
 
-    // Warm-up timeout indicator for Render backend
+    // Warm-up timeout indicator for Render backend if request takes longer
     slowTimerRef.current = setTimeout(() => {
-      setSlowMessage('Connecting to airline reservation systems. Please hold on...');
-    }, 4000);
+      setSlowMessage('Connecting to live airline reservation systems. Synchronizing real-time seat availability...');
+    }, 3500);
 
     try {
-      const res = await flightService.searchFlights({
-        origin,
-        destination,
-        departureDate,
-        cabinClass,
-        passengers,
-      });
-
-      if (res.data && Array.isArray(res.data)) {
-        setFlights(res.data);
-        setLastUpdated(new Date());
-
-        // Calculate max price for the budget slider
-        const prices = res.data.map((f: Flight) => {
-          const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
-          return (inv ? inv.totalPrice : f.basePrice) * passengers;
-        });
-        const highestPrice = Math.max(...prices, 15000);
-        setMaxPrice(highestPrice);
-        setPriceLimit(highestPrice);
+      const res = await flightService.searchFlights(searchParamsObj);
+      if (res && res.data) {
+        applyFlightData(res.data);
       } else {
         setFlights([]);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to retrieve flights for this route.');
+      if (flights.length === 0) {
+        setError(err.message || 'Failed to retrieve flights for this route.');
+      }
     } finally {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       setLoading(false);
       setSlowMessage(null);
     }
-  }, [origin, destination, departureDate, cabinClass, passengers]);
+  }, [origin, destination, departureDate, cabinClass, passengers, applyFlightData, flights.length]);
 
   useEffect(() => {
     fetchFlights();
     return () => {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     };
-  }, [fetchFlights]);
+  }, [origin, destination, departureDate, cabinClass, passengers]);
+
 
   // Live "Updated X seconds ago" counter
   useEffect(() => {

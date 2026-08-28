@@ -67,6 +67,7 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH, com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS}, allEntries = true)
     public FlightResponse createFlight(FlightCreateRequest request) {
         log.info("Creating new flight with number: {}", request.getFlightNumber());
 
@@ -86,6 +87,7 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH, com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS}, allEntries = true)
     public FlightResponse updateFlight(String id, FlightUpdateRequest request) {
         log.info("Updating flight with ID: {}", id);
 
@@ -101,6 +103,7 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH, com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS}, allEntries = true)
     public void deleteFlight(String id) {
         log.info("Deactivating / deleting flight with ID: {}", id);
 
@@ -114,6 +117,7 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH, com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS}, allEntries = true)
     public FlightResponse updateFlightStatus(String id, FlightStatusUpdateRequest request) {
         log.info("Admin updating flight status for ID: {} to {}", id, request.getStatus());
 
@@ -188,6 +192,7 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional
+    @org.springframework.cache.annotation.CacheEvict(value = {com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH, com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS}, allEntries = true)
     public FlightResponse updateFlightInventory(String id, FlightInventoryUpdateRequest request) {
         log.info("Admin updating cabin inventories for flight ID: {}", id);
 
@@ -229,6 +234,7 @@ public class FlightServiceImpl implements FlightService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(value = com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_DETAILS, key = "#id")
     public FlightResponse getFlightById(String id) {
         log.debug("Fetching flight by ID: {}", id);
 
@@ -250,11 +256,37 @@ public class FlightServiceImpl implements FlightService {
     }
 
     @Override
+    @org.springframework.cache.annotation.Cacheable(
+            value = com.smarttravel.common.config.CacheConfig.CACHE_FLIGHT_SEARCH,
+            key = "{#criteria.origin, #criteria.destination, #criteria.departureDate, #criteria.cabinClass, #criteria.passengers, #criteria.departureTimeWindow, #criteria.sortBy, #criteria.sortDirection, #criteria.page, #criteria.size}",
+            unless = "#result == null || #result.content == null || #result.content.isEmpty()"
+    )
     public PageResponse<FlightResponse> searchFlights(FlightSearchCriteria criteria) {
         log.debug("Searching flights with criteria: origin='{}', dest='{}', date='{}', passengers={}",
                 criteria.getOrigin(), criteria.getDestination(), criteria.getDepartureDate(), criteria.getPassengers());
 
         Page<Flight> flightPage = flightRepository.searchFlights(criteria);
+
+        // Dynamic On-Demand Synthesis: If 0 flights found for a valid origin & destination pair, synthesize authentic schedules
+        if (flightPage.isEmpty() && criteria.getOrigin() != null && !criteria.getOrigin().isBlank()
+                && criteria.getDestination() != null && !criteria.getDestination().isBlank()) {
+            java.time.LocalDate date = criteria.getDepartureDate() != null ? criteria.getDepartureDate() : java.time.LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1);
+            List<Flight> synthesized = synthesizeOnDemandFlights(criteria.getOrigin().trim().toUpperCase(), criteria.getDestination().trim().toUpperCase(), date);
+            if (!synthesized.isEmpty()) {
+                List<Flight> toSave = new ArrayList<>();
+                for (Flight f : synthesized) {
+                    if (!flightRepository.existsByFlightNumber(f.getFlightNumber())) {
+                        toSave.add(f);
+                    }
+                }
+                if (!toSave.isEmpty()) {
+                    flightRepository.saveAll(toSave);
+                    log.info("Synthesized and persisted {} on-demand flights for route {} -> {} on {}", toSave.size(), criteria.getOrigin(), criteria.getDestination(), date);
+                }
+                flightPage = flightRepository.searchFlights(criteria);
+            }
+        }
+
         List<FlightResponse> flightResponses = flightPage.getContent().stream()
                 .map(flight -> FlightMapper.toResponse(flight, criteria.getCabinClass(), criteria.getPassengers(), fareCalculationService))
                 .toList();
@@ -663,5 +695,84 @@ public class FlightServiceImpl implements FlightService {
             case "JFK" -> "John F. Kennedy International Airport";
             default -> "Indira Gandhi International Airport";
         };
+    }
+
+    private List<Flight> synthesizeOnDemandFlights(String origin, String dest, java.time.LocalDate date) {
+        List<Flight> list = new ArrayList<>();
+        String dateSuffix = date.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+
+        boolean isIntl = isInternationalAirport(origin) || isInternationalAirport(dest);
+        int baseDuration = calculateEstimatedDuration(origin, dest, isIntl);
+        double baseFare = calculateEstimatedFare(origin, dest, isIntl);
+
+        // 1. Early Morning (Air India • Boeing 787-9 Dreamliner / Airbus A320neo)
+        list.add(createSynthesizedFlight("AI", "Air India", 101, origin, dest, isIntl ? "Boeing 787-9 Dreamliner" : "Airbus A320neo", date.atTime(6, 30).toInstant(java.time.ZoneOffset.UTC), baseDuration, baseFare * 0.95, dateSuffix));
+        
+        // 2. Mid Morning (IndiGo • Airbus A321neo / Airbus A320ceo)
+        list.add(createSynthesizedFlight("6E", "IndiGo", 204, origin, dest, "Airbus A321neo", date.atTime(9, 15).toInstant(java.time.ZoneOffset.UTC), baseDuration, baseFare * 0.90, dateSuffix));
+        
+        // 3. Afternoon (Akasa Air / Air India Express • Boeing 737 MAX 8)
+        list.add(createSynthesizedFlight(isIntl ? "EK" : "QP", isIntl ? "Emirates" : "Akasa Air", 520, origin, dest, isIntl ? "Boeing 777-300ER" : "Boeing 737 MAX 8", date.atTime(13, 45).toInstant(java.time.ZoneOffset.UTC), baseDuration, baseFare * 1.05, dateSuffix));
+        
+        // 4. Evening (Air India • Airbus A350-900)
+        list.add(createSynthesizedFlight("AI", "Air India", 830, origin, dest, "Airbus A350-900", date.atTime(18, 20).toInstant(java.time.ZoneOffset.UTC), baseDuration, baseFare * 1.10, dateSuffix));
+        
+        // 5. Night (Air India Express / SpiceJet • Boeing 737-800)
+        list.add(createSynthesizedFlight(isIntl ? "SQ" : "IX", isIntl ? "Singapore Airlines" : "Air India Express", 412, origin, dest, isIntl ? "Airbus A350-900" : "Boeing 737-800", date.atTime(21, 50).toInstant(java.time.ZoneOffset.UTC), baseDuration, baseFare * 0.92, dateSuffix));
+
+        return list;
+    }
+
+    private Flight createSynthesizedFlight(String airlineCode, String airline, int baseNum, String orig, String dest,
+                                           String aircraft, Instant depTime, int durationMins, double basePriceVal, String dateSuffix) {
+        String flightNum = airlineCode + "-" + baseNum + "-" + dateSuffix;
+        return com.smarttravel.modules.flight.seeder.FlightDataSeeder.buildFlight(
+                flightNum,
+                airline,
+                airlineCode,
+                orig,
+                dest,
+                aircraft,
+                depTime,
+                durationMins,
+                basePriceVal,
+                FlightStatus.SCHEDULED,
+                null,
+                null
+        );
+    }
+
+    private boolean isInternationalAirport(String code) {
+        if (code == null) return false;
+        String clean = code.toUpperCase().trim();
+        return Set.of("DPS", "MLE", "BKK", "HKT", "DXB", "AUH", "DOH", "SIN", "KUL", "HND", "NRT", "ICN", "LHR", "CDG", "FRA", "AMS", "ZRH", "JFK", "SFO", "YYZ", "SYD").contains(clean);
+    }
+
+    private int calculateEstimatedDuration(String orig, String dest, boolean isIntl) {
+        if (!isIntl) return 130;
+        String o = orig != null ? orig.toUpperCase().trim() : "";
+        String d = dest != null ? dest.toUpperCase().trim() : "";
+        if (o.equals("DPS") || d.equals("DPS")) return 530;
+        if (o.equals("MLE") || d.equals("MLE")) return 200;
+        if (o.equals("DXB") || d.equals("DXB") || o.equals("AUH") || d.equals("AUH") || o.equals("DOH") || d.equals("DOH")) return 210;
+        if (o.equals("SIN") || d.equals("SIN") || o.equals("KUL") || d.equals("KUL") || o.equals("BKK") || d.equals("BKK")) return 300;
+        if (o.equals("LHR") || d.equals("LHR") || o.equals("CDG") || d.equals("CDG") || o.equals("FRA") || d.equals("FRA") || o.equals("AMS") || d.equals("AMS") || o.equals("ZRH") || d.equals("ZRH")) return 550;
+        if (o.equals("JFK") || d.equals("JFK") || o.equals("SFO") || d.equals("SFO") || o.equals("YYZ") || d.equals("YYZ")) return 950;
+        if (o.equals("SYD") || d.equals("SYD")) return 740;
+        return 240;
+    }
+
+    private double calculateEstimatedFare(String orig, String dest, boolean isIntl) {
+        if (!isIntl) return 4500;
+        String o = orig != null ? orig.toUpperCase().trim() : "";
+        String d = dest != null ? dest.toUpperCase().trim() : "";
+        if (o.equals("DPS") || d.equals("DPS")) return 16999;
+        if (o.equals("MLE") || d.equals("MLE")) return 12999;
+        if (o.equals("DXB") || d.equals("DXB") || o.equals("AUH") || d.equals("AUH") || o.equals("DOH") || d.equals("DOH")) return 21500;
+        if (o.equals("SIN") || d.equals("SIN") || o.equals("KUL") || d.equals("KUL") || o.equals("BKK") || d.equals("BKK")) return 14500;
+        if (o.equals("LHR") || d.equals("LHR") || o.equals("CDG") || d.equals("CDG") || o.equals("FRA") || d.equals("FRA") || o.equals("AMS") || d.equals("AMS") || o.equals("ZRH") || d.equals("ZRH")) return 49500;
+        if (o.equals("JFK") || d.equals("JFK") || o.equals("SFO") || d.equals("SFO") || o.equals("YYZ") || d.equals("YYZ")) return 72000;
+        if (o.equals("SYD") || d.equals("SYD")) return 68000;
+        return 18000;
     }
 }

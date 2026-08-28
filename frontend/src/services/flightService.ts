@@ -63,15 +63,43 @@ export interface CachedSearchResult {
   data: ApiResponse<FlightSearchResponse>;
 }
 
-const searchCache = new Map<string, CachedSearchResult>();
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+const MEMORY_CACHE = new Map<string, CachedSearchResult>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const STORAGE_PREFIX = 'smarttravel_flight_cache_';
+
+function getStorageCache(key: string): CachedSearchResult | null {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_PREFIX + key);
+    if (!raw) return null;
+    const parsed: CachedSearchResult = JSON.parse(raw);
+    if (parsed && Date.now() - parsed.timestamp < CACHE_TTL_MS) {
+      return parsed;
+    }
+  } catch {
+    // sessionStorage unavailable or parse failed
+  }
+  return null;
+}
+
+function setStorageCache(key: string, data: CachedSearchResult): void {
+  try {
+    sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data));
+  } catch {
+    // Storage quota or unavailable
+  }
+}
 
 export const flightService = {
   getCachedSearch(params: FlightSearchParams): CachedSearchResult | null {
     const cacheKey = JSON.stringify(params);
-    const cached = searchCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached;
+    const memoryCached = MEMORY_CACHE.get(cacheKey);
+    if (memoryCached && Date.now() - memoryCached.timestamp < CACHE_TTL_MS) {
+      return memoryCached;
+    }
+    const sessionCached = getStorageCache(cacheKey);
+    if (sessionCached) {
+      MEMORY_CACHE.set(cacheKey, sessionCached);
+      return sessionCached;
     }
     return null;
   },
@@ -81,20 +109,31 @@ export const flightService = {
     options?: { forceRefresh?: boolean; signal?: AbortSignal }
   ): Promise<ApiResponse<FlightSearchResponse>> {
     const cacheKey = JSON.stringify(params);
-    const cached = searchCache.get(cacheKey);
+    const cached = this.getCachedSearch(params);
 
-    if (!options?.forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (!options?.forceRefresh && cached) {
       return cached.data;
     }
 
-    const res = await apiClient.get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', {
-      params,
-      signal: options?.signal,
-    });
-    if (res.data && res.data.success) {
-      searchCache.set(cacheKey, { timestamp: Date.now(), data: res.data });
+    try {
+      const res = await apiClient.get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', {
+        params,
+        signal: options?.signal,
+      });
+
+      if (res.data && res.data.success) {
+        const cacheEntry = { timestamp: Date.now(), data: res.data };
+        MEMORY_CACHE.set(cacheKey, cacheEntry);
+        setStorageCache(cacheKey, cacheEntry);
+      }
+      return res.data;
+    } catch (err: any) {
+      // If network failed or aborted, and we have a stale cache, return it rather than failing
+      if (cached) {
+        return cached.data;
+      }
+      throw err;
     }
-    return res.data;
   },
 
   async getAllFlights(page = 0, size = 10): Promise<ApiResponse<FlightSearchResponse>> {
@@ -123,4 +162,5 @@ export const flightService = {
     return POPULAR_AIRPORTS;
   },
 };
+
 

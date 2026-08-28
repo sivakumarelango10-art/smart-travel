@@ -21,6 +21,7 @@ import { PriceHistoryModal } from './PriceHistoryModal';
 import { PriceFreezeModal } from './PriceFreezeModal';
 import { PriceBreakdownCard } from './PriceBreakdownCard';
 import { AirlineLogo } from './AirlineLogo';
+import { AircraftBadge } from './AircraftBadge';
 import { AnimatedPrice } from './AnimatedPrice';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
@@ -186,17 +187,17 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         {/* Main Card Body */}
         <div className="p-5 sm:p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 lg:gap-6">
           {/* 1. Airline Info */}
-          <div className="flex items-center gap-3.5 lg:w-52 shrink-0">
+          <div className="flex items-center gap-3.5 lg:w-60 shrink-0">
             <AirlineLogo airline={flight.airline} airlineCode={flight.airlineCode} size="lg" />
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-white text-[15px] leading-snug truncate" title={flight.airline}>
                 {flight.airline}
               </h3>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1 flex-wrap">
                 <span className="font-mono text-amber-400 font-bold bg-[#12131A] px-1.5 py-0.5 rounded border border-white/10 text-[11px]">
                   {flight.flightNumber}
                 </span>
-                <span className="text-slate-400 text-[11px] truncate">{flight.aircraftModel}</span>
+                <AircraftBadge aircraftModel={flight.aircraftModel} />
               </div>
             </div>
           </div>

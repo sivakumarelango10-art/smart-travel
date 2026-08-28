@@ -23,6 +23,8 @@ public class CacheConfig {
     public static final String CACHE_ANALYTICS_CUSTOMERS = "analytics_customers";
     public static final String CACHE_ANALYTICS_DASHBOARD = "analytics_dashboard";
     public static final String CACHE_AIRPORTS = "airports";
+    public static final String CACHE_FLIGHT_SEARCH = "flight_search";
+    public static final String CACHE_FLIGHT_DETAILS = "flight_details";
     public static final String CACHE_HOTEL_STATIC = "hotel_static";
     public static final String CACHE_HOTEL_SEARCH = "hotel_search";
     public static final String CACHE_HOTEL_ROOMS = "hotel_rooms";
@@ -41,6 +43,8 @@ public class CacheConfig {
                 CACHE_ANALYTICS_CUSTOMERS,
                 CACHE_ANALYTICS_DASHBOARD,
                 CACHE_AIRPORTS,
+                CACHE_FLIGHT_SEARCH,
+                CACHE_FLIGHT_DETAILS,
                 CACHE_HOTEL_STATIC,
                 CACHE_HOTEL_SEARCH,
                 CACHE_HOTEL_ROOMS,
@@ -49,9 +53,9 @@ public class CacheConfig {
         );
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .initialCapacity(200)
-                .maximumSize(2000)
-                .expireAfterWrite(60, TimeUnit.SECONDS)
+                .initialCapacity(300)
+                .maximumSize(5000)
+                .expireAfterWrite(90, TimeUnit.SECONDS)
                 .recordStats());
 
         return cacheManager;

@@ -19,5 +19,7 @@ public interface FlightRepository extends MongoRepository<Flight, String>, Fligh
 
     boolean existsByFlightNumber(String flightNumber);
 
+    long countByDepartureTimeBetweenAndActiveTrue(java.time.Instant start, java.time.Instant end);
+
     Page<Flight> findByActiveTrue(Pageable pageable);
 }
