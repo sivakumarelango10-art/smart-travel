@@ -28,6 +28,7 @@ import { bookingService } from '../services/bookingService';
 import { hotelService } from '../services/hotelService';
 import { paymentService } from '../services/paymentService';
 import { BookingSkeleton } from '../components/BookingSkeleton';
+import { notify } from '../utils/toast';
 import { AirlineLogo } from '../components/AirlineLogo';
 
 export const MyBookingsPage: React.FC = () => {
@@ -103,9 +104,10 @@ export const MyBookingsPage: React.FC = () => {
       setCancelLoading(true);
       await bookingService.cancelBooking(cancellingBooking.id, cancelReason);
       setCancellingBooking(null);
+      notify('Booking Cancelled', `Booking ${cancellingBooking.bookingReference} was cancelled successfully. Refund initiated.`, 'SUCCESS');
       await fetchFlightBookings();
     } catch (err: any) {
-      alert('Cancellation failed: ' + (err?.message || 'Please try again.'));
+      notify('Cancellation Failed', err?.message || 'Please try again.', 'ERROR');
     } finally {
       setCancelLoading(false);
     }
@@ -128,9 +130,10 @@ export const MyBookingsPage: React.FC = () => {
       setHotelCancelLoading(true);
       await hotelService.cancelBooking(cancellingHotel.id, hotelCancelReason);
       setCancellingHotel(null);
+      notify('Hotel Booking Cancelled', `Hotel booking ${cancellingHotel.bookingReference} was cancelled.`, 'SUCCESS');
       await fetchHotelBookings();
     } catch (err: any) {
-      alert('Hotel cancellation failed: ' + (err?.message || 'Please try again.'));
+      notify('Hotel Cancellation Failed', err?.message || 'Please try again.', 'ERROR');
     } finally {
       setHotelCancelLoading(false);
     }

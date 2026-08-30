@@ -24,8 +24,10 @@ import { reviewService } from '../../services/reviewService';
 import { StarRating } from '../../components/StarRating';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { ConfirmModal } from '../../components/admin/ConfirmModal';
+import { useAdminToast } from '../../components/admin/AdminToast';
 
 export const AdminReviewsPage: React.FC = () => {
+  const { showToast } = useAdminToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -90,7 +92,7 @@ export const AdminReviewsPage: React.FC = () => {
       setTimeout(() => setActionSuccess(null), 4000);
       fetchAdminReviews();
     } catch (err: any) {
-      alert(err.message || 'Moderation action failed');
+      showToast('error', 'Moderation Failed', err.message || 'Moderation action failed');
     }
   };
 

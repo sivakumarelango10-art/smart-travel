@@ -9,6 +9,7 @@ import {
 import { Ticket } from '../types/api';
 import { ticketService } from '../services/ticketService';
 import { AirlineLogo } from '../components/AirlineLogo';
+import { notify } from '../utils/toast';
 
 export const TicketPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -23,18 +24,19 @@ export const TicketPage: React.FC = () => {
       if (!bookingId) return;
       try {
         setLoading(true);
-        setError(null);
-        const tktRes = await ticketService.getTicketByBookingId(bookingId);
-
-        if (tktRes.success && tktRes.data) {
-          setTicket(tktRes.data);
+        const res = await ticketService.getTicketByBookingId(bookingId);
+        if (res.success && res.data) {
+          setTicket(res.data);
+        } else {
+          setError('Ticket is currently being generated. Please check back shortly.');
         }
       } catch (err: any) {
-        setError(err?.message || 'Failed to load e-ticket');
+        setError(err.message || 'Failed to load ticket information.');
       } finally {
         setLoading(false);
       }
     };
+
     fetchTicketData();
   }, [bookingId]);
 
@@ -51,8 +53,9 @@ export const TicketPage: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      notify('Download Complete', `E-Ticket ${ticket.ticketNumber} downloaded successfully.`, 'SUCCESS');
     } catch (err: any) {
-      alert('Download error: ' + (err?.message || 'Please try again.'));
+      notify('Download Error', err?.message || 'Please try again.', 'ERROR');
     } finally {
       setDownloading(false);
     }

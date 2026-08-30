@@ -19,6 +19,7 @@ import { BrandLogo } from '../components/BrandLogo';
 import { AirlineLogo } from '../components/AirlineLogo';
 import { BoardingPassSkeleton } from '../components/BoardingPassSkeleton';
 import { RealQRCode } from '../components/RealQRCode';
+import { notify } from '../utils/toast';
 
 export const BoardingPassPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -66,14 +67,15 @@ export const BoardingPassPage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const ref = activePass?.bookingReference || 'SmartTravel';
-      a.download = `BoardingPass_${ref}.pdf`;
+      const passRef = (boardingPasses[selectedPassIndex] || boardingPasses[0])?.bookingReference || 'SmartTravel';
+      a.download = `BoardingPass_${passRef}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      notify('Pass Downloaded', `Boarding pass for ${passRef} downloaded successfully.`, 'SUCCESS');
     } catch (err: any) {
-      alert('Failed to download boarding pass PDF: ' + (err?.message || 'Please try again.'));
+      notify('Download Error', 'Failed to download boarding pass PDF: ' + (err?.message || 'Please try again.'), 'ERROR');
     } finally {
       setDownloading(false);
     }

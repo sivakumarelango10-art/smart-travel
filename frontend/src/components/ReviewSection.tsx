@@ -29,9 +29,10 @@ import {
   ReviewReply,
   ReviewSortOption,
   ReviewStats,
-} from '../types/review';
+} from '../types/api';
 import { reviewService } from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
+import { notify } from '../utils/toast';
 import {
   modalBackdropVariants,
   modalDialogVariants,
@@ -184,7 +185,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
 
   const handleVoteHelpful = async (reviewId: string) => {
     if (!isAuthenticated) {
-      alert('Please sign in to vote.');
+      notify('Authentication Required', 'Please sign in to vote on traveler reviews.', 'WARNING', '/login');
       return;
     }
     try {
@@ -200,8 +201,9 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
             : r
         )
       );
+      notify('Feedback Recorded', 'Thank you for your feedback!', 'SUCCESS');
     } catch (err: any) {
-      alert(err.message || 'Failed to vote');
+      notify('Vote Error', err.message || 'Failed to vote on review', 'ERROR');
     }
   };
 
@@ -209,11 +211,12 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
     try {
       await reviewService.flagReview(reviewId);
       setSuccessMsg('Review has been reported to moderators for safety review.');
+      notify('Report Submitted', 'Review reported to moderators for safety review.', 'INFO');
       setFlaggingReviewId(null);
       setTimeout(() => setSuccessMsg(null), 5000);
       fetchReviews();
     } catch (err: any) {
-      alert(err.message || 'Failed to report review');
+      notify('Report Failed', err.message || 'Failed to report review', 'ERROR');
       setFlaggingReviewId(null);
     }
   };
@@ -291,7 +294,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       setReplyInputMap((prev) => ({ ...prev, [reviewId]: '' }));
       setExpandedReplies((prev) => ({ ...prev, [reviewId]: true }));
     } catch (err: any) {
-      alert(err.message || 'Failed to post reply');
+      notify('Reply Failed', err.message || 'Failed to post reply', 'ERROR');
     } finally {
       setReplySubmittingMap((prev) => ({ ...prev, [reviewId]: false }));
     }
@@ -307,8 +310,9 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       }));
       setEditingReplyId(null);
       setEditReplyText('');
+      notify('Reply Updated', 'Your reply was updated successfully.', 'SUCCESS');
     } catch (err: any) {
-      alert(err.message || 'Failed to update reply');
+      notify('Update Failed', err.message || 'Failed to update reply', 'ERROR');
     }
   };
 
@@ -320,8 +324,9 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
         ...prev,
         [reviewId]: (prev[reviewId] || []).filter((r) => r.id !== replyId),
       }));
+      notify('Reply Deleted', 'Your reply has been deleted.', 'INFO');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete reply');
+      notify('Delete Failed', err.message || 'Failed to delete reply', 'ERROR');
     }
   };
 
@@ -356,7 +361,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
           type="button"
           onClick={() => {
             if (!isAuthenticated) {
-              alert('Please sign in to write a review');
+              notify('Authentication Required', 'Please sign in to write a verified review.', 'WARNING', '/login');
               return;
             }
             setShowModal(true);

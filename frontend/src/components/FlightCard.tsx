@@ -28,6 +28,7 @@ import { AnimatedPrice } from './AnimatedPrice';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
 import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
+import { notify } from '../utils/toast';
 import { cardEntranceVariants } from '../lib/motion';
 
 interface FlightCardProps {
@@ -109,7 +110,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   const handleTrackFlight = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      alert('Please sign in to track this flight in real time.');
+      notify('Sign In Required', 'Please sign in to track this flight in real time.', 'WARNING', '/login');
       return;
     }
 
@@ -119,14 +120,16 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         await flightTrackingService.untrackFlight(flight.id);
         setIsTracked(false);
         setTrackMessage('Unsubscribed from live updates');
+        notify('Flight Unfollowed', `Unsubscribed from flight ${flight.flightNumber} alerts.`, 'INFO');
       } else {
         await flightTrackingService.trackFlight(flight.id);
         setIsTracked(true);
         setTrackMessage('Subscribed to live status alerts!');
+        notify('Flight Followed', `Subscribed to real-time alerts for flight ${flight.flightNumber}!`, 'SUCCESS', '/tracked-flights');
       }
       setTimeout(() => setTrackMessage(null), 3000);
     } catch (err: any) {
-      alert(err.message || 'Failed to update tracking');
+      notify('Tracking Error', err.message || 'Failed to update tracking', 'ERROR');
     } finally {
       setTrackingLoading(false);
     }
@@ -465,7 +468,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
             onClose={() => setShowPriceFreeze(false)}
             onFreezeCreated={() => {
               setShowPriceFreeze(false);
-              alert(`Fare of ₹${totalPrice.toLocaleString()} locked for 48 hours!`);
+              notify('Price Freeze Active', `Fare of ₹${totalPrice.toLocaleString()} locked for 48 hours!`, 'SUCCESS');
             }}
           />
         )}

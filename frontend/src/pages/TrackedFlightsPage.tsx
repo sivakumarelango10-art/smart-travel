@@ -19,6 +19,7 @@ import { FlightLiveStatusTracker } from '../components/FlightLiveStatusTracker';
 import { LiveAirspaceFeed } from '../components/LiveAirspaceFeed';
 import { PushNotificationModal } from '../components/PushNotificationModal';
 import { useAuth } from '../context/AuthContext';
+import { notify } from '../utils/toast';
 
 const POPULAR_FLIGHT_SUGGESTIONS = [
   { code: 'AI-101', route: 'DEL → BOM' },
@@ -120,7 +121,7 @@ export const TrackedFlightsPage: React.FC = () => {
   const handleTrackCurrentFlight = async () => {
     if (!activeSnapshot) return;
     if (!isAuthenticated) {
-      alert('Please sign in to add this flight to your tracking board.');
+      notify('Authentication Required', 'Please sign in to add this flight to your tracking board.', 'WARNING', '/login');
       return;
     }
 
@@ -129,22 +130,23 @@ export const TrackedFlightsPage: React.FC = () => {
       : activeSnapshot.flightNumber;
     try {
       await flightTrackingService.trackFlight(flightIdToTrack);
+      notify('Flight Tracked', `Flight ${activeSnapshot.flightNumber} added to your tracking board!`, 'SUCCESS', '/tracked-flights');
       setTrackActionMsg(`Flight ${activeSnapshot.flightNumber} added to your tracking board!`);
       fetchTracked();
     } catch (err: any) {
-      alert(err.message || 'Failed to track flight');
+      notify('Tracking Error', err.message || 'Failed to track flight', 'ERROR');
     } finally {
       setTimeout(() => setTrackActionMsg(null), 4000);
     }
   };
 
   const handleUntrack = async (flightId: string) => {
-    if (!confirm('Stop tracking this flight?')) return;
     try {
       await flightTrackingService.untrackFlight(flightId);
       setTrackedFlights((prev) => prev.filter((f) => f.flightId !== flightId));
+      notify('Flight Removed', 'Flight has been removed from your tracking board.', 'INFO');
     } catch (err: any) {
-      alert(err.message || 'Failed to untrack flight');
+      notify('Action Failed', err.message || 'Failed to untrack flight', 'ERROR');
     }
   };
 

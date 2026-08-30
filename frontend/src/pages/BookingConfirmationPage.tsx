@@ -15,6 +15,7 @@ import { Booking, Ticket } from '../types/api';
 import { bookingService } from '../services/bookingService';
 import { ticketService } from '../services/ticketService';
 import { AirlineLogo } from '../components/AirlineLogo';
+import { notify } from '../utils/toast';
 
 export const BookingConfirmationPage: React.FC = () => {
   const { bookingId } = useParams<{ bookingId: string }>();
@@ -93,8 +94,9 @@ export const BookingConfirmationPage: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      notify('Ticket Downloaded', `Official E-Ticket downloaded successfully.`, 'SUCCESS');
     } catch (err: any) {
-      alert('Failed to download PDF ticket: ' + (err?.message || 'Please try again.'));
+      notify('Download Error', 'Failed to download PDF ticket: ' + (err?.message || 'Please try again.'), 'ERROR');
     } finally {
       setDownloadingPdf(false);
     }
