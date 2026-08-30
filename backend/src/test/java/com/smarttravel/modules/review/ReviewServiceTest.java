@@ -1,18 +1,20 @@
 package com.smarttravel.modules.review;
 
 import com.smarttravel.common.exception.ConflictException;
+import com.smarttravel.modules.review.dto.ReviewStatsDto;
 import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewStatus;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import com.smarttravel.modules.review.repository.ReviewRepository;
-import com.smarttravel.modules.review.service.ReviewServiceImpl;
 import com.smarttravel.modules.review.service.ReviewMediaStorageService;
+import com.smarttravel.modules.review.service.ReviewServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +33,9 @@ class ReviewServiceTest {
 
     @Mock
     private ReviewMediaStorageService mediaStorageService;
+
+    @Mock
+    private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private ReviewServiceImpl reviewService;
@@ -90,10 +95,12 @@ class ReviewServiceTest {
         // First vote: adds user
         Review afterVote1 = reviewService.voteHelpful("rev-01", "user-1");
         assertThat(afterVote1.getHelpfulVoters()).contains("user-1");
+        assertThat(afterVote1.getHelpfulCount()).isEqualTo(1);
 
         // Second vote: removes user (toggle)
         Review afterVote2 = reviewService.voteHelpful("rev-01", "user-1");
         assertThat(afterVote2.getHelpfulVoters()).doesNotContain("user-1");
+        assertThat(afterVote2.getHelpfulCount()).isEqualTo(0);
     }
 
     @Test
@@ -115,5 +122,77 @@ class ReviewServiceTest {
 
         assertThat(result.getFlaggedBy()).hasSize(3);
         assertThat(result.getStatus()).isEqualTo(ReviewStatus.FLAGGED);
+    }
+
+    @Test
+    @DisplayName("Admin moderation: approveReview restores to PUBLISHED and clears flags")
+    void testApproveReview() {
+        List<String> flags = new ArrayList<>(List.of("user-A", "user-B", "user-C"));
+        Review review = Review.builder()
+                .id("rev-01")
+                .userId("author-user")
+                .status(ReviewStatus.FLAGGED)
+                .flaggedBy(flags)
+                .build();
+
+        when(reviewRepository.findById("rev-01")).thenReturn(Optional.of(review));
+        when(reviewRepository.save(any(Review.class))).thenReturn(review);
+
+        Review approved = reviewService.approveReview("rev-01", "admin-1");
+        assertThat(approved.getStatus()).isEqualTo(ReviewStatus.PUBLISHED);
+        assertThat(approved.getFlaggedBy()).isEmpty();
+        assertThat(approved.getModeratedBy()).isEqualTo("admin-1");
+    }
+
+    @Test
+    @DisplayName("Admin moderation: hideReview sets status to HIDDEN")
+    void testHideReview() {
+        Review review = Review.builder()
+                .id("rev-02")
+                .userId("author-user")
+                .status(ReviewStatus.PUBLISHED)
+                .build();
+
+        when(reviewRepository.findById("rev-02")).thenReturn(Optional.of(review));
+        when(reviewRepository.save(any(Review.class))).thenReturn(review);
+
+        Review hidden = reviewService.hideReview("rev-02", "admin-1");
+        assertThat(hidden.getStatus()).isEqualTo(ReviewStatus.HIDDEN);
+        assertThat(hidden.getModeratedBy()).isEqualTo("admin-1");
+    }
+
+    @Test
+    @DisplayName("Admin moderation: removeReview sets status to REMOVED with custom reason")
+    void testRemoveReview() {
+        Review review = Review.builder()
+                .id("rev-03")
+                .userId("author-user")
+                .status(ReviewStatus.FLAGGED)
+                .build();
+
+        when(reviewRepository.findById("rev-03")).thenReturn(Optional.of(review));
+        when(reviewRepository.save(any(Review.class))).thenReturn(review);
+
+        Review removed = reviewService.removeReview("rev-03", "admin-1", "Inappropriate offensive language");
+        assertThat(removed.getStatus()).isEqualTo(ReviewStatus.REMOVED);
+        assertThat(removed.getModerationNote()).isEqualTo("Inappropriate offensive language");
+    }
+
+    @Test
+    @DisplayName("getReviewStats calculates distribution, averages, and counts correctly")
+    void testGetReviewStats() {
+        List<Review> mockReviews = List.of(
+                Review.builder().rating(5.0).cleanlinessRating(5.0).serviceRating(4.0).valueRating(5.0).build(),
+                Review.builder().rating(4.0).cleanlinessRating(4.0).serviceRating(4.0).valueRating(4.0).build(),
+                Review.builder().rating(5.0).cleanlinessRating(5.0).serviceRating(5.0).valueRating(5.0).build()
+        );
+
+        when(reviewRepository.findPublishedByTarget("HOTEL", "hotel-01")).thenReturn(mockReviews);
+
+        ReviewStatsDto stats = reviewService.getReviewStats(ReviewTargetType.HOTEL, "hotel-01");
+        assertThat(stats.totalReviews()).isEqualTo(3);
+        assertThat(stats.averageRating()).isEqualTo(4.7);
+        assertThat(stats.count5Stars()).isEqualTo(2);
+        assertThat(stats.count4Stars()).isEqualTo(1);
     }
 }

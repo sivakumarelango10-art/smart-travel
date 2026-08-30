@@ -1,12 +1,14 @@
 package com.smarttravel.modules.review.service;
 
+import com.smarttravel.modules.review.dto.ReviewStatsDto;
 import com.smarttravel.modules.review.model.Review;
+import com.smarttravel.modules.review.model.ReviewStatus;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
- * Service for creating, retrieving, and moderating reviews.
+ * Service for creating, retrieving, filtering, sorting, and moderating reviews.
  */
 public interface ReviewService {
 
@@ -19,22 +21,40 @@ public interface ReviewService {
                         String title, String body, String bookingId);
 
     /**
-     * Get published reviews for a specific target.
+     * Get published reviews for a specific target with pagination (backward-compatible).
      */
     Page<Review> getReviewsForTarget(ReviewTargetType targetType, String targetId, Pageable pageable);
 
     /**
-     * Get all reviews by a user.
+     * Get published reviews for a specific target with advanced sorting and filtering.
+     *
+     * @param sortBy "NEWEST", "MOST_HELPFUL", "HIGHEST_RATED", "LOWEST_RATED", "OLDEST"
+     * @param ratingFilter Optional filter by exact star rating (e.g. 5, 4, 3, 2, 1)
+     * @param verifiedOnly Optional filter for verified bookings only
+     * @param withPhotosOnly Optional filter for reviews with photo attachments only
+     */
+    Page<Review> getReviewsForTarget(ReviewTargetType targetType, String targetId,
+                                    String sortBy, Integer ratingFilter,
+                                    Boolean verifiedOnly, Boolean withPhotosOnly,
+                                    Pageable pageable);
+
+    /**
+     * Get detailed star breakdown and category averages for a target.
+     */
+    ReviewStatsDto getReviewStats(ReviewTargetType targetType, String targetId);
+
+    /**
+     * Get all reviews submitted by a user.
      */
     Page<Review> getUserReviews(String userId, Pageable pageable);
 
     /**
-     * Get a review by ID (ownership-checked for edit/delete).
+     * Get a review by ID.
      */
     Review getReviewById(String reviewId);
 
     /**
-     * Vote a review as helpful.
+     * Vote a review as helpful (toggle).
      */
     Review voteHelpful(String reviewId, String votingUserId);
 
@@ -44,14 +64,29 @@ public interface ReviewService {
     Review flagReview(String reviewId, String flaggingUserId);
 
     /**
+     * Admin: get reviews for moderation (filter by status/targetType).
+     */
+    Page<Review> getReviewsForAdmin(ReviewStatus status, ReviewTargetType targetType, Pageable pageable);
+
+    /**
      * Admin: approve a flagged review back to published.
      */
     Review approveReview(String reviewId, String adminUserId);
 
     /**
-     * Admin: remove a review (moderation action).
+     * Admin: hide a review without deleting.
+     */
+    Review hideReview(String reviewId, String adminUserId);
+
+    /**
+     * Admin: remove a review (moderation action with reason).
      */
     Review removeReview(String reviewId, String adminUserId, String reason);
+
+    /**
+     * Admin: restore a previously hidden or removed review.
+     */
+    Review restoreReview(String reviewId, String adminUserId);
 
     /**
      * Delete own review.

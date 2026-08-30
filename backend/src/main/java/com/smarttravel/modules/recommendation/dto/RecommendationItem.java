@@ -3,10 +3,12 @@ package com.smarttravel.modules.recommendation.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * A single recommendation item returned to the frontend.
- * Contains everything needed to render a recommendation card.
+ * A rich recommendation item returned to the frontend.
+ * Contains core item details, explainability metadata, and interactive feedback state.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class RecommendationItem {
@@ -22,12 +24,27 @@ public class RecommendationItem {
     private String priceLabel;
     private String currency;
 
-    /** Score 0.0 – 100.0 */
+    /** Overall recommendation match score (0.0 – 100.0) */
     private double score;
 
-    /** Human-readable reason why this was recommended */
+    /** Short reason code (e.g. BASED_ON_HISTORY, COLLABORATIVE, POPULAR) */
     private String reasonCode;
     private String reasonLabel;
+
+    /** Rich explainability metadata for "Why this recommendation?" */
+    private RecommendationExplanation explanation;
+
+    /** Primary travel category (e.g. BEACH, LUXURY, MOUNTAIN, HERITAGE, CITY, NATURE) */
+    private String category;
+
+    /** Curated interest tags (e.g. ["Sunset Views", "Beachfront", "Spa"]) */
+    private List<String> tags;
+
+    /** Badge text to display on card (e.g. "96% Match", "You liked Goa") */
+    private String badgeText;
+
+    /** Current user's recorded feedback on this item (HELPFUL, NOT_RELEVANT, or null) */
+    private String userFeedback;
 
     // For flights
     private String fromCity;
@@ -60,6 +77,11 @@ public class RecommendationItem {
         public Builder score(double v) { r.score = v; return this; }
         public Builder reasonCode(String v) { r.reasonCode = v; return this; }
         public Builder reasonLabel(String v) { r.reasonLabel = v; return this; }
+        public Builder explanation(RecommendationExplanation v) { r.explanation = v; return this; }
+        public Builder category(String v) { r.category = v; return this; }
+        public Builder tags(List<String> v) { r.tags = v != null ? v : new ArrayList<>(); return this; }
+        public Builder badgeText(String v) { r.badgeText = v; return this; }
+        public Builder userFeedback(String v) { r.userFeedback = v; return this; }
         public Builder fromCity(String v) { r.fromCity = v; return this; }
         public Builder toCity(String v) { r.toCity = v; return this; }
         public Builder fromCode(String v) { r.fromCode = v; return this; }
@@ -84,6 +106,11 @@ public class RecommendationItem {
     public double getScore() { return score; }
     public String getReasonCode() { return reasonCode; }
     public String getReasonLabel() { return reasonLabel; }
+    public RecommendationExplanation getExplanation() { return explanation; }
+    public String getCategory() { return category; }
+    public List<String> getTags() { return tags; }
+    public String getBadgeText() { return badgeText; }
+    public String getUserFeedback() { return userFeedback; }
     public String getFromCity() { return fromCity; }
     public String getToCity() { return toCity; }
     public String getFromCode() { return fromCode; }
@@ -92,4 +119,6 @@ public class RecommendationItem {
     public String getCity() { return city; }
     public Integer getStarRating() { return starRating; }
     public Double getAvgRating() { return avgRating; }
+    public void setScore(double score) { this.score = score; }
+    public void setBadgeText(String badgeText) { this.badgeText = badgeText; }
 }

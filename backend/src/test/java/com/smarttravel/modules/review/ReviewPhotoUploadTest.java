@@ -32,6 +32,9 @@ class ReviewPhotoUploadTest {
     @Mock
     private ReviewRepository reviewRepository;
 
+    @Mock
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
     private ReviewMediaStorageService mediaStorageService;
     private ReviewServiceImpl reviewService;
 
@@ -43,7 +46,7 @@ class ReviewPhotoUploadTest {
     @BeforeEach
     void setUp() {
         mediaStorageService = new LocalReviewMediaStorageServiceImpl(tempDir.toString());
-        reviewService = new ReviewServiceImpl(reviewRepository, mediaStorageService);
+        reviewService = new ReviewServiceImpl(reviewRepository, mediaStorageService, mongoTemplate);
 
         sampleReview = Review.builder()
                 .id("rev-100")

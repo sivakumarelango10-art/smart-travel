@@ -10,9 +10,14 @@ import com.smarttravel.modules.hotel.model.Hotel;
 import com.smarttravel.modules.hotel.model.HotelAddress;
 import com.smarttravel.modules.hotel.repository.HotelRepository;
 import com.smarttravel.modules.recommendation.dto.RecommendationItem;
+import com.smarttravel.modules.recommendation.dto.UserPreferenceProfileDto;
+import com.smarttravel.modules.recommendation.model.RecommendationFeedback;
+import com.smarttravel.modules.recommendation.model.RecommendationFeedbackType;
 import com.smarttravel.modules.recommendation.model.UserActivity;
 import com.smarttravel.modules.recommendation.model.UserActivityType;
+import com.smarttravel.modules.recommendation.repository.RecommendationFeedbackRepository;
 import com.smarttravel.modules.recommendation.repository.UserActivityRepository;
+import com.smarttravel.modules.recommendation.service.CollaborativeFilteringService;
 import com.smarttravel.modules.recommendation.service.RecommendationServiceImpl;
 import com.smarttravel.modules.user.model.User;
 import com.smarttravel.modules.user.model.UserPreferences;
@@ -29,6 +34,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,6 +51,9 @@ class RecommendationServiceTest {
     private UserActivityRepository activityRepository;
 
     @Mock
+    private RecommendationFeedbackRepository feedbackRepository;
+
+    @Mock
     private FlightRepository flightRepository;
 
     @Mock
@@ -54,7 +63,7 @@ class RecommendationServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private com.smarttravel.modules.recommendation.service.CollaborativeFilteringService collaborativeFilteringService;
+    private CollaborativeFilteringService collaborativeFilteringService;
 
     @InjectMocks
     private RecommendationServiceImpl recommendationService;
@@ -62,6 +71,7 @@ class RecommendationServiceTest {
     private Flight flightMumbai;
     private Flight flightGoa;
     private Hotel hotelMumbai;
+    private Hotel hotelGoa;
 
     @BeforeEach
     void setUp() {
@@ -110,16 +120,25 @@ class RecommendationServiceTest {
                 .baseNightlyRate(new BigDecimal("18000.00"))
                 .active(true)
                 .build();
+
+        hotelGoa = Hotel.builder()
+                .id("ht-goi")
+                .name("Taj Exotica Resort & Spa Goa")
+                .address(HotelAddress.builder().city("Goa").state("Goa").build())
+                .starRating(5)
+                .averageRating(4.9)
+                .baseNightlyRate(new BigDecimal("22000.00"))
+                .active(true)
+                .build();
     }
 
     @Test
-    @DisplayName("getFlightRecommendations prioritizes destinations matching past search activity")
+    @DisplayName("getFlightRecommendations prioritizes destinations matching past search activity with explainable reasoning")
     void testGetFlightRecommendations_PrioritizesPastSearches() {
-        // User previously searched for flights arriving in Mumbai (BOM)
         UserActivity activity = UserActivity.builder()
                 .userId("user-1")
                 .activityType(UserActivityType.SEARCH)
-                .metadata(Map.of("arrivalAirport", "BOM"))
+                .metadata(Map.of("arrivalAirport", "BOM", "city", "Mumbai"))
                 .build();
 
         when(activityRepository.findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(eq("user-1"), any(Instant.class)))
@@ -137,21 +156,96 @@ class RecommendationServiceTest {
         List<RecommendationItem> recs = recommendationService.getFlightRecommendations("user-1", 5);
 
         assertThat(recs).isNotEmpty();
-        // Mumbai flight should score higher due to destination search match (40 pts)
         assertThat(recs.get(0).getTargetId()).isEqualTo("fl-bom");
-        assertThat(recs.get(0).getReasonCode()).isEqualTo("PAST_SEARCH");
+        assertThat(recs.get(0).getExplanation()).isNotNull();
+        assertThat(recs.get(0).getExplanation().getHeadline()).contains("Based on your destination");
     }
 
     @Test
-    @DisplayName("getPopularDestinations returns top trending properties without requiring user login")
-    void testGetPopularDestinations_Public() {
-        when(hotelRepository.findByActiveTrueOrderByAverageRatingDesc(any(PageRequest.class)))
-                .thenReturn(new PageImpl<>(List.of(hotelMumbai)));
+    @DisplayName("Negative feedback (NOT_RELEVANT or DISMISS) excludes the item from future recommendations")
+    void testFeedbackExcludesDismissedItem() {
+        RecommendationFeedback feedback = RecommendationFeedback.builder()
+                .userId("user-1")
+                .targetId("fl-bom")
+                .feedbackType(RecommendationFeedbackType.NOT_RELEVANT)
+                .build();
 
-        List<RecommendationItem> dests = recommendationService.getPopularDestinations(5);
+        when(feedbackRepository.findByUserId("user-1")).thenReturn(List.of(feedback));
+        when(flightRepository.findAll(any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(flightGoa, flightMumbai)));
 
-        assertThat(dests).hasSize(1);
-        assertThat(dests.get(0).getTitle()).isEqualTo("Mumbai");
-        assertThat(dests.get(0).getReasonCode()).isEqualTo("POPULAR");
+        List<RecommendationItem> recs = recommendationService.getFlightRecommendations("user-1", 5);
+
+        assertThat(recs).extracting(RecommendationItem::getTargetId).doesNotContain("fl-bom");
+    }
+
+    @Test
+    @DisplayName("recordFeedback persists user feedback and triggers activity tracking")
+    void testRecordFeedback() {
+        when(feedbackRepository.save(any(RecommendationFeedback.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RecommendationFeedback result = recommendationService.recordFeedback(
+                "user-1", "dest-bali", "DESTINATION",
+                RecommendationFeedbackType.HELPFUL, "CATEGORY_AFFINITY", "BEACH"
+        );
+
+        assertThat(result).isNotNull();
+        assertThat(result.getUserId()).isEqualTo("user-1");
+        assertThat(result.getTargetId()).isEqualTo("dest-bali");
+        assertThat(result.getFeedbackType()).isEqualTo(RecommendationFeedbackType.HELPFUL);
+        assertThat(result.getCategory()).isEqualTo("BEACH");
+
+        verify(activityRepository, times(1)).save(any(UserActivity.class));
+    }
+
+    @Test
+    @DisplayName("getUserPreferenceProfile synthesizes top categories and travel style from history")
+    void testGetUserPreferenceProfile() {
+        UserActivity act1 = UserActivity.builder()
+                .userId("user-1")
+                .activityType(UserActivityType.BOOK)
+                .metadata(Map.of("city", "Goa", "airline", "Air India"))
+                .build();
+
+        UserActivity act2 = UserActivity.builder()
+                .userId("user-1")
+                .activityType(UserActivityType.VIEW)
+                .metadata(Map.of("city", "Bali"))
+                .build();
+
+        when(activityRepository.findByUserIdOrderByCreatedAtDesc("user-1")).thenReturn(List.of(act1, act2));
+        when(feedbackRepository.countByUserIdAndFeedbackType("user-1", RecommendationFeedbackType.HELPFUL)).thenReturn(3L);
+
+        UserPreferences prefs = new UserPreferences();
+        prefs.setHomeAirport("BOM");
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(User.builder().id("user-1").preferences(prefs).build()));
+
+        UserPreferenceProfileDto profile = recommendationService.getUserPreferenceProfile("user-1");
+
+        assertThat(profile).isNotNull();
+        assertThat(profile.getTopCategories()).contains("BEACH");
+        assertThat(profile.getInferredTravelStyle()).contains("BEACH");
+        assertThat(profile.getHelpfulFeedbackCount()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("getDestinationRecommendations returns personalized destinations with 'You liked beaches! Try Bali' reasoning")
+    void testGetDestinationRecommendations_BeachCategory() {
+        UserActivity activity = UserActivity.builder()
+                .userId("user-1")
+                .activityType(UserActivityType.BOOK)
+                .metadata(Map.of("city", "Goa"))
+                .build();
+
+        when(activityRepository.findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(eq("user-1"), any(Instant.class)))
+                .thenReturn(List.of(activity));
+
+        List<RecommendationItem> dests = recommendationService.getDestinationRecommendations("user-1", 5);
+
+        assertThat(dests).isNotEmpty();
+        RecommendationItem bali = dests.stream().filter(d -> "Bali".equalsIgnoreCase(d.getTitle())).findFirst().orElse(null);
+        assertThat(bali).isNotNull();
+        assertThat(bali.getExplanation()).isNotNull();
+        assertThat(bali.getExplanation().getHeadline()).contains("You liked beach destinations! Try Bali.");
     }
 }

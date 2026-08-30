@@ -19,6 +19,7 @@ import { FlightSearchWidget } from '../components/FlightSearchWidget';
 import { FlightCard } from '../components/FlightCard';
 import { FlightCardSkeleton } from '../components/FlightCardSkeleton';
 import { FlightFilters } from '../components/FlightFilters';
+import { RecommendationsSection } from '../components/RecommendationsSection';
 import { staggerContainerVariants } from '../lib/motion';
 
 export const FlightSearchPage: React.FC = () => {
@@ -428,6 +429,15 @@ export const FlightSearchPage: React.FC = () => {
           )}
         </main>
       </section>
+
+      {/* RECOMMENDED FLIGHTS & DESTINATIONS */}
+      <RecommendationsSection
+        context="FLIGHT_SEARCH"
+        destination={destination}
+        title="Alternative Routes & Stays You May Like"
+        subtitle={`Personalized flights and trending destinations connected to ${destination}`}
+        limit={4}
+      />
     </div>
   );
 };

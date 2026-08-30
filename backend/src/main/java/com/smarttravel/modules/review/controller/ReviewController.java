@@ -1,6 +1,7 @@
 package com.smarttravel.modules.review.controller;
 
 import com.smarttravel.common.response.ApiResponse;
+import com.smarttravel.modules.review.dto.ReviewStatsDto;
 import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewTargetType;
 import com.smarttravel.modules.review.service.ReviewService;
@@ -17,7 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * REST controller for user reviews and ratings.
+ * REST controller for user reviews and ratings with sorting, filtering, and rich statistics.
  */
 @RestController
 @RequestMapping({"/api/v1/reviews", "/v1/reviews"})
@@ -38,9 +39,8 @@ public class ReviewController {
             Authentication authentication) {
 
         String userId = authentication.getName();
-        String userFullName = authentication.getName(); // Will be overridden by JWT details if available
+        String userFullName = authentication.getName();
 
-        // Try to extract displayName from JWT principal
         if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails ud) {
             userFullName = ud.getUsername();
         }
@@ -63,13 +63,17 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success("Review submitted", review));
     }
 
-    @Operation(summary = "Get reviews for a specific flight or hotel")
+    @Operation(summary = "Get reviews for a specific flight or hotel with sorting and filtering")
     @GetMapping({"", "/target/{targetType}/{targetId}"})
     public ResponseEntity<ApiResponse<Page<Review>>> getReviews(
             @PathVariable(name = "targetType", required = false) ReviewTargetType pathTargetType,
             @PathVariable(name = "targetId", required = false) String pathTargetId,
             @RequestParam(name = "targetType", required = false) ReviewTargetType queryTargetType,
             @RequestParam(name = "targetId", required = false) String queryTargetId,
+            @RequestParam(name = "sortBy", required = false, defaultValue = "NEWEST") String sortBy,
+            @RequestParam(name = "rating", required = false) Integer rating,
+            @RequestParam(name = "verifiedOnly", required = false, defaultValue = "false") Boolean verifiedOnly,
+            @RequestParam(name = "withPhotosOnly", required = false, defaultValue = "false") Boolean withPhotosOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -78,9 +82,18 @@ public class ReviewController {
 
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
         Page<Review> reviews = (effectiveType != null && effectiveId != null)
-                ? reviewService.getReviewsForTarget(effectiveType, effectiveId, pageable)
+                ? reviewService.getReviewsForTarget(effectiveType, effectiveId, sortBy, rating, verifiedOnly, withPhotosOnly, pageable)
                 : Page.empty(pageable);
         return ResponseEntity.ok(ApiResponse.success("Reviews retrieved", reviews));
+    }
+
+    @Operation(summary = "Get detailed star rating distribution and averages for a flight or hotel")
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<ReviewStatsDto>> getReviewStats(
+            @RequestParam ReviewTargetType targetType,
+            @RequestParam String targetId) {
+        ReviewStatsDto stats = reviewService.getReviewStats(targetType, targetId);
+        return ResponseEntity.ok(ApiResponse.success("Review statistics retrieved", stats));
     }
 
     @Operation(summary = "Get average rating for a target")
@@ -163,7 +176,7 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.success("Review deleted"));
     }
 
-    // ── Request ───────────────────────────────────────────────────────────────
+    // ── Request DTO ────────────────────────────────────────────────────────────
 
     public record CreateReviewRequest(
             @NotNull(message = "targetType is required") ReviewTargetType targetType,

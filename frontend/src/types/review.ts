@@ -1,5 +1,6 @@
 export type ReviewTargetType = 'FLIGHT' | 'HOTEL';
-export type ReviewStatus = 'PUBLISHED' | 'FLAGGED' | 'REMOVED' | 'PENDING';
+export type ReviewStatus = 'PUBLISHED' | 'FLAGGED' | 'HIDDEN' | 'REMOVED' | 'PENDING';
+export type ReviewSortOption = 'NEWEST' | 'MOST_HELPFUL' | 'HIGHEST_RATED' | 'LOWEST_RATED' | 'OLDEST';
 
 export interface Review {
   id: string;
@@ -16,8 +17,12 @@ export interface Review {
   body: string;
   status: ReviewStatus;
   helpfulVoters?: string[];
+  helpfulCount?: number;
   flaggedBy?: string[];
+  flagCount?: number;
   moderationNote?: string;
+  moderatedBy?: string;
+  moderatedAt?: string;
   bookingId?: string;
   verifiedPurchase: boolean;
   photos?: string[];
@@ -34,6 +39,20 @@ export interface ReviewReply {
   status: ReviewStatus;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  count5Stars: number;
+  count4Stars: number;
+  count3Stars: number;
+  count2Stars: number;
+  count1Star: number;
+  averageCleanliness: number;
+  averageService: number;
+  averageValue: number;
+  ratingDistribution: Record<string, number>;
 }
 
 export interface CreateReviewPayload {
@@ -53,4 +72,15 @@ export interface CreateReviewPayload {
 export interface CreateReplyPayload {
   content: string;
   userName?: string;
+}
+
+export interface ReviewFilterParams {
+  targetType?: ReviewTargetType;
+  targetId?: string;
+  sortBy?: ReviewSortOption;
+  rating?: number;
+  verifiedOnly?: boolean;
+  withPhotosOnly?: boolean;
+  page?: number;
+  size?: number;
 }

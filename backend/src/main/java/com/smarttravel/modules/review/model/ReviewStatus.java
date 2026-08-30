@@ -8,6 +8,8 @@ public enum ReviewStatus {
     PUBLISHED,
     /** Review flagged by users, pending admin review */
     FLAGGED,
+    /** Review hidden from public listings by moderator */
+    HIDDEN,
     /** Review removed by admin due to policy violation */
     REMOVED,
     /** Review pending moderation (not yet published) */

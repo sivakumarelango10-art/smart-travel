@@ -20,7 +20,15 @@ public enum UserActivityType {
     /** User searched for hotels in a city */
     SEARCH_HOTEL(1),
     /** User viewed hotel details */
-    VIEW_HOTEL(2);
+    VIEW_HOTEL(2),
+    /** User clicked on a recommendation card */
+    RECOMMENDATION_CLICK(3),
+    /** User marked recommendation as helpful */
+    RECOMMENDATION_HELPFUL(5),
+    /** User marked recommendation as not relevant */
+    RECOMMENDATION_IRRELEVANT(-5),
+    /** User dismissed recommendation */
+    RECOMMENDATION_DISMISS(-3);
 
     private final int weight;
 

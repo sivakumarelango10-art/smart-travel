@@ -29,6 +29,7 @@ import { Hotel, RoomType, RoomAvailabilityEvent } from '../types/api';
 import { hotelService } from '../services/hotelService';
 import { StarRating } from '../components/StarRating';
 import { ReviewSection } from '../components/ReviewSection';
+import { RecommendationsSection } from '../components/RecommendationsSection';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Panorama360Viewer } from '../components/Panorama360Viewer';
 import { HotelReservationModal } from '../components/HotelReservationModal';
@@ -670,6 +671,16 @@ export const HotelDetailsPage: React.FC = () => {
         targetId={hotel.id}
         targetType="HOTEL"
         targetName={hotel.name}
+      />
+
+      {/* 6. CONTEXTUAL HOTEL RECOMMENDATIONS */}
+      <RecommendationsSection
+        context="HOTEL_DETAILS"
+        destination={hotel.address?.city}
+        title="Similar Stays You May Love"
+        subtitle={`Handpicked luxury retreats and hotels similar to ${hotel.name}`}
+        limit={4}
+        showCategoryFilters={false}
       />
 
       {/* 360° EQUIRECTANGULAR PANORAMA VIEWER MODAL */}

@@ -189,9 +189,10 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
         return switch (type) {
             case BOOK -> WEIGHT_BOOK;
             case REVIEW -> WEIGHT_REVIEW;
-            case TRACK -> WEIGHT_TRACK;
-            case VIEW, EXTENDED_VIEW, VIEW_HOTEL -> WEIGHT_VIEW;
+            case TRACK, RECOMMENDATION_HELPFUL -> WEIGHT_TRACK;
+            case VIEW, EXTENDED_VIEW, VIEW_HOTEL, RECOMMENDATION_CLICK -> WEIGHT_VIEW;
             case SEARCH, SEARCH_HOTEL -> WEIGHT_SEARCH;
+            case RECOMMENDATION_IRRELEVANT, RECOMMENDATION_DISMISS -> 0.0;
         };
     }
 }

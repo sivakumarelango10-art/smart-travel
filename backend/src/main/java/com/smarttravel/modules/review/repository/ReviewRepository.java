@@ -24,6 +24,12 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
 
     Page<Review> findByStatusOrderByFlagCountDescCreatedAtDesc(ReviewStatus status, Pageable pageable);
 
+    Page<Review> findByStatus(ReviewStatus status, Pageable pageable);
+
+    Page<Review> findByStatusAndTargetType(ReviewStatus status, ReviewTargetType targetType, Pageable pageable);
+
+    long countByStatus(ReviewStatus status);
+
     @Query("{'targetType': ?0, 'targetId': ?1, 'status': 'PUBLISHED'}")
     java.util.List<Review> findPublishedByTarget(String targetType, String targetId);
 

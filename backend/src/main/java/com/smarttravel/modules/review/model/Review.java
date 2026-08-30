@@ -18,6 +18,9 @@ import java.util.List;
 @Document(collection = "reviews")
 @CompoundIndexes({
         @CompoundIndex(name = "review_target_idx", def = "{'targetType': 1, 'targetId': 1, 'status': 1, 'createdAt': -1}"),
+        @CompoundIndex(name = "review_target_rating_idx", def = "{'targetType': 1, 'targetId': 1, 'status': 1, 'rating': -1}"),
+        @CompoundIndex(name = "review_target_helpful_idx", def = "{'targetType': 1, 'targetId': 1, 'status': 1, 'helpfulCount': -1}"),
+        @CompoundIndex(name = "review_status_flag_idx", def = "{'status': 1, 'flagCount': -1, 'createdAt': -1}"),
         @CompoundIndex(name = "review_user_target_idx", def = "{'userId': 1, 'targetId': 1}", unique = true),
         @CompoundIndex(name = "review_user_idx", def = "{'userId': 1, 'createdAt': -1}")
 })
@@ -55,9 +58,11 @@ public class Review {
 
     /** IDs of users who found this review helpful */
     private List<String> helpfulVoters = new ArrayList<>();
+    private int helpfulCount = 0;
 
     /** IDs of users who flagged this review */
     private List<String> flaggedBy = new ArrayList<>();
+    private int flagCount = 0;
 
     /** Admin moderation notes */
     private String moderationNote;
@@ -97,19 +102,40 @@ public class Review {
         public Builder title(String v) { r.title = v; return this; }
         public Builder body(String v) { r.body = v; return this; }
         public Builder status(ReviewStatus v) { r.status = v; return this; }
-        public Builder helpfulVoters(List<String> v) { r.helpfulVoters = v; return this; }
-        public Builder flaggedBy(List<String> v) { r.flaggedBy = v; return this; }
+        public Builder helpfulVoters(List<String> v) {
+            r.helpfulVoters = v != null ? v : new ArrayList<>();
+            r.helpfulCount = r.helpfulVoters.size();
+            return this;
+        }
+        public Builder flaggedBy(List<String> v) {
+            r.flaggedBy = v != null ? v : new ArrayList<>();
+            r.flagCount = r.flaggedBy.size();
+            return this;
+        }
         public Builder moderationNote(String v) { r.moderationNote = v; return this; }
+        public Builder moderatedBy(String v) { r.moderatedBy = v; return this; }
+        public Builder moderatedAt(Instant v) { r.moderatedAt = v; return this; }
         public Builder bookingId(String v) { r.bookingId = v; return this; }
         public Builder verifiedPurchase(boolean v) { r.verifiedPurchase = v; return this; }
         public Builder photos(List<String> v) { r.photos = v != null ? v : new ArrayList<>(); return this; }
         public Builder createdAt(Instant v) { r.createdAt = v; return this; }
         public Builder updatedAt(Instant v) { r.updatedAt = v; return this; }
-        public Review build() { return r; }
+        public Review build() {
+            if (r.helpfulVoters != null) r.helpfulCount = r.helpfulVoters.size();
+            if (r.flaggedBy != null) r.flagCount = r.flaggedBy.size();
+            return r;
+        }
     }
 
-    public int getHelpfulCount() { return helpfulVoters == null ? 0 : helpfulVoters.size(); }
-    public int getFlagCount() { return flaggedBy == null ? 0 : flaggedBy.size(); }
+    public int getHelpfulCount() {
+        return (helpfulVoters != null) ? helpfulVoters.size() : helpfulCount;
+    }
+    public void setHelpfulCount(int count) { this.helpfulCount = count; }
+
+    public int getFlagCount() {
+        return (flaggedBy != null) ? flaggedBy.size() : flagCount;
+    }
+    public void setFlagCount(int count) { this.flagCount = count; }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -138,9 +164,15 @@ public class Review {
     public ReviewStatus getStatus() { return status; }
     public void setStatus(ReviewStatus status) { this.status = status; }
     public List<String> getHelpfulVoters() { return helpfulVoters; }
-    public void setHelpfulVoters(List<String> helpfulVoters) { this.helpfulVoters = helpfulVoters; }
+    public void setHelpfulVoters(List<String> helpfulVoters) {
+        this.helpfulVoters = helpfulVoters != null ? helpfulVoters : new ArrayList<>();
+        this.helpfulCount = this.helpfulVoters.size();
+    }
     public List<String> getFlaggedBy() { return flaggedBy; }
-    public void setFlaggedBy(List<String> flaggedBy) { this.flaggedBy = flaggedBy; }
+    public void setFlaggedBy(List<String> flaggedBy) {
+        this.flaggedBy = flaggedBy != null ? flaggedBy : new ArrayList<>();
+        this.flagCount = this.flaggedBy.size();
+    }
     public String getModerationNote() { return moderationNote; }
     public void setModerationNote(String moderationNote) { this.moderationNote = moderationNote; }
     public String getModeratedBy() { return moderatedBy; }

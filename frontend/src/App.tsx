@@ -45,6 +45,7 @@ const AdminTicketsPage = lazy(() => import('./pages/admin/AdminTicketsPage').the
 const AdminCheckInsPage = lazy(() => import('./pages/admin/AdminCheckInsPage').then((m) => ({ default: m.AdminCheckInsPage })));
 const AdminDisruptionsPage = lazy(() => import('./pages/admin/AdminDisruptionsPage').then((m) => ({ default: m.AdminDisruptionsPage })));
 const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
+const AdminReviewsPage = lazy(() => import('./pages/admin/AdminReviewsPage').then((m) => ({ default: m.AdminReviewsPage })));
 const AdminSystemPage = lazy(() => import('./pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })));
 
 import { ScrollToTop } from './components/ScrollToTop';
@@ -198,6 +199,7 @@ export default function App() {
                 <Route path="checkins" element={<AdminCheckInsPage />} />
                 <Route path="disruptions" element={<AdminDisruptionsPage />} />
                 <Route path="notifications" element={<AdminNotificationsPage />} />
+                <Route path="reviews" element={<AdminReviewsPage />} />
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>

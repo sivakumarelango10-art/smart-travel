@@ -14,12 +14,14 @@ import {
   Radio,
   Compass,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Star
 } from 'lucide-react';
 import { Flight, CabinClass } from '../types/api';
 import { PriceHistoryModal } from './PriceHistoryModal';
 import { PriceFreezeModal } from './PriceFreezeModal';
 import { PriceBreakdownCard } from './PriceBreakdownCard';
+import { ReviewSection } from './ReviewSection';
 import { AirlineLogo } from './AirlineLogo';
 import { AircraftBadge } from './AircraftBadge';
 import { AnimatedPrice } from './AnimatedPrice';
@@ -45,6 +47,7 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   const [showPriceHistory, setShowPriceHistory] = useState(false);
   const [showPriceFreeze, setShowPriceFreeze] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
   const [isTracked, setIsTracked] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackMessage, setTrackMessage] = useState<string | null>(null);
@@ -364,6 +367,23 @@ export const FlightCard: React.FC<FlightCardProps> = ({
               <span>Live Radar</span>
             </motion.button>
 
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={() => {
+                setShowReviews(!showReviews);
+                if (showBreakdown) setShowBreakdown(false);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
+                showReviews
+                  ? 'bg-amber-400/20 border-amber-400/40 text-amber-400 shadow-glow-gold'
+                  : 'bg-[#14161F] hover:bg-[#1F222E] text-slate-300 border-white/10'
+              }`}
+            >
+              <Star className={`w-3.5 h-3.5 ${showReviews ? 'text-amber-400 fill-amber-400' : 'text-amber-400'}`} />
+              <span>Reviews</span>
+            </motion.button>
+
             {trackMessage && (
               <span className="text-[11px] text-amber-400 font-semibold animate-fade-in">{trackMessage}</span>
             )}
@@ -371,7 +391,10 @@ export const FlightCard: React.FC<FlightCardProps> = ({
 
           <button
             type="button"
-            onClick={() => setShowBreakdown(!showBreakdown)}
+            onClick={() => {
+              setShowBreakdown(!showBreakdown);
+              if (showReviews) setShowReviews(false);
+            }}
             className="text-slate-400 hover:text-white font-semibold flex items-center gap-1 transition"
           >
             <span>{showBreakdown ? 'Hide Fare Details' : 'View Fare Breakdown'}</span>
@@ -396,6 +419,25 @@ export const FlightCard: React.FC<FlightCardProps> = ({
                   passengerCount={passengerCount}
                 />
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Collapsible Flight Reviews with AnimatePresence */}
+        <AnimatePresence>
+          {showReviews && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden border-t border-white/10 bg-[#0E1017] p-4 sm:p-6"
+            >
+              <ReviewSection
+                targetType="FLIGHT"
+                targetId={flight.flightNumber || flight.id}
+                targetName={`${flight.airline} Flight ${flight.flightNumber}`}
+              />
             </motion.div>
           )}
         </AnimatePresence>

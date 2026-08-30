@@ -2,7 +2,7 @@
 spring:
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/smarttravel_dev?serverSelectionTimeoutMS=2000}
+      uri: ${MONGODB_URI:mongodb://localhost:27017/smarttravel_dev?serverSelectionTimeoutMS=10000}
       database: ${MONGODB_DATABASE:smarttravel}
       auto-index-creation: false
 

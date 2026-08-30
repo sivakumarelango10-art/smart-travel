@@ -34,6 +34,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { UserPreferences } from '../types/auth';
 import { pushNotificationService, PlatformInfo } from '../services/pushNotificationService';
+import { RecommendationsSection } from '../components/RecommendationsSection';
 
 export const MyAccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -1081,6 +1082,13 @@ export const MyAccountPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* RECOMMENDED FOR YOUR NEXT TRIP */}
+      <RecommendationsSection
+        title="Recommended For Your Next Trip"
+        subtitle="Curated stays, flights, and destinations matching your account travel style"
+        limit={4}
+      />
 
       {/* DESTRUCTIVE DELETE ACCOUNT CONFIRMATION MODAL */}
       {showDeleteModal && (
