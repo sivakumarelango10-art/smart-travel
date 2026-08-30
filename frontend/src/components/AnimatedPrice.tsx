@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { motion, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 
 interface AnimatedPriceProps {
-  value: number;
+  value: number | string;
   currency?: string;
   className?: string;
   prefix?: string;
@@ -21,10 +21,11 @@ export const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
   suffix = '',
 }) => {
   const shouldReduceMotion = useReducedMotion();
-  const [displayValue, setDisplayValue] = useState(value);
-  const prevValueRef = useRef(value);
+  const numValue = typeof value === 'number' ? (isNaN(value) ? 0 : value) : Number(value) || 0;
+  const [displayValue, setDisplayValue] = useState(numValue);
+  const prevValueRef = useRef(numValue);
 
-  const spring = useSpring(value, {
+  const spring = useSpring(numValue, {
     stiffness: 120,
     damping: 18,
     mass: 0.5,
@@ -35,30 +36,29 @@ export const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
   });
 
   useEffect(() => {
-    spring.set(value);
+    spring.set(numValue);
     const unsubscribe = formatted.on('change', (latest) => {
-      setDisplayValue(Number(latest.replace(/,/g, '')));
+      setDisplayValue(Number(latest.replace(/,/g, '')) || 0);
     });
 
-    const isDifferent = prevValueRef.current !== value;
-    prevValueRef.current = value;
+    prevValueRef.current = numValue;
 
     return () => unsubscribe();
-  }, [value, spring, formatted]);
+  }, [numValue, spring, formatted]);
 
   if (shouldReduceMotion) {
     return (
       <span className={className}>
-        {prefix}{currency}{value.toLocaleString('en-IN')}{suffix}
+        {prefix}{currency}{numValue.toLocaleString('en-IN')}{suffix}
       </span>
     );
   }
 
-  const isChanged = prevValueRef.current !== value;
+  const isChanged = prevValueRef.current !== numValue;
 
   return (
     <motion.span
-      key={value}
+      key={numValue}
       initial={isChanged ? { scale: 1.08, color: '#FBBF24' } : false}
       animate={{ scale: 1, color: 'inherit' }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -70,3 +70,4 @@ export const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
     </motion.span>
   );
 };
+
