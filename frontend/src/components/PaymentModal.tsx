@@ -111,8 +111,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     setError(null);
     try {
       const activeOrder = await ensureActiveOrder();
-      const mockPayId = `pay_mock_${Date.now()}`;
-      const mockSignature = `sig_mock_${Math.random().toString(36).substring(2)}`;
+      const mockPayId = `mock_pay_${Date.now()}`;
+      const mockSignature = `mock_sig_${Math.random().toString(36).substring(2)}`;
 
       const verifyRes = await paymentService.verifyPayment({
         razorpayOrderId: activeOrder.razorpayOrderId,
