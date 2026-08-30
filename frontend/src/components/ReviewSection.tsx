@@ -317,7 +317,6 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
   };
 
   const handleDeleteReply = async (reviewId: string, replyId: string) => {
-    if (!confirm('Are you sure you want to delete this reply?')) return;
     try {
       await reviewService.deleteReply(reviewId, replyId);
       setRepliesMap((prev) => ({
