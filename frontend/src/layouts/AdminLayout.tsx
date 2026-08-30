@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Plane, BookmarkCheck, RotateCcw,
-  Ticket, UserCheck, Zap, Bell, Activity, Shield,
+  Ticket, QrCode, Zap, Bell, Activity, Shield,
   LogOut, ChevronLeft, Menu, X, ChevronRight, Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +25,7 @@ const navItems: NavItem[] = [
   { label: 'Refunds',        path: '/admin/refunds',        icon: <RotateCcw className="w-4 h-4" /> },
   { label: 'Reviews',        path: '/admin/reviews',        icon: <Star className="w-4 h-4" /> },
   { label: 'Tickets',        path: '/admin/tickets',        icon: <Ticket className="w-4 h-4" /> },
-  { label: 'Check-ins',      path: '/admin/checkins',       icon: <UserCheck className="w-4 h-4" /> },
+  { label: 'Check-In & QR',  path: '/admin/checkins',       icon: <QrCode className="w-4 h-4" /> },
   { label: 'Disruptions',    path: '/admin/disruptions',    icon: <Zap className="w-4 h-4" /> },
   { label: 'Notifications',  path: '/admin/notifications',  icon: <Bell className="w-4 h-4" /> },
   { label: 'System Health',  path: '/admin/system',         icon: <Activity className="w-4 h-4" /> },
