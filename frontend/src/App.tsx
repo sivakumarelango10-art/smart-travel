@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -9,44 +9,45 @@ import { PageLoader } from './components/PageLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { InAppNotificationToast } from './components/InAppNotificationToast';
 import { startKeepAliveHeartbeat, stopKeepAliveHeartbeat } from './services/warmupService';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-// Lazy-loaded Customer & Public Pages
-const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
-const FlightSearchPage = lazy(() => import('./pages/FlightSearchPage').then((m) => ({ default: m.FlightSearchPage })));
-const HotelSearchPage = lazy(() => import('./pages/HotelSearchPage').then((m) => ({ default: m.HotelSearchPage })));
-const HotelDetailsPage = lazy(() => import('./pages/HotelDetailsPage').then((m) => ({ default: m.HotelDetailsPage })));
-const TrackedFlightsPage = lazy(() => import('./pages/TrackedFlightsPage').then((m) => ({ default: m.TrackedFlightsPage })));
-const BookingPage = lazy(() => import('./pages/BookingPage').then((m) => ({ default: m.BookingPage })));
-const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage').then((m) => ({ default: m.BookingConfirmationPage })));
-const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage').then((m) => ({ default: m.MyBookingsPage })));
-const MyAccountPage = lazy(() => import('./pages/MyAccountPage').then((m) => ({ default: m.MyAccountPage })));
-const TicketPage = lazy(() => import('./pages/TicketPage').then((m) => ({ default: m.TicketPage })));
-const CheckInPage = lazy(() => import('./pages/CheckInPage').then((m) => ({ default: m.CheckInPage })));
-const BoardingPassPage = lazy(() => import('./pages/BoardingPassPage').then((m) => ({ default: m.BoardingPassPage })));
-const BoardingPassVerificationPage = lazy(() => import('./pages/BoardingPassVerificationPage').then((m) => ({ default: m.BoardingPassVerificationPage })));
-const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
-const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
-const OffersPage = lazy(() => import('./pages/OffersPage').then((m) => ({ default: m.OffersPage })));
-const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
-const TermsAndConditionsPage = lazy(() => import('./pages/TermsAndConditionsPage').then((m) => ({ default: m.TermsAndConditionsPage })));
-const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage').then((m) => ({ default: m.CookiePolicyPage })));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+// Lazy-loaded Customer & Public Pages (with automatic chunk refresh retry)
+const HomePage = lazyWithRetry(() => import('./pages/HomePage').then((m) => ({ default: m.HomePage })));
+const FlightSearchPage = lazyWithRetry(() => import('./pages/FlightSearchPage').then((m) => ({ default: m.FlightSearchPage })));
+const HotelSearchPage = lazyWithRetry(() => import('./pages/HotelSearchPage').then((m) => ({ default: m.HotelSearchPage })));
+const HotelDetailsPage = lazyWithRetry(() => import('./pages/HotelDetailsPage').then((m) => ({ default: m.HotelDetailsPage })));
+const TrackedFlightsPage = lazyWithRetry(() => import('./pages/TrackedFlightsPage').then((m) => ({ default: m.TrackedFlightsPage })));
+const BookingPage = lazyWithRetry(() => import('./pages/BookingPage').then((m) => ({ default: m.BookingPage })));
+const BookingConfirmationPage = lazyWithRetry(() => import('./pages/BookingConfirmationPage').then((m) => ({ default: m.BookingConfirmationPage })));
+const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage').then((m) => ({ default: m.MyBookingsPage })));
+const MyAccountPage = lazyWithRetry(() => import('./pages/MyAccountPage').then((m) => ({ default: m.MyAccountPage })));
+const TicketPage = lazyWithRetry(() => import('./pages/TicketPage').then((m) => ({ default: m.TicketPage })));
+const CheckInPage = lazyWithRetry(() => import('./pages/CheckInPage').then((m) => ({ default: m.CheckInPage })));
+const BoardingPassPage = lazyWithRetry(() => import('./pages/BoardingPassPage').then((m) => ({ default: m.BoardingPassPage })));
+const BoardingPassVerificationPage = lazyWithRetry(() => import('./pages/BoardingPassVerificationPage').then((m) => ({ default: m.BoardingPassVerificationPage })));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazyWithRetry(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const OffersPage = lazyWithRetry(() => import('./pages/OffersPage').then((m) => ({ default: m.OffersPage })));
+const PrivacyPolicyPage = lazyWithRetry(() => import('./pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsAndConditionsPage = lazyWithRetry(() => import('./pages/TermsAndConditionsPage').then((m) => ({ default: m.TermsAndConditionsPage })));
+const CookiePolicyPage = lazyWithRetry(() => import('./pages/CookiePolicyPage').then((m) => ({ default: m.CookiePolicyPage })));
+const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
-// Lazy-loaded Admin Pages (loaded only on demand by administrators)
-const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
-const AdminFlightsPage = lazy(() => import('./pages/admin/AdminFlightsPage').then((m) => ({ default: m.AdminFlightsPage })));
-const AdminFlightDetailPage = lazy(() => import('./pages/admin/AdminFlightDetailPage').then((m) => ({ default: m.AdminFlightDetailPage })));
-const AdminFlightFormPage = lazy(() => import('./pages/admin/AdminFlightFormPage').then((m) => ({ default: m.AdminFlightFormPage })));
-const AdminSeatMapPage = lazy(() => import('./pages/admin/AdminSeatMapPage').then((m) => ({ default: m.AdminSeatMapPage })));
-const AdminBookingsPage = lazy(() => import('./pages/admin/AdminBookingsPage').then((m) => ({ default: m.AdminBookingsPage })));
-const AdminBookingDetailPage = lazy(() => import('./pages/admin/AdminBookingDetailPage').then((m) => ({ default: m.AdminBookingDetailPage })));
-const AdminRefundsPage = lazy(() => import('./pages/admin/AdminRefundsPage').then((m) => ({ default: m.AdminRefundsPage })));
-const AdminTicketsPage = lazy(() => import('./pages/admin/AdminTicketsPage').then((m) => ({ default: m.AdminTicketsPage })));
-const AdminCheckInsPage = lazy(() => import('./pages/admin/AdminCheckInsPage').then((m) => ({ default: m.AdminCheckInsPage })));
-const AdminDisruptionsPage = lazy(() => import('./pages/admin/AdminDisruptionsPage').then((m) => ({ default: m.AdminDisruptionsPage })));
-const AdminNotificationsPage = lazy(() => import('./pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
-const AdminReviewsPage = lazy(() => import('./pages/admin/AdminReviewsPage').then((m) => ({ default: m.AdminReviewsPage })));
-const AdminSystemPage = lazy(() => import('./pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })));
+// Lazy-loaded Admin Pages (with automatic chunk refresh retry)
+const AdminDashboardPage = lazyWithRetry(() => import('./pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
+const AdminFlightsPage = lazyWithRetry(() => import('./pages/admin/AdminFlightsPage').then((m) => ({ default: m.AdminFlightsPage })));
+const AdminFlightDetailPage = lazyWithRetry(() => import('./pages/admin/AdminFlightDetailPage').then((m) => ({ default: m.AdminFlightDetailPage })));
+const AdminFlightFormPage = lazyWithRetry(() => import('./pages/admin/AdminFlightFormPage').then((m) => ({ default: m.AdminFlightFormPage })));
+const AdminSeatMapPage = lazyWithRetry(() => import('./pages/admin/AdminSeatMapPage').then((m) => ({ default: m.AdminSeatMapPage })));
+const AdminBookingsPage = lazyWithRetry(() => import('./pages/admin/AdminBookingsPage').then((m) => ({ default: m.AdminBookingsPage })));
+const AdminBookingDetailPage = lazyWithRetry(() => import('./pages/admin/AdminBookingDetailPage').then((m) => ({ default: m.AdminBookingDetailPage })));
+const AdminRefundsPage = lazyWithRetry(() => import('./pages/admin/AdminRefundsPage').then((m) => ({ default: m.AdminRefundsPage })));
+const AdminTicketsPage = lazyWithRetry(() => import('./pages/admin/AdminTicketsPage').then((m) => ({ default: m.AdminTicketsPage })));
+const AdminCheckInsPage = lazyWithRetry(() => import('./pages/admin/AdminCheckInsPage').then((m) => ({ default: m.AdminCheckInsPage })));
+const AdminDisruptionsPage = lazyWithRetry(() => import('./pages/admin/AdminDisruptionsPage').then((m) => ({ default: m.AdminDisruptionsPage })));
+const AdminNotificationsPage = lazyWithRetry(() => import('./pages/admin/AdminNotificationsPage').then((m) => ({ default: m.AdminNotificationsPage })));
+const AdminReviewsPage = lazyWithRetry(() => import('./pages/admin/AdminReviewsPage').then((m) => ({ default: m.AdminReviewsPage })));
+const AdminSystemPage = lazyWithRetry(() => import('./pages/admin/AdminSystemPage').then((m) => ({ default: m.AdminSystemPage })));
 
 import { ScrollToTop } from './components/ScrollToTop';
 

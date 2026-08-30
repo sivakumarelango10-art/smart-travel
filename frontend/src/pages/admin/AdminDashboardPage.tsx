@@ -213,9 +213,9 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Total Seats</p>
           <p className="text-lg font-bold text-white mt-0.5">
-            {seats?.totalSeats.toLocaleString() ?? '0'}
+            {seats?.totalSeats?.toLocaleString() ?? '0'}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.availableSeats.toLocaleString()} available</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.availableSeats?.toLocaleString() ?? '0'} available</p>
         </div>
 
         <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
@@ -223,13 +223,13 @@ export const AdminDashboardPage: React.FC = () => {
           <p className="text-lg font-bold text-emerald-400 mt-0.5">
             {seats?.overallOccupancyPercentage ?? 0}%
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.bookedSeats.toLocaleString()} booked</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{seats?.bookedSeats?.toLocaleString() ?? '0'} booked</p>
         </div>
 
         <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Tickets Issued</p>
           <p className="text-lg font-bold text-white mt-0.5">
-            {overview?.ticketsIssued.toLocaleString() ?? '0'}
+            {overview?.ticketsIssued?.toLocaleString() ?? '0'}
           </p>
           <p className="text-[11px] text-slate-400 mt-0.5">Active e-tickets</p>
         </div>
@@ -237,7 +237,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="bg-[#14161F] rounded-2xl border border-white/10 p-3.5 shadow-xl">
           <p className="text-[11px] font-semibold uppercase text-slate-400">Check-Ins Done</p>
           <p className="text-lg font-bold text-white mt-0.5">
-            {overview?.checkInsCompleted.toLocaleString() ?? '0'}
+            {overview?.checkInsCompleted?.toLocaleString() ?? '0'}
           </p>
           <p className="text-[11px] text-slate-400 mt-0.5">Boarding passes</p>
         </div>

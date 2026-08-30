@@ -17,6 +17,16 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
+    const isChunkError = /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(
+      error?.message || ''
+    );
+    if (isChunkError && typeof window !== 'undefined') {
+      const alreadyReloaded = window.sessionStorage.getItem('eb_chunk_reload');
+      if (!alreadyReloaded) {
+        window.sessionStorage.setItem('eb_chunk_reload', 'true');
+        window.location.reload();
+      }
+    }
     return { hasError: true, error };
   }
 

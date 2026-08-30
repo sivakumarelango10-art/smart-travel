@@ -15,6 +15,7 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [slowNotice, setSlowNotice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const from = (location.state as any)?.from?.pathname || '/';
@@ -25,6 +26,7 @@ export const LoginPage: React.FC = () => {
       setError('Please fill in both email and password.');
       return;
     }
+    const timer = setTimeout(() => setSlowNotice(true), 2500);
     try {
       setLoading(true);
       setError(null);
@@ -33,6 +35,8 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(err?.message || 'Invalid email or password credentials.');
     } finally {
+      clearTimeout(timer);
+      setSlowNotice(false);
       setLoading(false);
     }
   };
@@ -158,6 +162,12 @@ export const LoginPage: React.FC = () => {
               </>
             )}
           </button>
+
+          {slowNotice && (
+            <p className="text-[11px] text-amber-400 font-medium text-center animate-pulse pt-1">
+              Waking cloud instance from standby, connecting securely...
+            </p>
+          )}
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-400">
