@@ -3,6 +3,13 @@ import { ShieldCheck, Receipt, Lock } from 'lucide-react';
 import { Flight, CabinClass, PriceFreeze } from '../types/api';
 import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
 
+export interface AppliedOffer {
+  code: string;
+  discountAmount: number;
+  title: string;
+  minSpend?: number;
+}
+
 interface FareSummaryCardProps {
   flight: Flight;
   cabinClass: CabinClass;
@@ -10,6 +17,7 @@ interface FareSummaryCardProps {
   selectedSeats?: string[];
   expiresAt?: string;
   appliedFreeze?: PriceFreeze | null;
+  appliedOffer?: AppliedOffer | null;
 }
 
 export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
@@ -18,6 +26,7 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   passengerCount,
   selectedSeats = [],
   appliedFreeze,
+  appliedOffer,
 }) => {
   const { updatedPrice } = useFlightPricingWebSocket(flight.id, cabinClass);
 
@@ -47,7 +56,9 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
   const totalBase = basePricePerPax * passengerCount;
   const totalTax = taxPerPax * passengerCount;
   const totalFee = feePerPax * passengerCount;
-  const totalAmount = appliedFreeze ? appliedFreeze.lockedTotalPrice : totalPerPax * passengerCount;
+  const rawTotalAmount = appliedFreeze ? appliedFreeze.lockedTotalPrice : totalPerPax * passengerCount;
+  const discountAmount = appliedOffer ? Math.min(rawTotalAmount, appliedOffer.discountAmount) : 0;
+  const finalPayable = Math.max(0, rawTotalAmount - discountAmount);
 
   return (
     <div className="rounded-2xl bg-[#14161F] border border-white/10 p-5 shadow-xl space-y-4 sticky top-20">
@@ -92,15 +103,31 @@ export const FareSummaryCard: React.FC<FareSummaryCardProps> = ({
             </span>
           </div>
         )}
+
+        {appliedOffer && discountAmount > 0 && (
+          <div className="flex items-center justify-between text-emerald-400 font-bold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 animate-fade-in">
+            <span className="flex items-center gap-1.5 text-xs">
+              <span>Offer ({appliedOffer.code})</span>
+            </span>
+            <span className="font-mono font-bold">-₹{discountAmount.toLocaleString('en-IN')}</span>
+          </div>
+        )}
       </div>
 
       {/* Total Due */}
       <div className="pt-3 border-t border-white/10 flex items-center justify-between">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Fare Payable</span>
-          <span className="text-2xl font-black text-amber-400 tracking-tight">
-            ₹{totalAmount.toLocaleString('en-IN')}
-          </span>
+          <div className="flex items-baseline gap-2">
+            {discountAmount > 0 && (
+              <span className="text-xs text-slate-400 line-through font-mono">
+                ₹{rawTotalAmount.toLocaleString('en-IN')}
+              </span>
+            )}
+            <span className="text-2xl font-black text-amber-400 tracking-tight">
+              ₹{finalPayable.toLocaleString('en-IN')}
+            </span>
+          </div>
         </div>
 
         {appliedFreeze && (

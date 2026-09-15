@@ -128,6 +128,18 @@ public class BookingServiceImpl implements BookingService {
 
         // 1. Fetch flight and validate bookability
         Flight flight = flightRepository.findByIdAndActiveTrue(request.getFlightId())
+                .or(() -> flightRepository.findById(request.getFlightId()))
+                .or(() -> {
+                    String id = request.getFlightId();
+                    if (id != null && id.startsWith("instant_")) {
+                        String[] parts = id.split("_");
+                        if (parts.length >= 3) {
+                            String code = parts[1].toUpperCase() + "-" + parts[2];
+                            return flightRepository.findByFlightNumber(code);
+                        }
+                    }
+                    return java.util.Optional.empty();
+                })
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", request.getFlightId()));
 
         if (!BOOKABLE_STATUSES.contains(flight.getStatus())) {
@@ -189,6 +201,30 @@ public class BookingServiceImpl implements BookingService {
             fareSnapshot = fareCalculationService.calculateFare(basePrice, cabinClass, passengerCount);
         }
 
+        // Apply promotional coupon discount if provided
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        String couponCode = request.getCouponCode() != null ? request.getCouponCode().trim().toUpperCase() : null;
+        if (couponCode != null && !couponCode.isBlank()) {
+            discountAmount = calculateCouponDiscount(couponCode, fareSnapshot.getTotalAmount());
+        } else if (request.getDiscountAmount() != null && request.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+            discountAmount = request.getDiscountAmount().min(fareSnapshot.getTotalAmount());
+        }
+
+        if (discountAmount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal discountedTotal = fareSnapshot.getTotalAmount().subtract(discountAmount).max(BigDecimal.ZERO);
+            fareSnapshot = FareBreakdownDto.builder()
+                    .baseFare(fareSnapshot.getBaseFare())
+                    .taxes(fareSnapshot.getTaxes())
+                    .fees(fareSnapshot.getFees())
+                    .discountAmount(discountAmount)
+                    .couponCode(couponCode)
+                    .totalAmount(discountedTotal)
+                    .currency(fareSnapshot.getCurrency())
+                    .passengerCount(passengerCount)
+                    .build();
+            log.info("Applied coupon {} discount: ₹{} (New Total: ₹{}) for user {}", couponCode, discountAmount, discountedTotal, userId);
+        }
+
         // 5. Generate unique PNR reference
         String pnr = generateUniquePnr();
 
@@ -234,6 +270,8 @@ public class BookingServiceImpl implements BookingService {
                 .totalAmount(fareSnapshot.getTotalAmount())
                 .currency(fareSnapshot.getCurrency())
                 .status(BookingStatus.CONFIRMED)
+                .couponCode(couponCode)
+                .discountAmount(discountAmount)
                 .expiresAt(expiresAt)
                 .createdAt(now)
                 .updatedAt(now)
@@ -447,5 +485,26 @@ public class BookingServiceImpl implements BookingService {
             }
         }
         return pnrGenerator.generatePnr();
+    }
+
+    private BigDecimal calculateCouponDiscount(String couponCode, BigDecimal totalAmount) {
+        if (couponCode == null || couponCode.isBlank() || totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        String code = couponCode.trim().toUpperCase();
+        return switch (code) {
+            case "SMARTFLY25" -> totalAmount.compareTo(new BigDecimal("4999.00")) >= 0
+                    ? new BigDecimal("1500.00").min(totalAmount) : BigDecimal.ZERO;
+            case "FLYSMART10" -> totalAmount.compareTo(new BigDecimal("2500.00")) >= 0
+                    ? totalAmount.multiply(new BigDecimal("0.10")).min(new BigDecimal("1000.00")).setScale(2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            case "DOMESTIC500" -> totalAmount.compareTo(new BigDecimal("2000.00")) >= 0
+                    ? new BigDecimal("500.00").min(totalAmount) : BigDecimal.ZERO;
+            case "FESTIVE20" -> totalAmount.compareTo(new BigDecimal("5000.00")) >= 0
+                    ? totalAmount.multiply(new BigDecimal("0.20")).min(new BigDecimal("2000.00")).setScale(2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            case "FIRSTTRIP" -> totalAmount.compareTo(new BigDecimal("3000.00")) >= 0
+                    ? new BigDecimal("750.00").min(totalAmount) : BigDecimal.ZERO;
+            case "FREEZELOCK" -> new BigDecimal("300.00").min(totalAmount);
+            default -> BigDecimal.ZERO;
+        };
     }
 }

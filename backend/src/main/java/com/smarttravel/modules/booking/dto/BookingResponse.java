@@ -91,6 +91,12 @@ public class BookingResponse {
     @Schema(description = "Booking Last Modified Timestamp", example = "2026-08-20T14:30:00Z")
     private Instant updatedAt;
 
+    @Schema(description = "Promotional coupon code applied", example = "SMARTFLY25")
+    private String couponCode;
+
+    @Schema(description = "Discount amount deducted", example = "1500.00")
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
     public BookingResponse() {
     }
 
@@ -275,6 +281,19 @@ public class BookingResponse {
             return this;
         }
 
+        private String couponCode;
+        private BigDecimal discountAmount = BigDecimal.ZERO;
+
+        public Builder couponCode(String couponCode) {
+            this.couponCode = couponCode;
+            return this;
+        }
+
+        public Builder discountAmount(BigDecimal discountAmount) {
+            this.discountAmount = discountAmount;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -286,11 +305,14 @@ public class BookingResponse {
         }
 
         public BookingResponse build() {
-            return new BookingResponse(id, bookingReference, userId, userEmail, flightId, flightNumber,
+            BookingResponse response = new BookingResponse(id, bookingReference, userId, userEmail, flightId, flightNumber,
                     airline, airlineCode, departureAirport, arrivalAirport, departureTime,
                     arrivalTime, durationMinutes, cabinClass, passengerCount, passengers,
                     fareBreakdown, totalAmount, currency, status, cancelledAt, cancellationReason,
                     expiresAt, createdAt, updatedAt);
+            response.setCouponCode(couponCode);
+            response.setDiscountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO);
+            return response;
         }
     }
 
@@ -492,5 +514,21 @@ public class BookingResponse {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
     }
 }

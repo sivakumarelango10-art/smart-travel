@@ -10,7 +10,13 @@ import {
   AlertCircle,
   Plane,
   ShieldCheck,
-  Lock
+  Lock,
+  Tag,
+  Sparkles,
+  Percent,
+  Copy,
+  Check,
+  X
 } from 'lucide-react';
 import { Flight, CabinClass, Passenger, Seat, Booking, PriceFreeze } from '../types/api';
 import { flightService } from '../services/flightService';
@@ -20,10 +26,68 @@ import { pricingService } from '../services/pricingService';
 import { useAuth } from '../context/AuthContext';
 import { SeatMap } from '../components/SeatMap';
 import { PassengerForm } from '../components/PassengerForm';
-import { FareSummaryCard } from '../components/FareSummaryCard';
+import { FareSummaryCard, AppliedOffer } from '../components/FareSummaryCard';
 import { PaymentModal } from '../components/PaymentModal';
 import { AirlineLogo } from '../components/AirlineLogo';
 import { AircraftBadge } from '../components/AircraftBadge';
+
+interface FlightOfferCoupon {
+  code: string;
+  title: string;
+  description: string;
+  discountLabel: string;
+  minSpend: number;
+  badge: string;
+  calcDiscount: (subtotal: number) => number;
+}
+
+const VERIFIED_FLIGHT_OFFERS: FlightOfferCoupon[] = [
+  {
+    code: 'SMARTFLY25',
+    title: 'Domestic & International Special',
+    description: 'Flat ₹1,500 instant discount on flights with booking value ₹4,999 and above.',
+    discountLabel: 'FLAT ₹1,500 OFF',
+    minSpend: 4999,
+    calcDiscount: () => 1500,
+    badge: 'Most Popular',
+  },
+  {
+    code: 'FLYSMART10',
+    title: 'Smart Traveler Instant Savings',
+    description: 'Get 10% instant discount (up to ₹1,000) on bookings above ₹2,500.',
+    discountLabel: '10% INSTANT OFF',
+    minSpend: 2500,
+    calcDiscount: (subtotal) => Math.min(1000, Math.round(subtotal * 0.1)),
+    badge: 'Best Value',
+  },
+  {
+    code: 'DOMESTIC500',
+    title: 'Domestic Express Discount',
+    description: 'Flat ₹500 off on all domestic non-stop routes above ₹2,000.',
+    discountLabel: 'FLAT ₹500 OFF',
+    minSpend: 2000,
+    calcDiscount: () => 500,
+    badge: 'Quick Saver',
+  },
+  {
+    code: 'FESTIVE20',
+    title: 'Festive Season Bonanza',
+    description: '20% off (up to ₹2,000) on flights above ₹5,000 for peak holiday travel.',
+    discountLabel: '20% HOLIDAY OFF',
+    minSpend: 5000,
+    calcDiscount: (subtotal) => Math.min(2000, Math.round(subtotal * 0.2)),
+    badge: 'Festive Perk',
+  },
+  {
+    code: 'FIRSTTRIP',
+    title: 'First Flight Traveler Welcome',
+    description: 'Flat ₹750 off on your flight reservation above ₹3,000.',
+    discountLabel: 'FLAT ₹750 OFF',
+    minSpend: 3000,
+    calcDiscount: () => 750,
+    badge: 'New User',
+  },
+];
 
 export const BookingPage: React.FC = () => {
   const { flightId } = useParams<{ flightId: string }>();
@@ -83,6 +147,76 @@ export const BookingPage: React.FC = () => {
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
 
+  // Deals & Offers State
+  const [appliedOffer, setAppliedOffer] = useState<AppliedOffer | null>(null);
+  const [couponInput, setCouponInput] = useState<string>('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const calculateCurrentSubtotal = (): number => {
+    if (!flight) return 0;
+    const cabinInv =
+      flight.cabinInventories?.find((c) => c.cabinClass === cabinClass) ||
+      flight.cabinInventories?.[0];
+    const unitPrice = cabinInv ? cabinInv.totalPrice : flight.basePrice;
+    const base = unitPrice * passengerCount;
+    const seatSelectionTotal = selectedSeats.reduce((acc, seatNum) => {
+      const s = seats.find((seat) => seat.seatNumber === seatNum);
+      return acc + (s?.price || 0);
+    }, 0);
+    return base + seatSelectionTotal;
+  };
+
+  const handleApplyCoupon = (codeToApply?: string) => {
+    const rawCode = (codeToApply || couponInput).trim().toUpperCase();
+    setCouponError(null);
+    setCouponSuccess(null);
+
+    if (!rawCode) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+
+    const offer = VERIFIED_FLIGHT_OFFERS.find((o) => o.code === rawCode);
+    if (!offer) {
+      setCouponError(`Coupon code "${rawCode}" is not recognized.`);
+      return;
+    }
+
+    const subtotal = calculateCurrentSubtotal();
+    if (subtotal < offer.minSpend) {
+      setCouponError(
+        `Minimum booking value of ₹${offer.minSpend.toLocaleString('en-IN')} required for ${offer.code} (Current: ₹${subtotal.toLocaleString('en-IN')}).`
+      );
+      return;
+    }
+
+    const discount = offer.calcDiscount(subtotal);
+    setAppliedOffer({
+      code: offer.code,
+      discountAmount: discount,
+      title: offer.title,
+    });
+    setCouponInput(offer.code);
+    setCouponSuccess(`Coupon ${offer.code} applied successfully! You saved ₹${discount.toLocaleString('en-IN')}.`);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedOffer(null);
+    setCouponInput('');
+    setCouponError(null);
+    setCouponSuccess(null);
+  };
+
+  const handleCopyCode = (code: string) => {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(code);
+    }
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   // Fetch Flight & Seat Map with background hydration
   const loadFlightAndSeats = async () => {
     if (!flightId) return;
@@ -126,9 +260,12 @@ export const BookingPage: React.FC = () => {
 
       setSeats(seatList);
 
-      // Auto-assign available seats if none selected yet
+      // Auto-assign available seats matching selected cabin class if none selected yet
       if (selectedSeats.length === 0 && seatList.length > 0) {
-        const available = seatList.filter((s) => s.status === 'AVAILABLE').slice(0, passengerCount);
+        const matchingCabinSeats = seatList.filter(
+          (s) => s.status === 'AVAILABLE' && (!cabinClass || s.cabinClass === cabinClass)
+        );
+        const available = (matchingCabinSeats.length > 0 ? matchingCabinSeats : seatList.filter((s) => s.status === 'AVAILABLE')).slice(0, passengerCount);
         if (available.length > 0) {
           setSelectedSeats(available.map((s) => s.seatNumber));
         }
@@ -230,6 +367,8 @@ export const BookingPage: React.FC = () => {
         cabinClass,
         passengers: payloadPassengers,
         priceFreezeId: appliedFreeze ? appliedFreeze.id : undefined,
+        couponCode: appliedOffer ? appliedOffer.code : undefined,
+        discountAmount: appliedOffer ? appliedOffer.discountAmount : undefined,
       });
 
       if (res && res.data) {
@@ -239,9 +378,9 @@ export const BookingPage: React.FC = () => {
         throw new Error('Failed to create booking reservation.');
       }
     } catch (err: any) {
-      setBookingError(err.message || 'Seat lock or booking creation failed. Please reselect seats.');
-      // If seat conflict occurred, return to step 1
-      if (err.message?.includes('Seat') || err.message?.includes('conflict') || err.message?.includes('occupied')) {
+      setBookingError(err.message || 'Booking reservation failed. Please review your details.');
+      // Only return to step 1 if there is a real seat occupancy collision (HTTP 409 conflict)
+      if (err.status === 409 || err.response?.status === 409 || err.message?.toLowerCase().includes('already booked')) {
         setStep(1);
         loadFlightAndSeats();
       }
@@ -412,6 +551,177 @@ export const BookingPage: React.FC = () => {
                 onChange={handlePassengerChange}
                 errors={errors}
               />
+
+              {/* DEALS & OFFERS SECTION */}
+              <div className="p-6 rounded-2xl bg-[#14161F] border border-white/10 shadow-xl space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center font-bold">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white flex items-center gap-2">
+                        <span>Flight Deals & Offers</span>
+                        <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                          Instant Discounts
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Apply a promo code to unlock instant airline discounts before payment
+                      </p>
+                    </div>
+                  </div>
+                  {appliedOffer && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Remove Offer</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Coupon Input Box */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleApplyCoupon();
+                        }
+                      }}
+                      placeholder="ENTER PROMO CODE (e.g. SMARTFLY25)"
+                      className="w-full bg-[#181A22] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono uppercase placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition tracking-wider"
+                    />
+                    {couponInput && (
+                      <button
+                        type="button"
+                        onClick={() => setCouponInput('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCoupon()}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold text-xs shadow-glow-gold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-black" />
+                    <span>Apply Code</span>
+                  </button>
+                </div>
+
+                {/* Feedback Alerts */}
+                {couponSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span>{couponSuccess}</span>
+                  </div>
+                )}
+                {couponError && (
+                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{couponError}</span>
+                  </div>
+                )}
+
+                {/* Available Coupons Grid */}
+                <div className="space-y-3 pt-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Available Verified Airline Coupons
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {VERIFIED_FLIGHT_OFFERS.map((offer) => {
+                      const isApplied = appliedOffer?.code === offer.code;
+                      const subtotal = calculateCurrentSubtotal();
+                      const isEligible = subtotal >= offer.minSpend;
+
+                      return (
+                        <div
+                          key={offer.code}
+                          className={`p-3.5 rounded-xl border transition relative flex flex-col justify-between ${
+                            isApplied
+                              ? 'bg-emerald-500/10 border-emerald-500/40 shadow-glow-emerald'
+                              : 'bg-[#181A22] border-white/10 hover:border-amber-400/40'
+                          }`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-[#12131A] text-amber-400 border border-amber-400/30 tracking-wider">
+                                  {offer.code}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCode(offer.code)}
+                                  className="text-slate-500 hover:text-white transition p-0.5 cursor-pointer"
+                                  title="Copy Code"
+                                >
+                                  {copiedCode === offer.code ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">
+                                {offer.badge}
+                              </span>
+                            </div>
+
+                            <div>
+                              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <Percent className="w-3.5 h-3.5 text-amber-400" />
+                                <span>{offer.discountLabel}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                {offer.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 mt-2 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400">
+                              Min. spend: ₹{offer.minSpend.toLocaleString('en-IN')}
+                            </span>
+
+                            {isApplied ? (
+                              <button
+                                type="button"
+                                onClick={handleRemoveCoupon}
+                                className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span>Applied</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleApplyCoupon(offer.code)}
+                                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                                  isEligible
+                                    ? 'bg-amber-400 text-black hover:bg-amber-300 font-extrabold shadow-glow-gold'
+                                    : 'bg-white/5 text-slate-400 hover:bg-white/10 border border-white/10'
+                                }`}
+                              >
+                                <span>Apply</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -504,6 +814,30 @@ export const BookingPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Applied Discount Banner in Step 3 */}
+              {appliedOffer && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex items-center justify-between shadow-glow-emerald">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                      <Tag className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-white font-bold flex items-center gap-2">
+                        <span>Applied Offer:</span>
+                        <span className="font-mono text-emerald-400 font-black">{appliedOffer.code}</span>
+                      </span>
+                      <p className="text-[11px] text-slate-400">{appliedOffer.title}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 uppercase block font-semibold">Total Savings</span>
+                    <span className="text-sm font-black text-emerald-400 font-mono">
+                      -₹{appliedOffer.discountAmount.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Pre-Checkout Legal Consent & Cancellation Notice */}
               <div className="p-4 rounded-2xl bg-[#14161F] border border-white/10 text-xs space-y-2 text-slate-300">
                 <div className="flex items-center gap-2 font-bold text-amber-400">
@@ -534,7 +868,7 @@ export const BookingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="px-5 py-2.5 rounded-xl bg-[#14161F] hover:bg-[#1F222E] text-slate-300 text-xs font-bold flex items-center gap-2 transition border border-white/10"
+                className="px-5 py-2.5 rounded-xl bg-[#14161F] hover:bg-[#1F222E] text-slate-300 text-xs font-bold flex items-center gap-2 transition border border-white/10 cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4 text-amber-400" />
                 <span>Back</span>
@@ -616,6 +950,7 @@ export const BookingPage: React.FC = () => {
             passengerCount={passengerCount}
             selectedSeats={selectedSeats}
             appliedFreeze={appliedFreeze}
+            appliedOffer={appliedOffer}
           />
         </div>
       </div>

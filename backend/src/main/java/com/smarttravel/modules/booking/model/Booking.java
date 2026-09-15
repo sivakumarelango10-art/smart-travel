@@ -82,6 +82,10 @@ public class Booking {
 
     private String ticketNumber;
 
+    private String couponCode;
+
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -156,6 +160,8 @@ public class Booking {
         private Instant expiresAt;
         private String ticketId;
         private String ticketNumber;
+        private String couponCode;
+        private BigDecimal discountAmount;
         private Instant createdAt;
         private Instant updatedAt;
 
@@ -284,6 +290,16 @@ public class Booking {
             return this;
         }
 
+        public Builder couponCode(String couponCode) {
+            this.couponCode = couponCode;
+            return this;
+        }
+
+        public Builder discountAmount(BigDecimal discountAmount) {
+            this.discountAmount = discountAmount;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -302,6 +318,8 @@ public class Booking {
                     expiresAt, createdAt, updatedAt);
             booking.setTicketId(ticketId);
             booking.setTicketNumber(ticketNumber);
+            booking.setCouponCode(couponCode);
+            booking.setDiscountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO);
             return booking;
         }
     }
@@ -520,6 +538,22 @@ public class Booking {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
     }
 
     @Override

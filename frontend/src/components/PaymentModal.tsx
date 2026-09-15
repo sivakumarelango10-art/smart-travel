@@ -12,7 +12,8 @@ import {
   Check,
   X,
   Sparkles,
-  Zap
+  Zap,
+  Tag
 } from 'lucide-react';
 import { Booking, PaymentOrder } from '../types/api';
 import { paymentService } from '../services/paymentService';
@@ -340,12 +341,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div>
                   <span className="text-[10px] text-slate-400 block font-medium">Passenger</span>
                   <span className="text-xs font-semibold text-slate-200">{leadPassenger}</span>
+                  {booking.couponCode && (
+                    <div className="flex items-center gap-1 mt-1 text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 w-fit">
+                      <Tag className="w-3 h-3" />
+                      <span>{booking.couponCode} applied</span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 block font-medium">Total Amount Due</span>
                   <div className="text-lg font-black text-amber-400">
                     <AnimatedPrice value={booking.totalAmount || 0} />
                   </div>
+                  {Boolean(booking.discountAmount && booking.discountAmount > 0) && (
+                    <span className="text-[11px] text-emerald-400 font-bold block">
+                      Saved ₹{booking.discountAmount?.toLocaleString('en-IN')}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

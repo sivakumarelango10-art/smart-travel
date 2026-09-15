@@ -16,6 +16,12 @@ public class FareBreakdownDto {
     @Schema(description = "Airport and convenience fees", example = "150.00")
     private BigDecimal fees;
 
+    @Schema(description = "Promotional discount amount applied", example = "1500.00")
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Schema(description = "Coupon code applied", example = "SMARTFLY25")
+    private String couponCode;
+
     @Schema(description = "Total payable amount", example = "5750.00")
     private BigDecimal totalAmount;
 
@@ -30,10 +36,23 @@ public class FareBreakdownDto {
 
     public FareBreakdownDto(BigDecimal baseFare, BigDecimal taxes, BigDecimal fees,
                             BigDecimal totalAmount, String currency, int passengerCount) {
+        this(baseFare, taxes, fees, BigDecimal.ZERO, null, totalAmount, currency, passengerCount);
+    }
+
+    public FareBreakdownDto(BigDecimal baseFare, BigDecimal taxes, BigDecimal fees,
+                            BigDecimal discountAmount, String couponCode,
+                            BigDecimal totalAmount, String currency, int passengerCount) {
         this.baseFare = baseFare != null ? baseFare : BigDecimal.ZERO;
         this.taxes = taxes != null ? taxes : BigDecimal.ZERO;
         this.fees = fees != null ? fees : BigDecimal.ZERO;
-        this.totalAmount = totalAmount != null ? totalAmount : this.baseFare.add(this.taxes).add(this.fees);
+        this.discountAmount = discountAmount != null ? discountAmount : BigDecimal.ZERO;
+        this.couponCode = couponCode;
+        if (totalAmount != null) {
+            this.totalAmount = totalAmount;
+        } else {
+            BigDecimal subtotal = this.baseFare.add(this.taxes).add(this.fees);
+            this.totalAmount = subtotal.subtract(this.discountAmount).max(BigDecimal.ZERO);
+        }
         this.currency = currency != null ? currency : "INR";
         this.passengerCount = passengerCount > 0 ? passengerCount : 1;
     }
@@ -46,6 +65,8 @@ public class FareBreakdownDto {
         private BigDecimal baseFare = BigDecimal.ZERO;
         private BigDecimal taxes = BigDecimal.ZERO;
         private BigDecimal fees = BigDecimal.ZERO;
+        private BigDecimal discountAmount = BigDecimal.ZERO;
+        private String couponCode;
         private BigDecimal totalAmount;
         private String currency = "INR";
         private int passengerCount = 1;
@@ -65,6 +86,16 @@ public class FareBreakdownDto {
             return this;
         }
 
+        public Builder discountAmount(BigDecimal discountAmount) {
+            this.discountAmount = discountAmount;
+            return this;
+        }
+
+        public Builder couponCode(String couponCode) {
+            this.couponCode = couponCode;
+            return this;
+        }
+
         public Builder totalAmount(BigDecimal totalAmount) {
             this.totalAmount = totalAmount;
             return this;
@@ -81,8 +112,8 @@ public class FareBreakdownDto {
         }
 
         public FareBreakdownDto build() {
-            BigDecimal computed = totalAmount != null ? totalAmount : baseFare.add(taxes).add(fees);
-            return new FareBreakdownDto(baseFare, taxes, fees, computed, currency, passengerCount);
+            BigDecimal computed = totalAmount != null ? totalAmount : baseFare.add(taxes).add(fees).subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO).max(BigDecimal.ZERO);
+            return new FareBreakdownDto(baseFare, taxes, fees, discountAmount, couponCode, computed, currency, passengerCount);
         }
     }
 
@@ -108,6 +139,22 @@ public class FareBreakdownDto {
 
     public void setFees(BigDecimal fees) {
         this.fees = fees;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
     }
 
     public BigDecimal getTotalAmount() {

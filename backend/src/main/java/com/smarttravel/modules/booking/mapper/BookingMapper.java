@@ -43,6 +43,8 @@ public class BookingMapper {
                 .passengers(toPassengerDtoList(booking.getPassengers()))
                 .fareBreakdown(booking.getFareBreakdown())
                 .totalAmount(booking.getTotalAmount())
+                .couponCode(booking.getCouponCode())
+                .discountAmount(booking.getDiscountAmount())
                 .currency(booking.getCurrency())
                 .status(booking.getStatus())
                 .cancelledAt(booking.getCancelledAt())

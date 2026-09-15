@@ -159,6 +159,11 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   }, [selectedSeats, safeSeats]);
 
   const handleSeatClick = (seat: Seat) => {
+    if (cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass) {
+      setConflictError(`Seat ${seat.seatNumber} is reserved for ${seat.cabinClass.replace('_', ' ')}. Please select an available seat in your chosen ${cabinClass.replace('_', ' ')} cabin.`);
+      return;
+    }
+
     if (seat.status !== 'AVAILABLE' && !selectedSeats.includes(seat.seatNumber)) {
       return;
     }
@@ -318,8 +323,9 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const seat = leftSeats.find((s) => getSeatColumn(s) === col);
                         if (!seat) return <div key={col} className="w-8 h-8"></div>;
 
+                        const isWrongCabin = Boolean(cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass);
                         const isSelected = selectedSeats.includes(seat.seatNumber);
-                        const isAvailable = seat.status === 'AVAILABLE';
+                        const isAvailable = seat.status === 'AVAILABLE' && !isWrongCabin;
                         const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
                         const matchesPref = isPreferredSeat(seat, rowNum, col);
 
@@ -333,12 +339,18 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
                             animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
                             transition={{ duration: 0.2 }}
-                            title={`${seat.seatNumber} • ${seat.cabinClass} ${
-                              isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
-                            } ${matchesPref ? '• Matches your preference!' : ''}`}
+                            title={
+                              isWrongCabin
+                                ? `${seat.seatNumber} • Reserved for ${seat.cabinClass?.replace('_', ' ')} travelers`
+                                : `${seat.seatNumber} • ${seat.cabinClass} ${
+                                    isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
+                                  } ${matchesPref ? '• Matches your preference!' : ''}`
+                            }
                             className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
                               isSelected
                                 ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
+                                : isWrongCabin
+                                ? 'bg-[#0B0C10] border border-white/5 text-slate-700 opacity-25 cursor-not-allowed'
                                 : isAvailable
                                 ? isExtraLegroom
                                   ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
@@ -371,8 +383,9 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                         const seat = rightSeats.find((s) => getSeatColumn(s) === col);
                         if (!seat) return <div key={col} className="w-8 h-8"></div>;
 
+                        const isWrongCabin = Boolean(cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass);
                         const isSelected = selectedSeats.includes(seat.seatNumber);
-                        const isAvailable = seat.status === 'AVAILABLE';
+                        const isAvailable = seat.status === 'AVAILABLE' && !isWrongCabin;
                         const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
                         const matchesPref = isPreferredSeat(seat, rowNum, col);
 
@@ -386,12 +399,18 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                             whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
                             animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
                             transition={{ duration: 0.2 }}
-                            title={`${seat.seatNumber} • ${seat.cabinClass} ${
-                              isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
-                            } ${matchesPref ? '• Matches your preference!' : ''}`}
+                            title={
+                              isWrongCabin
+                                ? `${seat.seatNumber} • Reserved for ${seat.cabinClass?.replace('_', ' ')} travelers`
+                                : `${seat.seatNumber} • ${seat.cabinClass} ${
+                                    isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
+                                  } ${matchesPref ? '• Matches your preference!' : ''}`
+                            }
                             className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
                               isSelected
                                 ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
+                                : isWrongCabin
+                                ? 'bg-[#0B0C10] border border-white/5 text-slate-700 opacity-25 cursor-not-allowed'
                                 : isAvailable
                                 ? isExtraLegroom
                                   ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'

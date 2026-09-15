@@ -22,6 +22,8 @@ export interface BookingCreateRequest {
   cabinClass: CabinClass;
   passengers: Passenger[];
   priceFreezeId?: string;
+  couponCode?: string;
+  discountAmount?: number;
 }
 
 export interface Booking {
@@ -43,6 +45,8 @@ export interface Booking {
   passengers: Passenger[];
   fareBreakdown: FareBreakdown;
   totalAmount: number;
+  couponCode?: string;
+  discountAmount?: number;
   currency: string;
   status: BookingStatus;
   ticketId?: string;

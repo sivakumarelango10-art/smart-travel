@@ -27,6 +27,7 @@ export interface FareBreakdown {
   airportFee: number;
   serviceFee: number;
   discountAmount?: number;
+  couponCode?: string;
   totalFare: number;
   currency: string;
 }

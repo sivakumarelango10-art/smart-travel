@@ -189,6 +189,46 @@ class BookingServiceTest {
     }
 
     @Test
+    @DisplayName("Create booking successfully applies coupon discount and updates total amount")
+    void testCreateBooking_WithCouponDiscount() {
+        BookingCreateRequest request = BookingCreateRequest.builder()
+                .flightId("fl-123")
+                .cabinClass(CabinClass.ECONOMY)
+                .passengers(List.of(samplePassengerDto))
+                .couponCode("SMARTFLY25")
+                .build();
+
+        FareBreakdownDto fareDto = FareBreakdownDto.builder()
+                .baseFare(new BigDecimal("5000.00"))
+                .taxes(new BigDecimal("600.00"))
+                .fees(new BigDecimal("150.00"))
+                .totalAmount(new BigDecimal("5750.00"))
+                .currency("INR")
+                .passengerCount(1)
+                .build();
+
+        when(flightRepository.findByIdAndActiveTrue("fl-123")).thenReturn(Optional.of(sampleFlight));
+        when(reservationService.reserveSeats("fl-123", CabinClass.ECONOMY, 1)).thenReturn(true);
+        when(fareCalculationService.calculateFare(any(BigDecimal.class), eq(CabinClass.ECONOMY), eq(1))).thenReturn(fareDto);
+        when(pnrGenerator.generatePnr()).thenReturn("STDISCOUNT");
+        when(bookingRepository.existsByBookingReference("STDISCOUNT")).thenReturn(false);
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> {
+            Booking b = inv.getArgument(0);
+            b.setId("bk-disc");
+            return b;
+        });
+
+        BookingResponse response = bookingService.createBooking(request, "user-1", "john.doe@example.com");
+
+        assertNotNull(response);
+        assertEquals("bk-disc", response.getId());
+        assertEquals("SMARTFLY25", response.getCouponCode());
+        assertEquals(new BigDecimal("1500.00"), response.getDiscountAmount());
+        // Original: 5750.00 - 1500.00 = 4250.00
+        assertEquals(new BigDecimal("4250.00"), response.getTotalAmount());
+    }
+
+    @Test
     @DisplayName("Create booking throws ResourceNotFoundException if flight does not exist or is inactive")
     void testCreateBooking_FlightNotFound() {
         BookingCreateRequest request = BookingCreateRequest.builder()

@@ -33,6 +33,12 @@ public class BookingCreateRequest {
     @Schema(description = "Optional active Price Freeze ID to apply locked fare snapshot", example = "66c1e101f1a2b3c4d5e6f703")
     private String priceFreezeId;
 
+    @Schema(description = "Optional promotional coupon code applied at checkout", example = "SMARTFLY25")
+    private String couponCode;
+
+    @Schema(description = "Optional pre-calculated discount amount", example = "1500.00")
+    private java.math.BigDecimal discountAmount;
+
     public BookingCreateRequest() {
     }
 
@@ -49,6 +55,16 @@ public class BookingCreateRequest {
         this.priceFreezeId = priceFreezeId;
     }
 
+    public BookingCreateRequest(String flightId, CabinClass cabinClass, List<PassengerDto> passengers,
+                                String priceFreezeId, String couponCode, java.math.BigDecimal discountAmount) {
+        this.flightId = flightId;
+        this.cabinClass = cabinClass;
+        this.passengers = passengers;
+        this.priceFreezeId = priceFreezeId;
+        this.couponCode = couponCode;
+        this.discountAmount = discountAmount;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -58,6 +74,8 @@ public class BookingCreateRequest {
         private CabinClass cabinClass;
         private List<PassengerDto> passengers;
         private String priceFreezeId;
+        private String couponCode;
+        private java.math.BigDecimal discountAmount;
 
         public Builder flightId(String flightId) {
             this.flightId = flightId;
@@ -79,8 +97,18 @@ public class BookingCreateRequest {
             return this;
         }
 
+        public Builder couponCode(String couponCode) {
+            this.couponCode = couponCode;
+            return this;
+        }
+
+        public Builder discountAmount(java.math.BigDecimal discountAmount) {
+            this.discountAmount = discountAmount;
+            return this;
+        }
+
         public BookingCreateRequest build() {
-            return new BookingCreateRequest(flightId, cabinClass, passengers, priceFreezeId);
+            return new BookingCreateRequest(flightId, cabinClass, passengers, priceFreezeId, couponCode, discountAmount);
         }
     }
 
@@ -114,5 +142,21 @@ public class BookingCreateRequest {
 
     public void setPriceFreezeId(String priceFreezeId) {
         this.priceFreezeId = priceFreezeId;
+    }
+
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
+    }
+
+    public java.math.BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(java.math.BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
     }
 }
