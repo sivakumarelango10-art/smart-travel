@@ -22,6 +22,8 @@ public interface FlightRepository extends MongoRepository<Flight, String>, Fligh
 
     boolean existsByFlightNumber(String flightNumber);
 
+    List<Flight> findByFlightNumberIn(java.util.Collection<String> flightNumbers);
+
     long countByDepartureTimeBetweenAndActiveTrue(Instant start, Instant end);
 
     @Query(value = "{}", fields = "{ 'flightNumber' : 1, '_id' : 0 }")

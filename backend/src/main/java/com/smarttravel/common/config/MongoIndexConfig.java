@@ -53,6 +53,11 @@ public class MongoIndexConfig {
                     .on("active", Sort.Direction.ASC)
                     .on("departureTime", Sort.Direction.ASC)
                     .named("idx_flight_esr_composite"));
+            ensureIndexSafely("flights", new Index().on("departureAirport.code", Sort.Direction.ASC)
+                    .on("arrivalAirport.code", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .on("basePrice", Sort.Direction.ASC)
+                    .named("idx_flight_cheapest_composite"));
             ensureIndexSafely("flights", new Index().on("flightNumber", Sort.Direction.ASC)
                     .named("idx_flight_number"));
             ensureIndexSafely("flights", new Index().on("status", Sort.Direction.ASC)
@@ -67,11 +72,26 @@ public class MongoIndexConfig {
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_booking_user_status_date"));
+            ensureIndexSafely("bookings", new Index().on("status", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_booking_status_date"));
+            ensureIndexSafely("bookings", new Index().on("status", Sort.Direction.ASC)
+                    .on("expiresAt", Sort.Direction.ASC)
+                    .named("idx_booking_status_expires"));
+            ensureIndexSafely("bookings", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .named("idx_booking_flight_status"));
             ensureUniqueIndexSafely("bookings", "bookingReference", "idx_booking_reference_unique");
 
             // 3. Tickets collection indexes
             ensureUniqueIndexSafely("tickets", "bookingId", "idx_ticket_booking_id");
             ensureTicketNumberUniqueIndex();
+            ensureIndexSafely("tickets", new Index().on("userId", Sort.Direction.ASC)
+                    .on("issuedAt", Sort.Direction.DESC)
+                    .named("idx_ticket_user_issued"));
+            ensureIndexSafely("tickets", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .named("idx_ticket_flight_status"));
 
             // 4. Hotels collection compound indexes
             ensureIndexSafely("hotels", new Index().on("address.city", Sort.Direction.ASC)
@@ -81,6 +101,9 @@ public class MongoIndexConfig {
             ensureIndexSafely("hotels", new Index().on("nearestAirportCode", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .named("idx_hotel_airport_active"));
+            ensureIndexSafely("hotels", new Index().on("active", Sort.Direction.ASC)
+                    .on("averageRating", Sort.Direction.DESC)
+                    .named("idx_hotel_active_rating"));
 
             // 5. Rooms collection indexes
             ensureIndexSafely("rooms", new Index().on("hotelId", Sort.Direction.ASC)
@@ -93,26 +116,47 @@ public class MongoIndexConfig {
                     .on("status", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_review_target_status_date"));
+            ensureIndexSafely("reviews", new Index().on("status", Sort.Direction.ASC)
+                    .on("flagCount", Sort.Direction.DESC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_review_status_flag_date"));
+            ensureIndexSafely("reviews", new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_review_user_date"));
 
             // 7. Price Freezes collection compound indexes
             ensureIndexSafely("price_freezes", new Index().on("userId", Sort.Direction.ASC)
                     .on("flightId", Sort.Direction.ASC)
                     .on("status", Sort.Direction.ASC)
                     .named("idx_freeze_user_flight_status"));
-
-            // 8. User Activity / Recommendations
-            ensureIndexSafely("user_activities", new Index().on("userId", Sort.Direction.ASC)
-                    .on("eventType", Sort.Direction.ASC)
+            ensureIndexSafely("price_freezes", new Index().on("status", Sort.Direction.ASC)
+                    .on("expiresAt", Sort.Direction.ASC)
+                    .named("idx_freeze_status_expires"));
+            ensureIndexSafely("price_freezes", new Index().on("userId", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
-                    .named("idx_user_activity_user_event_date"));
+                    .named("idx_freeze_user_created"));
 
-            // 9. Notifications collection
+            // 8. User Activity / Recommendations (correct field is activityType)
+            ensureIndexSafely("user_activities", new Index().on("userId", Sort.Direction.ASC)
+                    .on("activityType", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_user_activity_user_type_date"));
+            ensureIndexSafely("user_activities", new Index().on("targetId", Sort.Direction.ASC)
+                    .on("activityType", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_user_activity_target_type_date"));
+
+            // 9. Notifications collection (correct field is read)
             ensureIndexSafely("notifications", new Index().on("userId", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_notification_user_created_date"));
             ensureIndexSafely("notifications", new Index().on("userId", Sort.Direction.ASC)
                     .on("read", Sort.Direction.ASC)
                     .named("idx_notification_user_read_status"));
+            ensureIndexSafely("notifications", new Index().on("userId", Sort.Direction.ASC)
+                    .on("read", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_notification_user_read_created"));
 
             // 10. Payments collection
             ensureIndexSafely("payments", new Index().on("bookingId", Sort.Direction.ASC)
@@ -120,6 +164,16 @@ public class MongoIndexConfig {
             ensureIndexSafely("payments", new Index().on("paymentStatus", Sort.Direction.ASC)
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_payment_status_date"));
+            ensureIndexSafely("payments", new Index().on("razorpayOrderId", Sort.Direction.ASC)
+                    .named("idx_payment_razorpay_order_id"));
+            ensureIndexSafely("payments", new Index().on("razorpayPaymentId", Sort.Direction.ASC)
+                    .named("idx_payment_razorpay_payment_id"));
+            ensureIndexSafely("payments", new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_payment_user_date"));
+            ensureIndexSafely("payments", new Index().on("bookingId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_payment_booking_date"));
 
             // 11. Flight Price Histories collection compound indexes
             ensureIndexSafely("flight_price_histories", new Index().on("flightId", Sort.Direction.ASC)
@@ -135,6 +189,9 @@ public class MongoIndexConfig {
                     .on("enabled", Sort.Direction.ASC)
                     .on("priority", Sort.Direction.ASC)
                     .named("idx_pricing_rule_type_enabled_prio"));
+            ensureIndexSafely("dynamic_pricing_rules", new Index().on("enabled", Sort.Direction.ASC)
+                    .on("priority", Sort.Direction.ASC)
+                    .named("idx_pricing_rule_enabled_prio"));
 
             // 13. Hotel Bookings collection compound indexes
             ensureIndexSafely("hotel_bookings", new Index().on("userId", Sort.Direction.ASC)
@@ -148,6 +205,7 @@ public class MongoIndexConfig {
                     .on("createdAt", Sort.Direction.DESC)
                     .named("idx_hotel_booking_hotel_date"));
             ensureUniqueIndexSafely("hotel_bookings", "confirmationNumber", "idx_hotel_booking_conf_unique");
+            ensureUniqueIndexSafely("hotel_bookings", "bookingReference", "idx_hotel_booking_reference_unique");
 
             // 14. Tracked Flights collection compound indexes
             ensureIndexSafely("tracked_flights", new Index().on("userId", Sort.Direction.ASC)
@@ -159,6 +217,63 @@ public class MongoIndexConfig {
 
             // 15. Users collection unique email index
             ensureUniqueIndexSafely("users", "email", "idx_user_email_unique");
+
+            // 16. Check-ins collection indexes (Critical: previously had zero indexes except _id)
+            ensureUniqueIndexSafely("check_ins", "bookingId", "idx_checkin_booking_id");
+            ensureUniqueIndexSafely("check_ins", "checkInNumber", "idx_checkin_number_unique");
+            ensureIndexSafely("check_ins", new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_checkin_user_date"));
+
+            // 17. Seats collection indexes (39,600+ documents - prevents in-memory sort on seatmap render)
+            ensureIndexSafely("seats", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("rowNumber", Sort.Direction.ASC)
+                    .on("column", Sort.Direction.ASC)
+                    .named("idx_seat_flight_row_col"));
+            ensureIndexSafely("seats", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("cabinClass", Sort.Direction.ASC)
+                    .on("rowNumber", Sort.Direction.ASC)
+                    .on("column", Sort.Direction.ASC)
+                    .named("idx_seat_flight_cabin_row_col"));
+            ensureIndexSafely("seats", new Index().on("bookingId", Sort.Direction.ASC)
+                    .named("idx_seat_booking_id"));
+            ensureIndexSafely("seats", new Index().on("status", Sort.Direction.ASC)
+                    .on("expiresAt", Sort.Direction.ASC)
+                    .named("idx_seat_status_expiry"));
+
+            // 18. Refunds collection compound indexes
+            ensureIndexSafely("refunds", new Index().on("status", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_refund_status_date"));
+            ensureIndexSafely("refunds", new Index().on("paymentId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .named("idx_refund_payment_status"));
+            ensureIndexSafely("refunds", new Index().on("bookingId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .named("idx_refund_booking_status"));
+            ensureIndexSafely("refunds", new Index().on("userId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_refund_user_date"));
+
+            // 19. Flight Disruptions collection compound indexes
+            ensureIndexSafely("flight_disruptions", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_disruption_flight_created"));
+            ensureIndexSafely("flight_disruptions", new Index().on("flightId", Sort.Direction.ASC)
+                    .on("status", Sort.Direction.ASC)
+                    .named("idx_disruption_flight_status"));
+            ensureIndexSafely("flight_disruptions", new Index().on("status", Sort.Direction.ASC)
+                    .on("createdAt", Sort.Direction.DESC)
+                    .named("idx_disruption_status_date"));
+
+            // 20. Boarding Passes collection compound indexes
+            ensureIndexSafely("boarding_passes", new Index().on("bookingId", Sort.Direction.ASC)
+                    .named("idx_bp_booking_id"));
+            ensureIndexSafely("boarding_passes", new Index().on("bookingReference", Sort.Direction.ASC)
+                    .named("idx_bp_booking_ref"));
+            ensureIndexSafely("boarding_passes", new Index().on("userId", Sort.Direction.ASC)
+                    .on("issuedAt", Sort.Direction.DESC)
+                    .named("idx_bp_user_issued"));
 
             log.info("All MongoDB performance indexes successfully verified and initialized.");
         } catch (Exception ex) {

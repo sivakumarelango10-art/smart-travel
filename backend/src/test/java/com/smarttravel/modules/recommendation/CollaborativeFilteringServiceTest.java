@@ -71,6 +71,7 @@ class CollaborativeFilteringServiceTest {
         UserActivity u2Goa = UserActivity.builder().userId("user2").activityType(UserActivityType.BOOK).targetId("GOI").build();
         UserActivity u2Bali = UserActivity.builder().userId("user2").activityType(UserActivityType.BOOK).targetId("DPS").build();
 
+        when(activityRepository.existsByUserId("userA")).thenReturn(true);
         when(activityRepository.findAll()).thenReturn(List.of(uAGoa, u1Goa, u1Bali, u2Goa, u2Bali));
 
         Map<String, Double> scores = collaborativeFilteringService.computeCollaborativeScores("userA", Set.of("DPS", "DEL"));

@@ -6,8 +6,6 @@ import com.smarttravel.modules.flight.model.CabinInventory;
 import com.smarttravel.modules.flight.model.Flight;
 import com.smarttravel.modules.flight.model.FlightStatus;
 import com.smarttravel.modules.flight.repository.FlightRepository;
-import com.smarttravel.modules.hotel.model.Hotel;
-import com.smarttravel.modules.hotel.model.HotelAddress;
 import com.smarttravel.modules.hotel.repository.HotelRepository;
 import com.smarttravel.modules.recommendation.dto.RecommendationItem;
 import com.smarttravel.modules.recommendation.dto.UserPreferenceProfileDto;
@@ -34,7 +32,6 @@ import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,8 +67,6 @@ class RecommendationServiceTest {
 
     private Flight flightMumbai;
     private Flight flightGoa;
-    private Hotel hotelMumbai;
-    private Hotel hotelGoa;
 
     @BeforeEach
     void setUp() {
@@ -108,26 +103,6 @@ class RecommendationServiceTest {
                 ))
                 .totalSeats(100)
                 .availableSeats(80)
-                .active(true)
-                .build();
-
-        hotelMumbai = Hotel.builder()
-                .id("ht-bom")
-                .name("The Oberoi Mumbai")
-                .address(HotelAddress.builder().city("Mumbai").state("Maharashtra").build())
-                .starRating(5)
-                .averageRating(4.8)
-                .baseNightlyRate(new BigDecimal("18000.00"))
-                .active(true)
-                .build();
-
-        hotelGoa = Hotel.builder()
-                .id("ht-goi")
-                .name("Taj Exotica Resort & Spa Goa")
-                .address(HotelAddress.builder().city("Goa").state("Goa").build())
-                .starRating(5)
-                .averageRating(4.9)
-                .baseNightlyRate(new BigDecimal("22000.00"))
                 .active(true)
                 .build();
     }

@@ -20,6 +20,9 @@ public class HealthResponse {
     @Schema(description = "Database connectivity health", example = "CONNECTED")
     private String database;
 
+    @Schema(description = "Database round-trip latency in milliseconds", example = "26")
+    private Long latencyMs;
+
     @Schema(description = "Response timestamp", example = "2026-08-18T16:25:00.000Z")
     private Instant timestamp = Instant.now();
 
@@ -27,10 +30,15 @@ public class HealthResponse {
     }
 
     public HealthResponse(String status, String service, String environment, String database, Instant timestamp) {
+        this(status, service, environment, database, null, timestamp);
+    }
+
+    public HealthResponse(String status, String service, String environment, String database, Long latencyMs, Instant timestamp) {
         this.status = status;
         this.service = service;
         this.environment = environment;
         this.database = database;
+        this.latencyMs = latencyMs;
         this.timestamp = timestamp != null ? timestamp : Instant.now();
     }
 
@@ -43,10 +51,16 @@ public class HealthResponse {
         private String service;
         private String environment;
         private String database;
+        private Long latencyMs;
         private Instant timestamp = Instant.now();
 
         public Builder status(String status) {
             this.status = status;
+            return this;
+        }
+
+        public Builder latencyMs(Long latencyMs) {
+            this.latencyMs = latencyMs;
             return this;
         }
 
@@ -71,7 +85,7 @@ public class HealthResponse {
         }
 
         public HealthResponse build() {
-            return new HealthResponse(status, service, environment, database, timestamp);
+            return new HealthResponse(status, service, environment, database, latencyMs, timestamp);
         }
     }
 
@@ -105,6 +119,14 @@ public class HealthResponse {
 
     public void setDatabase(String database) {
         this.database = database;
+    }
+
+    public Long getLatencyMs() {
+        return latencyMs;
+    }
+
+    public void setLatencyMs(Long latencyMs) {
+        this.latencyMs = latencyMs;
     }
 
     public Instant getTimestamp() {

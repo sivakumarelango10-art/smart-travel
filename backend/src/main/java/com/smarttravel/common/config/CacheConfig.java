@@ -33,28 +33,57 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager(
-                CACHE_ANALYTICS_OVERVIEW,
-                CACHE_ANALYTICS_REVENUE,
-                CACHE_ANALYTICS_BOOKINGS,
-                CACHE_ANALYTICS_FLIGHTS,
-                CACHE_ANALYTICS_SEATS,
-                CACHE_ANALYTICS_PAYMENTS,
-                CACHE_ANALYTICS_CUSTOMERS,
-                CACHE_ANALYTICS_DASHBOARD,
-                CACHE_AIRPORTS,
-                CACHE_FLIGHT_SEARCH,
-                CACHE_FLIGHT_DETAILS,
-                CACHE_HOTEL_STATIC,
-                CACHE_HOTEL_SEARCH,
-                CACHE_HOTEL_ROOMS,
-                CACHE_DYNAMIC_PRICING_RULES,
-                CACHE_RECOMMENDATIONS
-        );
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
 
+        // 1. Static Reference Data (Long TTL: 24 hours)
+        cacheManager.registerCustomCache(CACHE_AIRPORTS,
+                Caffeine.newBuilder().initialCapacity(50).maximumSize(500)
+                        .expireAfterWrite(24, TimeUnit.HOURS).recordStats().build());
+
+        // 2. Business Rules & Catalogs (Medium TTL: 15-30 minutes)
+        cacheManager.registerCustomCache(CACHE_DYNAMIC_PRICING_RULES,
+                Caffeine.newBuilder().initialCapacity(20).maximumSize(200)
+                        .expireAfterWrite(15, TimeUnit.MINUTES).recordStats().build());
+        cacheManager.registerCustomCache(CACHE_HOTEL_STATIC,
+                Caffeine.newBuilder().initialCapacity(100).maximumSize(1000)
+                        .expireAfterWrite(30, TimeUnit.MINUTES).recordStats().build());
+        cacheManager.registerCustomCache(CACHE_HOTEL_ROOMS,
+                Caffeine.newBuilder().initialCapacity(100).maximumSize(1000)
+                        .expireAfterWrite(15, TimeUnit.MINUTES).recordStats().build());
+
+        // 3. Search & Operational Inventory (Short TTL: 45-60 seconds)
+        cacheManager.registerCustomCache(CACHE_FLIGHT_DETAILS,
+                Caffeine.newBuilder().initialCapacity(200).maximumSize(3000)
+                        .expireAfterWrite(60, TimeUnit.SECONDS).recordStats().build());
+        cacheManager.registerCustomCache(CACHE_FLIGHT_SEARCH,
+                Caffeine.newBuilder().initialCapacity(300).maximumSize(4000)
+                        .expireAfterWrite(45, TimeUnit.SECONDS).recordStats().build());
+        cacheManager.registerCustomCache(CACHE_HOTEL_SEARCH,
+                Caffeine.newBuilder().initialCapacity(150).maximumSize(1500)
+                        .expireAfterWrite(60, TimeUnit.SECONDS).recordStats().build());
+
+        // 4. Recommendation Signals (TTL: 2 minutes)
+        cacheManager.registerCustomCache(CACHE_RECOMMENDATIONS,
+                Caffeine.newBuilder().initialCapacity(100).maximumSize(2000)
+                        .expireAfterWrite(120, TimeUnit.SECONDS).recordStats().build());
+
+        // 5. Analytics Aggregations (TTL: 90 seconds)
+        Caffeine<Object, Object> analyticsBuilder = Caffeine.newBuilder()
+                .initialCapacity(50).maximumSize(500)
+                .expireAfterWrite(90, TimeUnit.SECONDS).recordStats();
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_OVERVIEW, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_REVENUE, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_BOOKINGS, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_FLIGHTS, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_SEATS, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_PAYMENTS, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_CUSTOMERS, analyticsBuilder.build());
+        cacheManager.registerCustomCache(CACHE_ANALYTICS_DASHBOARD, analyticsBuilder.build());
+
+        // Default fallback configuration for any dynamically registered caches
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .initialCapacity(300)
-                .maximumSize(5000)
+                .initialCapacity(100)
+                .maximumSize(1000)
                 .expireAfterWrite(90, TimeUnit.SECONDS)
                 .recordStats());
 

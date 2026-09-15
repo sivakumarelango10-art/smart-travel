@@ -58,15 +58,15 @@ class HealthControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/health should also return UP status and HTTP 200")
-    void testGetV1HealthSuccess() throws Exception {
+    @DisplayName("GET /api/v1/health should return DEGRADED status when database is disconnected")
+    void testGetV1HealthDegradedWhenDbDisconnected() throws Exception {
         when(mongoTemplate.executeCommand(any(Document.class))).thenThrow(new RuntimeException("DB Connection timeout"));
 
         mockMvc.perform(get("/api/v1/health")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.status").value("UP"))
+                .andExpect(jsonPath("$.data.status").value("DEGRADED"))
                 .andExpect(jsonPath("$.data.service").value("SmartTravel Backend"))
                 .andExpect(jsonPath("$.data.database").value("DISCONNECTED"));
     }

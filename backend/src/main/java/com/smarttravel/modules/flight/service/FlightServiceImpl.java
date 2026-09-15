@@ -273,12 +273,16 @@ public class FlightServiceImpl implements FlightService {
             java.time.LocalDate date = criteria.getDepartureDate() != null ? criteria.getDepartureDate() : java.time.LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1);
             List<Flight> synthesized = synthesizeOnDemandFlights(criteria.getOrigin().trim().toUpperCase(), criteria.getDestination().trim().toUpperCase(), date);
             if (!synthesized.isEmpty()) {
-                List<Flight> toSave = new ArrayList<>();
-                for (Flight f : synthesized) {
-                    if (!flightRepository.existsByFlightNumber(f.getFlightNumber())) {
-                        toSave.add(f);
-                    }
-                }
+                List<String> flightNumbers = synthesized.stream().map(Flight::getFlightNumber).toList();
+                List<Flight> existingFlights = flightRepository.findByFlightNumberIn(flightNumbers);
+                java.util.Set<String> existingNumbers = existingFlights != null
+                        ? existingFlights.stream().map(Flight::getFlightNumber).collect(java.util.stream.Collectors.toSet())
+                        : java.util.Collections.emptySet();
+
+                List<Flight> toSave = synthesized.stream()
+                        .filter(f -> !existingNumbers.contains(f.getFlightNumber()))
+                        .toList();
+
                 if (!toSave.isEmpty()) {
                     flightRepository.saveAll(toSave);
                     log.info("Synthesized and persisted {} on-demand flights for route {} -> {} on {}", toSave.size(), criteria.getOrigin(), criteria.getDestination(), date);

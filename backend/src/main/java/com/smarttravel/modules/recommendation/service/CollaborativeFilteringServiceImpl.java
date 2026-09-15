@@ -43,15 +43,23 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
             return Collections.emptyMap();
         }
 
-        // Fetch user interactions across the platform
-        List<UserActivity> allActivities = activityRepository.findAll();
-        if (allActivities == null || allActivities.isEmpty()) {
+        // Fast O(1) check: exit immediately if target user has zero activities (avoid fetching platform activities)
+        if (!activityRepository.existsByUserId(userId)) {
             return Collections.emptyMap();
         }
 
-        // Fast check: exit immediately if target user has zero activities
-        boolean hasTargetUserActivity = allActivities.stream().anyMatch(a -> userId.equals(a.getUserId()));
-        if (!hasTargetUserActivity) {
+        // Fetch recent user interactions across the platform (windowed to prevent JVM heap exhaustion)
+        List<UserActivity> allActivities = null;
+        try {
+            java.time.Instant since = java.time.Instant.now().minus(90, java.time.temporal.ChronoUnit.DAYS);
+            allActivities = activityRepository.findByCreatedAtAfterOrderByCreatedAtDesc(
+                    since, org.springframework.data.domain.PageRequest.of(0, 5000));
+        } catch (Exception ignored) {}
+
+        if (allActivities == null || allActivities.isEmpty()) {
+            allActivities = activityRepository.findAll();
+        }
+        if (allActivities == null || allActivities.isEmpty()) {
             return Collections.emptyMap();
         }
 
@@ -120,7 +128,16 @@ public class CollaborativeFilteringServiceImpl implements CollaborativeFiltering
             return 1.0;
         }
 
-        List<UserActivity> allActivities = activityRepository.findAll();
+        List<UserActivity> allActivities = null;
+        try {
+            java.time.Instant since = java.time.Instant.now().minus(90, java.time.temporal.ChronoUnit.DAYS);
+            allActivities = activityRepository.findByCreatedAtAfterOrderByCreatedAtDesc(
+                    since, org.springframework.data.domain.PageRequest.of(0, 5000));
+        } catch (Exception ignored) {}
+
+        if (allActivities == null || allActivities.isEmpty()) {
+            allActivities = activityRepository.findAll();
+        }
         Map<String, Map<String, Double>> itemUserMatrix = new HashMap<>();
 
         for (UserActivity act : allActivities) {

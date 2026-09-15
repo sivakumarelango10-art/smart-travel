@@ -12,6 +12,8 @@ import java.util.List;
  */
 public interface UserActivityRepository extends MongoRepository<UserActivity, String> {
 
+    boolean existsByUserId(String userId);
+
     List<UserActivity> findByUserIdOrderByCreatedAtDesc(String userId);
 
     List<UserActivity> findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(

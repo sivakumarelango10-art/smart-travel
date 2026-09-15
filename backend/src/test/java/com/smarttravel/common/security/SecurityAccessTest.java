@@ -1,14 +1,36 @@
 package com.smarttravel.common.security;
 
 
+import com.smarttravel.modules.analytics.service.AnalyticsService;
 import com.smarttravel.modules.auth.controller.AuthController;
 import com.smarttravel.modules.auth.dto.UserResponse;
 import com.smarttravel.modules.auth.service.AuthService;
+import com.smarttravel.modules.booking.service.BookingService;
+import com.smarttravel.modules.booking.service.CheckInService;
 import com.smarttravel.modules.flight.controller.AdminFlightController;
 import com.smarttravel.modules.flight.controller.FlightController;
-
+import com.smarttravel.modules.flight.disruption.service.FlightDisruptionService;
+import com.smarttravel.modules.flight.impact.service.FlightImpactService;
 import com.smarttravel.modules.flight.service.FlightService;
+import com.smarttravel.modules.flight.service.SeatMapService;
+import com.smarttravel.modules.flight.simulation.service.FlightSimulationService;
+import com.smarttravel.modules.flight.tracking.service.FlightTrackingService;
 import com.smarttravel.modules.health.controller.HealthController;
+import com.smarttravel.modules.hotel.controller.HotelController;
+import com.smarttravel.modules.hotel.model.Hotel;
+import com.smarttravel.modules.hotel.model.RoomCategory;
+import com.smarttravel.modules.hotel.model.RoomType;
+import com.smarttravel.modules.hotel.service.HotelService;
+import com.smarttravel.modules.notification.service.NotificationService;
+import com.smarttravel.modules.payment.refund.service.RefundEligibilityService;
+import com.smarttravel.modules.payment.refund.service.RefundService;
+import com.smarttravel.modules.payment.service.PaymentService;
+import com.smarttravel.modules.payment.webhook.service.PaymentWebhookService;
+import com.smarttravel.modules.pricing.service.DynamicPricingService;
+import com.smarttravel.modules.pricing.service.PriceFreezeService;
+import com.smarttravel.modules.recommendation.service.RecommendationService;
+import com.smarttravel.modules.review.service.ReviewService;
+import com.smarttravel.modules.ticket.service.TicketService;
 import com.smarttravel.modules.user.model.AccountStatus;
 import org.bson.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -34,11 +56,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import com.smarttravel.modules.hotel.controller.HotelController;
-import com.smarttravel.modules.hotel.model.Hotel;
-import com.smarttravel.modules.hotel.model.RoomCategory;
-import com.smarttravel.modules.hotel.model.RoomType;
 
 @WebMvcTest(
         controllers = {
@@ -83,61 +100,61 @@ class SecurityAccessTest {
     private FlightService flightService;
 
     @MockBean
-    private com.smarttravel.modules.flight.simulation.service.FlightSimulationService flightSimulationService;
+    private FlightSimulationService flightSimulationService;
 
     @MockBean
-    private com.smarttravel.modules.booking.service.BookingService bookingService;
+    private BookingService bookingService;
 
     @MockBean
-    private com.smarttravel.modules.payment.service.PaymentService paymentService;
+    private PaymentService paymentService;
 
     @MockBean
-    private com.smarttravel.modules.payment.webhook.service.PaymentWebhookService paymentWebhookService;
+    private PaymentWebhookService paymentWebhookService;
 
     @MockBean
-    private com.smarttravel.modules.ticket.service.TicketService ticketService;
+    private TicketService ticketService;
 
     @MockBean
-    private com.smarttravel.modules.flight.service.SeatMapService seatMapService;
+    private SeatMapService seatMapService;
 
     @MockBean
-    private com.smarttravel.modules.booking.service.CheckInService checkInService;
+    private CheckInService checkInService;
 
     @MockBean
-    private com.smarttravel.modules.flight.disruption.service.FlightDisruptionService flightDisruptionService;
+    private FlightDisruptionService flightDisruptionService;
 
     @MockBean
-    private com.smarttravel.modules.flight.impact.service.FlightImpactService flightImpactService;
+    private FlightImpactService flightImpactService;
 
     @MockBean
-    private com.smarttravel.modules.payment.refund.service.RefundService refundService;
+    private RefundService refundService;
 
     @MockBean
-    private com.smarttravel.modules.payment.refund.service.RefundEligibilityService refundEligibilityService;
+    private RefundEligibilityService refundEligibilityService;
 
     @MockBean
-    private com.smarttravel.modules.notification.service.NotificationService notificationService;
+    private NotificationService notificationService;
 
     @MockBean
-    private com.smarttravel.modules.analytics.service.AnalyticsService analyticsService;
+    private AnalyticsService analyticsService;
 
     @MockBean
-    private com.smarttravel.modules.hotel.service.HotelService hotelService;
+    private HotelService hotelService;
 
     @MockBean
-    private com.smarttravel.modules.pricing.service.DynamicPricingService dynamicPricingService;
+    private DynamicPricingService dynamicPricingService;
 
     @MockBean
-    private com.smarttravel.modules.pricing.service.PriceFreezeService priceFreezeService;
+    private PriceFreezeService priceFreezeService;
 
     @MockBean
-    private com.smarttravel.modules.review.service.ReviewService reviewService;
+    private ReviewService reviewService;
 
     @MockBean
-    private com.smarttravel.modules.recommendation.service.RecommendationService recommendationService;
+    private RecommendationService recommendationService;
 
     @MockBean
-    private com.smarttravel.modules.flight.tracking.service.FlightTrackingService flightTrackingService;
+    private FlightTrackingService flightTrackingService;
 
 
 

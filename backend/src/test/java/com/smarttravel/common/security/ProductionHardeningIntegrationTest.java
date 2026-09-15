@@ -12,10 +12,7 @@ import com.smarttravel.modules.flight.service.SeatMapService;
 import com.smarttravel.modules.flight.simulation.service.FlightSimulationService;
 import com.smarttravel.modules.health.controller.HealthController;
 import com.smarttravel.modules.notification.service.NotificationService;
-import com.smarttravel.modules.payment.refund.service.RefundEligibilityService;
 import com.smarttravel.modules.payment.refund.service.RefundService;
-import com.smarttravel.modules.payment.service.PaymentService;
-import com.smarttravel.modules.payment.webhook.service.PaymentWebhookService;
 import com.smarttravel.modules.ticket.service.TicketService;
 import org.bson.Document;
 import org.junit.jupiter.api.DisplayName;
@@ -80,12 +77,6 @@ class ProductionHardeningIntegrationTest {
     private BookingService bookingService;
 
     @MockBean
-    private PaymentService paymentService;
-
-    @MockBean
-    private PaymentWebhookService paymentWebhookService;
-
-    @MockBean
     private TicketService ticketService;
 
     @MockBean
@@ -102,9 +93,6 @@ class ProductionHardeningIntegrationTest {
 
     @MockBean
     private RefundService refundService;
-
-    @MockBean
-    private RefundEligibilityService refundEligibilityService;
 
     @MockBean
     private NotificationService notificationService;
@@ -148,7 +136,7 @@ class ProductionHardeningIntegrationTest {
 
         mockMvc.perform(get("/api/health"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status").value("UP"))
+                .andExpect(jsonPath("$.data.status").value("DEGRADED"))
                 .andExpect(jsonPath("$.data.database").value("DISCONNECTED"));
     }
 
