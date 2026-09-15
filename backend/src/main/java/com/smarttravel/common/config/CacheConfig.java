@@ -56,11 +56,11 @@ public class CacheConfig {
                 Caffeine.newBuilder().initialCapacity(200).maximumSize(3000)
                         .expireAfterWrite(60, TimeUnit.SECONDS).recordStats().build());
         cacheManager.registerCustomCache(CACHE_FLIGHT_SEARCH,
-                Caffeine.newBuilder().initialCapacity(300).maximumSize(4000)
-                        .expireAfterWrite(45, TimeUnit.SECONDS).recordStats().build());
+                Caffeine.newBuilder().initialCapacity(500).maximumSize(5000)
+                        .expireAfterWrite(5, TimeUnit.MINUTES).recordStats().build());
         cacheManager.registerCustomCache(CACHE_HOTEL_SEARCH,
-                Caffeine.newBuilder().initialCapacity(150).maximumSize(1500)
-                        .expireAfterWrite(60, TimeUnit.SECONDS).recordStats().build());
+                Caffeine.newBuilder().initialCapacity(200).maximumSize(2000)
+                        .expireAfterWrite(5, TimeUnit.MINUTES).recordStats().build());
 
         // 4. Recommendation Signals (TTL: 2 minutes)
         cacheManager.registerCustomCache(CACHE_RECOMMENDATIONS,

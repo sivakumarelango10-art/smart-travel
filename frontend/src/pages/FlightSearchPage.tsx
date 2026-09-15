@@ -313,9 +313,16 @@ export const FlightSearchPage: React.FC = () => {
                 <h2 className="font-black text-white text-base">
                   Available Flights
                 </h2>
-                <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                  {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
-                </span>
+                {loading && flights.length === 0 ? (
+                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20 flex items-center gap-1.5 shadow-glow-gold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    Searching live schedules...
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                    {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
+                  </span>
+                )}
                 {timeAgoText && (
                   <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-glow-emerald">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -361,14 +368,19 @@ export const FlightSearchPage: React.FC = () => {
           )}
 
           {/* Flight Results Content */}
-          {loading ? (
+          {loading && flights.length === 0 ? (
             <div className="space-y-4 py-2">
               {slowMessage && (
-                <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs flex items-center gap-3 animate-fade-in shadow-glow-gold">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0" />
-                  <div className="flex-1 font-semibold">
-                    {slowMessage}
+                <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs flex items-center justify-between gap-3 animate-fade-in shadow-glow-gold">
+                  <div className="flex items-center gap-3">
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0" />
+                    <div className="font-semibold">
+                      {slowMessage}
+                    </div>
                   </div>
+                  <span className="text-[10px] uppercase font-mono tracking-wider bg-amber-400/20 px-2 py-0.5 rounded text-amber-300 font-bold shrink-0">
+                    LIVE SYNC
+                  </span>
                 </div>
               )}
               {[1, 2, 3, 4].map((i) => (
