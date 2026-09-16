@@ -129,17 +129,7 @@ public class BookingServiceImpl implements BookingService {
         // 1. Fetch flight and validate bookability
         Flight flight = flightRepository.findByIdAndActiveTrue(request.getFlightId())
                 .or(() -> flightRepository.findById(request.getFlightId()))
-                .or(() -> {
-                    String id = request.getFlightId();
-                    if (id != null && id.startsWith("instant_")) {
-                        String[] parts = id.split("_");
-                        if (parts.length >= 3) {
-                            String code = parts[1].toUpperCase() + "-" + parts[2];
-                            return flightRepository.findByFlightNumber(code);
-                        }
-                    }
-                    return java.util.Optional.empty();
-                })
+                .or(() -> com.smarttravel.modules.flight.service.InstantFlightResolver.resolveOrProvision(flightRepository, request.getFlightId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", request.getFlightId()));
 
         if (!BOOKABLE_STATUSES.contains(flight.getStatus())) {

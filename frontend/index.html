@@ -17,6 +17,23 @@
     <meta name="application-name" content="SmartTravel" />
     <meta name="msapplication-TileColor" content="#020617" />
     <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
+    <!-- Proactive Cloud Backend Preconnect & Standby Wakeup -->
+    <link rel="dns-prefetch" href="https://smarttravel-backend-6qkl.onrender.com" />
+    <link rel="preconnect" href="https://smarttravel-backend-6qkl.onrender.com" crossorigin />
+    <script>
+      // Non-blocking zero-overhead background ping to awaken cloud container from standby
+      (function() {
+        try {
+          if (window.fetch) {
+            window.fetch('https://smarttravel-backend-6qkl.onrender.com/v1/health', {
+              mode: 'no-cors',
+              cache: 'no-cache',
+              priority: 'low'
+            }).catch(function() {});
+          }
+        } catch (e) {}
+      })();
+    </script>
     <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

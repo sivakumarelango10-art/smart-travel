@@ -55,6 +55,29 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleQuickLogin = async (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    warmupFastPing();
+
+    const timer1 = setTimeout(() => setSlowNoticeStage(1), 2200);
+    const timer2 = setTimeout(() => setSlowNoticeStage(2), 6500);
+
+    try {
+      setLoading(true);
+      setError(null);
+      await login({ email: demoEmail, password: demoPass, rememberMe });
+      navigate(from, { replace: true });
+    } catch (err: any) {
+      setError(err?.message || 'Quick sign-in could not be completed. Please try again.');
+    } finally {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      setSlowNoticeStage(0);
+      setLoading(false);
+    }
+  };
+
   const handleGoogleSuccess = async (credential: string) => {
     try {
       setLoading(true);
@@ -105,6 +128,37 @@ export const LoginPage: React.FC = () => {
               Or continue with email
             </span>
             <div className="border-t border-white/10 w-full" />
+          </div>
+        </div>
+
+        {/* 1-Click Fast Demo Credentials */}
+        <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-3.5 space-y-2">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-bold text-slate-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Instant Demo Access
+            </span>
+            <span className="text-[10px] text-slate-500">1-click login</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('testuser_new@example.com', 'Password123!')}
+              disabled={loading}
+              className="px-3 py-2 rounded-xl bg-[#181A22] hover:bg-white/10 border border-white/10 hover:border-amber-400/50 text-left transition flex flex-col cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-white group-hover:text-amber-300 transition">Traveler Demo</span>
+              <span className="text-[10px] text-slate-400 truncate">testuser_new@example.com</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('admin@smarttravel.com', 'Admin@123')}
+              disabled={loading}
+              className="px-3 py-2 rounded-xl bg-[#181A22] hover:bg-white/10 border border-white/10 hover:border-amber-400/50 text-left transition flex flex-col cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-amber-400 group-hover:text-amber-300 transition">Admin Demo</span>
+              <span className="text-[10px] text-slate-400 truncate">admin@smarttravel.com</span>
+            </button>
           </div>
         </div>
 

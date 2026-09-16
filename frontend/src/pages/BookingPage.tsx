@@ -226,14 +226,30 @@ export const BookingPage: React.FC = () => {
       setBookingError(null);
 
       const [flightRes, seatsRes] = await Promise.all([
-        flightService.getFlightById(flightId),
+        flightService.getFlightById(flightId).catch((err) => {
+          const cachedFallback = flightService.getCachedFlightById(flightId);
+          if (cachedFallback) {
+            return {
+              success: true,
+              message: 'Flight recovered from cache',
+              data: cachedFallback,
+              timestamp: new Date().toISOString(),
+            };
+          }
+          throw err;
+        }),
         seatService.getSeatMap(flightId).catch(() => null),
       ]);
 
       if (flightRes && flightRes.data) {
         setFlight(flightRes.data);
       } else if (!flight) {
-        throw new Error('Flight details could not be loaded.');
+        const cachedFallback = flightService.getCachedFlightById(flightId);
+        if (cachedFallback) {
+          setFlight(cachedFallback);
+        } else {
+          throw new Error('Flight details could not be loaded.');
+        }
       }
 
       let seatList: Seat[] = [];
@@ -271,7 +287,11 @@ export const BookingPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      if (!flight) {
+      const recovered = flightService.getCachedFlightById(flightId);
+      if (recovered) {
+        setFlight(recovered);
+        setBookingError(null);
+      } else if (!flight) {
         setBookingError(err.message || 'Failed to load flight or seat information.');
       }
     } finally {

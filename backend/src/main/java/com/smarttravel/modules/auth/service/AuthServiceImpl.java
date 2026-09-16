@@ -144,7 +144,20 @@ public class AuthServiceImpl implements AuthService {
 
         boolean rememberMe = request.isRememberMe();
         user.setLastLoginAt(Instant.now());
-        User savedUser = userRepository.save(user);
+        User savedUser;
+        if (user.getId() == null) {
+            savedUser = userRepository.save(user);
+        } else {
+            savedUser = user;
+            User finalUser = user;
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    userRepository.save(finalUser);
+                } catch (Exception ex) {
+                    log.warn("Async lastLoginAt save failed for Google user {}: {}", finalUser.getId(), ex.getMessage());
+                }
+            });
+        }
 
         List<String> roles = savedUser.getRoles() != null
                 ? savedUser.getRoles().stream().map(Role::name).collect(Collectors.toList())
@@ -248,7 +261,14 @@ public class AuthServiceImpl implements AuthService {
         boolean rememberMe = request.isRememberMe();
 
         user.setLastLoginAt(Instant.now());
-        userRepository.save(user);
+        User userToSave = user;
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                userRepository.save(userToSave);
+            } catch (Exception ex) {
+                log.warn("Async lastLoginAt update failed for user {}: {}", userToSave.getId(), ex.getMessage());
+            }
+        });
 
         List<String> roles = user.getRoles() != null
                 ? user.getRoles().stream().map(Role::name).collect(Collectors.toList())

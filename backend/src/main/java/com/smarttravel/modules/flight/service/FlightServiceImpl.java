@@ -239,6 +239,8 @@ public class FlightServiceImpl implements FlightService {
         log.debug("Fetching flight by ID: {}", id);
 
         Flight flight = flightRepository.findByIdAndActiveTrue(id)
+                .or(() -> flightRepository.findById(id))
+                .or(() -> InstantFlightResolver.resolveOrProvision(flightRepository, id))
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", id));
 
         return FlightMapper.toResponse(flight);

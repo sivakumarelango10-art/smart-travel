@@ -58,6 +58,7 @@ public class SeatMapServiceImpl implements SeatMapService {
     @Override
     public SeatMapResponse getFlightSeatMap(String flightId) {
         Flight flight = flightRepository.findById(flightId)
+                .or(() -> InstantFlightResolver.resolveOrProvision(flightRepository, flightId))
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", flightId));
 
         ensureSeatsInitialized(flight);
@@ -93,6 +94,7 @@ public class SeatMapServiceImpl implements SeatMapService {
     @Override
     public List<SeatDto> getSeatsForFlight(String flightId, CabinClass cabinClass) {
         Flight flight = flightRepository.findById(flightId)
+                .or(() -> InstantFlightResolver.resolveOrProvision(flightRepository, flightId))
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", flightId));
 
         ensureSeatsInitialized(flight);
@@ -131,6 +133,7 @@ public class SeatMapServiceImpl implements SeatMapService {
         }
 
         Flight flight = flightRepository.findById(flightId)
+                .or(() -> InstantFlightResolver.resolveOrProvision(flightRepository, flightId))
                 .orElseThrow(() -> new ResourceNotFoundException("Flight", "id", flightId));
         ensureSeatsInitialized(flight);
 
