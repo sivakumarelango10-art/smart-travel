@@ -69,7 +69,16 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ErrorResponse>) => {
     if (error.response) {
       const status = error.response.status;
-      if (status === 401) {
+      const requestUrl = error.config?.url || '';
+      const isPublicAuthEndpoint =
+        requestUrl.includes('/auth/login') ||
+        requestUrl.includes('/auth/register') ||
+        requestUrl.includes('/auth/google') ||
+        requestUrl.includes('/auth/forgot-password') ||
+        requestUrl.includes('/auth/reset-password');
+
+      // Only invalidate saved sessions when an AUTHENTICATED request receives 401 (expired/revoked token)
+      if (status === 401 && !isPublicAuthEndpoint) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
@@ -78,6 +87,17 @@ apiClient.interceptors.response.use(
         sessionStorage.removeItem(USER_KEY);
         window.dispatchEvent(new Event('auth:unauthorized'));
       }
+
+      // Handle Render / Cloudflare gateway transitions gracefully
+      if (status === 502 || status === 503 || status === 504) {
+        return Promise.reject({
+          status,
+          error: 'SERVICE_WAKING_UP',
+          message: 'The cloud server is currently waking up from standby. Please wait a few seconds and try again.',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       return Promise.reject(error.response.data);
     } else if (error.code === 'ERR_CANCELED') {
       // Gracefully handle aborted requests
@@ -91,7 +111,7 @@ apiClient.interceptors.response.use(
       return Promise.reject({
         status: 408,
         error: 'REQUEST_TIMEOUT',
-        message: 'The request took too long to complete. Please verify your connection and try again.',
+        message: 'The cloud server took too long to respond. It may still be warming up from standby. Please retry.',
         timestamp: new Date().toISOString(),
       });
     } else if (error.request) {

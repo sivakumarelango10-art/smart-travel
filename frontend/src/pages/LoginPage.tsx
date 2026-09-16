@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogIn, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Lock, Mail, AlertCircle, Eye, EyeOff, Sparkles, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
+import { warmupBackend, warmupFastPing } from '../services/warmupService';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,10 +16,19 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [slowNotice, setSlowNotice] = useState(false);
+  const [slowNoticeStage, setSlowNoticeStage] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  // Parse redirect destination: check query param first (?redirect=... or ?returnUrl=...), then location.state, fallback to '/'
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect') || searchParams.get('returnUrl');
+  const stateFrom = (location.state as any)?.from?.pathname;
+  const from = redirectParam ? decodeURIComponent(redirectParam) : (stateFrom || '/');
+
+  // Proactively warm up cloud backend as soon as the user opens the Login page
+  useEffect(() => {
+    warmupBackend();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +36,10 @@ export const LoginPage: React.FC = () => {
       setError('Please fill in both email and password.');
       return;
     }
-    const timer = setTimeout(() => setSlowNotice(true), 2500);
+
+    const timer1 = setTimeout(() => setSlowNoticeStage(1), 2200);
+    const timer2 = setTimeout(() => setSlowNoticeStage(2), 6500);
+
     try {
       setLoading(true);
       setError(null);
@@ -35,8 +48,9 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(err?.message || 'Invalid email or password credentials.');
     } finally {
-      clearTimeout(timer);
-      setSlowNotice(false);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      setSlowNoticeStage(0);
       setLoading(false);
     }
   };
@@ -104,6 +118,7 @@ export const LoginPage: React.FC = () => {
                 placeholder="traveler@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onFocus={warmupFastPing}
                 required
                 className="w-full bg-[#181A22] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
               />
@@ -119,6 +134,7 @@ export const LoginPage: React.FC = () => {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onFocus={warmupFastPing}
                 required
                 className="w-full bg-[#181A22] border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
               />
@@ -163,16 +179,32 @@ export const LoginPage: React.FC = () => {
             )}
           </button>
 
-          {slowNotice && (
-            <p className="text-[11px] text-amber-400 font-medium text-center animate-pulse pt-1">
-              Waking cloud instance from standby, connecting securely...
+          {slowNoticeStage === 1 && (
+            <p className="text-[11px] text-amber-400 font-medium text-center animate-pulse pt-1 flex items-center justify-center gap-1.5">
+              <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+              <span>Connecting securely to SmartTravel authentication service...</span>
             </p>
+          )}
+
+          {slowNoticeStage === 2 && (
+            <div className="pt-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-1.5">
+              <p className="text-[11px] text-amber-300 font-bold flex items-center justify-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Waking cloud instance from standby...</span>
+              </p>
+              <p className="text-[10px] text-slate-400">
+                Cloud container is spinning up. Your session is connecting and will complete automatically.
+              </p>
+              <div className="w-full bg-amber-500/20 h-1 rounded-full overflow-hidden">
+                <div className="bg-amber-400 h-full w-2/3 animate-[pulse_1.5s_infinite]"></div>
+              </div>
+            </div>
           )}
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-400">
           Don&apos;t have an account?{' '}
-          <Link to="/register" className="text-amber-400 font-bold hover:underline">
+          <Link to={{ pathname: '/register', search: location.search }} className="text-amber-400 font-bold hover:underline">
             Register for Free
           </Link>
         </div>

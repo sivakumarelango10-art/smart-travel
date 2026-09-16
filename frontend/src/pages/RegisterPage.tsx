@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { UserPlus, User, Lock, Mail, Phone, AlertCircle, Check, X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from '../components/BrandLogo';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
+import { warmupBackend, warmupFastPing } from '../services/warmupService';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, loginWithGoogle } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -19,12 +21,22 @@ export const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Parse redirect destination: check query param first (?redirect=... or ?returnUrl=...), then location.state, fallback to '/'
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect') || searchParams.get('returnUrl');
+  const stateFrom = (location.state as any)?.from?.pathname;
+  const from = redirectParam ? decodeURIComponent(redirectParam) : (stateFrom || '/');
+
+  useEffect(() => {
+    warmupBackend();
+  }, []);
+
   const handleGoogleSuccess = async (credential: string) => {
     try {
       setLoading(true);
       setError(null);
       await loginWithGoogle(credential, true);
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err?.message || 'Google registration failed. Please try again.');
     } finally {
@@ -70,7 +82,7 @@ export const RegisterPage: React.FC = () => {
         confirmPassword,
         phoneNumber: phoneNumber.trim() || undefined,
       });
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err: any) {
       setError(err?.message || 'Registration failed. Please check your details.');
     } finally {
@@ -124,6 +136,7 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Rahul Sharma"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                onFocus={warmupFastPing}
                 required
                 className="w-full bg-[#181A22] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition font-medium"
               />
@@ -264,7 +277,7 @@ export const RegisterPage: React.FC = () => {
 
         <div className="pt-2 text-center text-xs text-slate-400">
           Already have an account?{' '}
-          <Link to="/login" className="text-amber-400 font-bold hover:underline">
+          <Link to={{ pathname: '/login', search: location.search }} className="text-amber-400 font-bold hover:underline">
             Sign In Here
           </Link>
         </div>

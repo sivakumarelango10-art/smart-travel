@@ -275,6 +275,12 @@ public class MongoIndexConfig {
                     .on("issuedAt", Sort.Direction.DESC)
                     .named("idx_bp_user_issued"));
 
+            // 12. Users collection authentication & identity lookup indexes
+            ensureUniqueIndexSafely("users", "email", "idx_user_email_unique");
+            ensureUniqueIndexSafely("users", "normalizedEmail", "idx_user_normalized_email_unique");
+            ensureIndexSafely("users", new Index().on("googleSubject", Sort.Direction.ASC)
+                    .named("idx_user_google_subject"));
+
             log.info("All MongoDB performance indexes successfully verified and initialized.");
         } catch (Exception ex) {
             log.warn("MongoDB index initialization warning (continuing startup): {}", ex.getMessage());

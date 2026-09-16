@@ -17,7 +17,19 @@ export const authService = {
   },
 
   async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
-    const res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials);
+    let res;
+    try {
+      res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials);
+    } catch (err: any) {
+      // If server is waking up or network blipped during container startup, retry once cleanly
+      if (err?.error === 'SERVICE_WAKING_UP' || err?.error === 'NETWORK_ERROR' || err?.status === 408) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials);
+      } else {
+        throw err;
+      }
+    }
+
     if (res.data.success && res.data.data.accessToken) {
       const storage = credentials.rememberMe ? localStorage : sessionStorage;
       // Clear alternative storage to prevent state split
@@ -38,10 +50,24 @@ export const authService = {
   },
 
   async loginWithGoogle(credential: string, rememberMe: boolean = true): Promise<ApiResponse<AuthResponse>> {
-    const res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
-      credential,
-      rememberMe,
-    });
+    let res;
+    try {
+      res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
+        credential,
+        rememberMe,
+      });
+    } catch (err: any) {
+      if (err?.error === 'SERVICE_WAKING_UP' || err?.error === 'NETWORK_ERROR' || err?.status === 408) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
+          credential,
+          rememberMe,
+        });
+      } else {
+        throw err;
+      }
+    }
+
     if (res.data.success && res.data.data.accessToken) {
       const storage = rememberMe ? localStorage : sessionStorage;
       const altStorage = rememberMe ? sessionStorage : localStorage;

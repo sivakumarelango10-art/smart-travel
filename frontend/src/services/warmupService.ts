@@ -2,7 +2,17 @@ import { apiClient } from './api';
 
 let isWarming = false;
 let isWarm = false;
+let lastWarmTimestamp = 0;
 let warmupInterval: any = null;
+
+const WARM_TTL_MS = 3 * 60 * 1000; // 3 minutes before re-verifying
+
+/**
+ * Returns true if the backend has responded recently and is believed to be awake.
+ */
+export const isBackendWarm = (): boolean => {
+  return isWarm && Date.now() - lastWarmTimestamp < WARM_TTL_MS;
+};
 
 /**
  * Preloads Razorpay checkout script in the background during idle time
@@ -19,10 +29,11 @@ export const preloadPaymentSdk = () => {
 
 /**
  * Proactively triggers a backend health check to wake up cloud instances
- * as soon as the user loads the application.
+ * as soon as the user loads the application or focuses an authentication input.
  */
-export const warmupBackend = async (): Promise<boolean> => {
-  if (isWarming || isWarm) return isWarm;
+export const warmupBackend = async (force: boolean = false): Promise<boolean> => {
+  if (!force && isBackendWarm()) return true;
+  if (isWarming) return isWarm;
   isWarming = true;
 
   try {
@@ -31,6 +42,7 @@ export const warmupBackend = async (): Promise<boolean> => {
     });
     if (res.status === 200) {
       isWarm = true;
+      lastWarmTimestamp = Date.now();
       window.dispatchEvent(new CustomEvent('backend:warm', { detail: { warm: true } }));
       return true;
     }
@@ -43,7 +55,17 @@ export const warmupBackend = async (): Promise<boolean> => {
 };
 
 /**
- * Starts a 2.5-minute keep-alive heartbeat while the user is actively browsing
+ * Fast lightweight fire-and-forget ping triggered on user interaction (input focus, hover)
+ * to wake up sleeping instances before the user even finishes typing credentials.
+ */
+export const warmupFastPing = () => {
+  if (!isBackendWarm() && !isWarming) {
+    warmupBackend();
+  }
+};
+
+/**
+ * Starts a 2-minute keep-alive heartbeat while the user is actively browsing
  * to prevent cloud server instances from sleeping.
  */
 export const startKeepAliveHeartbeat = () => {
@@ -56,9 +78,14 @@ export const startKeepAliveHeartbeat = () => {
   warmupInterval = setInterval(() => {
     // Only send keep-alive when document is visible
     if (document.visibilityState === 'visible') {
-      apiClient.get('/v1/health', { timeout: 15000 }).catch(() => {});
+      apiClient.get('/v1/health', { timeout: 15000 })
+        .then(() => {
+          isWarm = true;
+          lastWarmTimestamp = Date.now();
+        })
+        .catch(() => {});
     }
-  }, 2.5 * 60 * 1000); // every 2.5 minutes
+  }, 2 * 60 * 1000); // every 2 minutes
 };
 
 export const stopKeepAliveHeartbeat = () => {
@@ -67,3 +94,4 @@ export const stopKeepAliveHeartbeat = () => {
     warmupInterval = null;
   }
 };
+
