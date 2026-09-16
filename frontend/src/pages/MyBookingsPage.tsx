@@ -30,6 +30,7 @@ import { paymentService } from '../services/paymentService';
 import { BookingSkeleton } from '../components/BookingSkeleton';
 import { notify } from '../utils/toast';
 import { AirlineLogo } from '../components/AirlineLogo';
+import { HotelInvoiceModal } from '../components/HotelInvoiceModal';
 
 export const MyBookingsPage: React.FC = () => {
   const [bookingCategory, setBookingCategory] = useState<'FLIGHTS' | 'HOTELS'>('FLIGHTS');
@@ -47,6 +48,7 @@ export const MyBookingsPage: React.FC = () => {
   const [hotelRefundPreview, setHotelRefundPreview] = useState<HotelRefundCalculation | null>(null);
   const [hotelCancelReason, setHotelCancelReason] = useState<string>('Personal schedule change');
   const [hotelCancelLoading, setHotelCancelLoading] = useState<boolean>(false);
+  const [invoiceModalBooking, setInvoiceModalBooking] = useState<HotelBooking | null>(null);
 
   // Flight Cancellation & Refund Modal state
   const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null);
@@ -580,6 +582,14 @@ export const MyBookingsPage: React.FC = () => {
                           <Compass className="w-3.5 h-3.5 text-amber-400" />
                           <span>View Property / 360°</span>
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => setInvoiceModalBooking(hb)}
+                          className="px-3.5 py-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-400/20 transition cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-amber-400" />
+                          <span>View Tax Bill</span>
+                        </button>
                         {isConfirmed && (
                           <button
                             type="button"
@@ -798,6 +808,14 @@ export const MyBookingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Official Tax Invoice & Bill Modal */}
+      {invoiceModalBooking && (
+        <HotelInvoiceModal
+          booking={invoiceModalBooking}
+          onClose={() => setInvoiceModalBooking(null)}
+        />
       )}
     </div>
   );

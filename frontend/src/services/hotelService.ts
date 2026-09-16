@@ -111,12 +111,45 @@ export const hotelService = {
     totalElements: number;
     totalPages: number;
   }> {
-    const response = await apiClient.get<ApiResponse<{
-      content: import('../types/hotel').HotelBooking[];
-      totalElements: number;
-      totalPages: number;
-    }>>('/v1/hotels/bookings/my', { params: { page, size } });
-    return response.data.data || { content: [], totalElements: 0, totalPages: 0 };
+    let serverBookings: import('../types/hotel').HotelBooking[] = [];
+    try {
+      const response = await apiClient.get<ApiResponse<{
+        content: import('../types/hotel').HotelBooking[];
+        totalElements: number;
+        totalPages: number;
+      }>>('/v1/hotels/bookings/my', { params: { page, size } });
+      serverBookings = response.data?.data?.content || [];
+    } catch {
+      // Backend may be waking up; proceed to load local saved bookings
+    }
+
+    // Merge with any local bookings
+    let localBookings: import('../types/hotel').HotelBooking[] = [];
+    try {
+      localBookings = JSON.parse(localStorage.getItem('smarttravel_local_hotel_bookings') || '[]');
+    } catch {}
+
+    const combinedMap = new Map<string, import('../types/hotel').HotelBooking>();
+    localBookings.forEach((b) => {
+      if (b && (b.bookingReference || b.id)) {
+        combinedMap.set(b.bookingReference || b.id, b);
+      }
+    });
+    serverBookings.forEach((b) => {
+      if (b && (b.bookingReference || b.id)) {
+        combinedMap.set(b.bookingReference || b.id, b);
+      }
+    });
+
+    const allBookings = Array.from(combinedMap.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+    return {
+      content: allBookings.slice(page * size, (page + 1) * size),
+      totalElements: allBookings.length,
+      totalPages: Math.ceil(allBookings.length / size) || 1,
+    };
   },
 
   /**

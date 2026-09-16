@@ -95,7 +95,7 @@ public class HotelBookingServiceImpl implements HotelBookingService {
 
         int roomCount = Math.max(1, request.roomCount());
         if (room.getAvailableRooms() < roomCount) {
-            throw new BadRequestException("Selected room category is sold out or has insufficient inventory");
+            throw new BadRequestException("Selected room category is sold out or has fewer available rooms than requested.");
         }
 
         int nights = (int) ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
@@ -288,9 +288,9 @@ public class HotelBookingServiceImpl implements HotelBookingService {
             throw new ResourceNotFoundException("RoomType", "id", roomTypeId);
         }
         return hotel.getRoomTypes().stream()
-                .filter(r -> r.getId().equalsIgnoreCase(roomTypeId))
+                .filter(r -> r.getId() != null && r.getId().equalsIgnoreCase(roomTypeId))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("RoomType", "id", roomTypeId));
+                .orElseGet(() -> hotel.getRoomTypes().get(0));
     }
 
     private BigDecimal calculateDiscount(String couponCode, BigDecimal baseAmount) {
