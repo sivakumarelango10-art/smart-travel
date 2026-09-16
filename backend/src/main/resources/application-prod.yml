@@ -12,14 +12,14 @@ server:
 spring:
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb+srv://sivakumarelango10_db_user:d8ueFqRWyoV8nr3m@cluster0.nfolksb.mongodb.net/smarttravel?retryWrites=true&w=majority&appName=Cluster0}
+      uri: ${MONGODB_URI}
       database: ${MONGODB_DATABASE:smarttravel}
       auto-index-creation: false
 
 # Application Security Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET:dGhpcy1pcy1hLXNhbXBsZS01MTItYml0LXNlY3JldC1rZXktZm9yLXVzZS13aXRoLWpqd3Qtc21hcnR0cmF2ZWwtYXBwbGljYXRpb24tZGV2ZWxvcG1lbnQtdGVzdGluZw==}
+    secret: ${JWT_SECRET}
 
 # Production Logging Configuration
 logging:
@@ -43,8 +43,8 @@ smarttravel:
   payment:
     razorpay:
       enabled: ${RAZORPAY_ENABLED:true}
-      key-id: ${RAZORPAY_KEY_ID:rzp_test_TRufciEcT5Hkyx}
-      key-secret: ${RAZORPAY_KEY_SECRET:p8J2nAdeypF79JlMmeXljM0g}
+      key-id: ${RAZORPAY_KEY_ID}
+      key-secret: ${RAZORPAY_KEY_SECRET}
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 

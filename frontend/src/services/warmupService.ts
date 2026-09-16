@@ -38,7 +38,7 @@ export const warmupBackend = async (force: boolean = false): Promise<boolean> =>
 
   try {
     const res = await apiClient.get('/v1/health', {
-      timeout: 60000,
+      timeout: 90000, // 90s — Render cold start can take up to 60–90s
     });
     if (res.status === 200) {
       isWarm = true;
@@ -91,7 +91,14 @@ export const startKeepAliveHeartbeat = () => {
         })
         .catch(() => {});
     }
-  }, 2 * 60 * 1000); // every 2 minutes
+  }, 10 * 60 * 1000); // every 10 minutes — Render sleeps at 15min inactivity
+
+  // Re-ping immediately when user returns to the tab after being away
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !isBackendWarm()) {
+      warmupBackend();
+    }
+  });
 };
 
 export const stopKeepAliveHeartbeat = () => {

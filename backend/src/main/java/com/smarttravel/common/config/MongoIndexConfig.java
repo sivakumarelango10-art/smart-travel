@@ -114,10 +114,7 @@ public class MongoIndexConfig {
                     .on("averageRating", Sort.Direction.DESC)
                     .named("idx_hotel_active_rating"));
 
-            // 5. Rooms collection indexes
-            ensureIndexSafely("rooms", new Index().on("hotelId", Sort.Direction.ASC)
-                    .on("roomType", Sort.Direction.ASC)
-                    .named("idx_room_hotel_type"));
+            // 5. Rooms: embedded in hotels document (not a separate collection — no separate index needed)
 
             // 6. Reviews collection compound indexes
             ensureIndexSafely("reviews", new Index().on("targetId", Sort.Direction.ASC)

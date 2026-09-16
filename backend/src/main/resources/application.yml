@@ -66,6 +66,11 @@ smarttravel:
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 
+# Keep-Alive Scheduler (prevents Render free-tier cold starts)
+keepalive:
+  initial-delay-ms: ${KEEPALIVE_INITIAL_DELAY_MS:300000}  # 5 min after startup
+  fixed-delay-ms: ${KEEPALIVE_FIXED_DELAY_MS:600000}       # Every 10 min
+
 # Actuator Management & Health Probes
 management:
   endpoints:

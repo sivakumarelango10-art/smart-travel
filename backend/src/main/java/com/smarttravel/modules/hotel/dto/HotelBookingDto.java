@@ -124,6 +124,7 @@ public class HotelBookingDto {
             String currency,
             BookingStatus status,
             String paymentId,
+            String razorpayOrderId,
             String paymentStatus,
             String cancellationPolicy,
             Instant cancelledAt,

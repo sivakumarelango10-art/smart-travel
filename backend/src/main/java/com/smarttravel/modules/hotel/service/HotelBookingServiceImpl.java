@@ -142,9 +142,8 @@ public class HotelBookingServiceImpl implements HotelBookingService {
                 .discountAmount(discountAmount)
                 .totalAmount(totalAmount)
                 .currency(hotel.getCurrency() != null ? hotel.getCurrency() : "INR")
-                .status(BookingStatus.CONFIRMED)
-                .paymentId("PAY-HTL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                .paymentStatus("COMPLETED")
+                .status(BookingStatus.PENDING)
+                .paymentStatus("PENDING")
                 .cancellationPolicy("Free cancellation up to 7 days before check-in (100% refund); 50% refund 24h–7 days; Non-refundable within 24h.")
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -350,6 +349,7 @@ public class HotelBookingServiceImpl implements HotelBookingService {
                 b.getCurrency(),
                 b.getStatus(),
                 b.getPaymentId(),
+                b.getRazorpayOrderId(),
                 b.getPaymentStatus(),
                 b.getCancellationPolicy(),
                 b.getCancelledAt(),

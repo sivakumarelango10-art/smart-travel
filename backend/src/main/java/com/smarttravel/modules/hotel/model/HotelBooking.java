@@ -83,11 +83,13 @@ public class HotelBooking {
 
     private String currency = "INR";
 
-    private BookingStatus status = BookingStatus.CONFIRMED;
+    private BookingStatus status = BookingStatus.PENDING;
 
     private String paymentId;
 
-    private String paymentStatus = "COMPLETED";
+    private String razorpayOrderId;
+
+    private String paymentStatus = "PENDING";
 
     private String cancellationPolicy;
 
@@ -142,6 +144,7 @@ public class HotelBooking {
         public Builder currency(String currency) { b.currency = currency; return this; }
         public Builder status(BookingStatus status) { b.status = status; return this; }
         public Builder paymentId(String paymentId) { b.paymentId = paymentId; return this; }
+        public Builder razorpayOrderId(String razorpayOrderId) { b.razorpayOrderId = razorpayOrderId; return this; }
         public Builder paymentStatus(String paymentStatus) { b.paymentStatus = paymentStatus; return this; }
         public Builder cancellationPolicy(String cancellationPolicy) { b.cancellationPolicy = cancellationPolicy; return this; }
         public Builder cancelledAt(Instant cancelledAt) { b.cancelledAt = cancelledAt; return this; }
@@ -242,6 +245,9 @@ public class HotelBooking {
 
     public String getPaymentId() { return paymentId; }
     public void setPaymentId(String paymentId) { this.paymentId = paymentId; }
+
+    public String getRazorpayOrderId() { return razorpayOrderId; }
+    public void setRazorpayOrderId(String razorpayOrderId) { this.razorpayOrderId = razorpayOrderId; }
 
     public String getPaymentStatus() { return paymentStatus; }
     public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
