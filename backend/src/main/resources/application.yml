@@ -6,7 +6,7 @@ spring:
     active: dev
 
 server:
-  port: 8080
+  port: ${PORT:${SERVER_PORT:8080}}
   servlet:
     context-path: /
   tomcat:

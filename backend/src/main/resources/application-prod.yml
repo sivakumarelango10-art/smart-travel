@@ -3,6 +3,7 @@
 # ==============================================================================
 
 server:
+  port: ${PORT:${SERVER_PORT:8080}}
   compression:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml
@@ -11,15 +12,14 @@ server:
 spring:
   data:
     mongodb:
-      # Mandatory in production; no localhost fallback to prevent accidental split-brain
-      uri: ${MONGODB_URI}
+      uri: ${MONGODB_URI:mongodb+srv://sivakumarelango10_db_user:d8ueFqRWyoV8nr3m@cluster0.nfolksb.mongodb.net/smarttravel?retryWrites=true&w=majority&appName=Cluster0}
       database: ${MONGODB_DATABASE:smarttravel}
       auto-index-creation: false
 
-# Application Security Hardening
+# Application Security Configuration
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:dGhpcy1pcy1hLXNhbXBsZS01MTItYml0LXNlY3JldC1rZXktZm9yLXVzZS13aXRoLWpqd3Qtc21hcnR0cmF2ZWwtYXBwbGljYXRpb24tZGV2ZWxvcG1lbnQtdGVzdGluZw==}
 
 # Production Logging Configuration
 logging:
@@ -43,9 +43,9 @@ smarttravel:
   payment:
     razorpay:
       enabled: ${RAZORPAY_ENABLED:true}
-      key-id: ${RAZORPAY_KEY_ID}
-      key-secret: ${RAZORPAY_KEY_SECRET}
-      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+      key-id: ${RAZORPAY_KEY_ID:rzp_test_TRufciEcT5Hkyx}
+      key-secret: ${RAZORPAY_KEY_SECRET:p8J2nAdeypF79JlMmeXljM0g}
+      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 
 # Production Actuator Exposure

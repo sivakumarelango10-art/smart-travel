@@ -39,7 +39,7 @@ RUN chown -R smarttravel:smarttravel /app
 USER smarttravel
 
 # Default HTTP server port (overridden by Render's PORT env var)
-EXPOSE 8080
+EXPOSE 8080 10000
 
 # Environment defaults (overridden by Render dashboard environment variables)
 ENV SPRING_PROFILES_ACTIVE=prod \
@@ -48,6 +48,6 @@ ENV SPRING_PROFILES_ACTIVE=prod \
 
 # Container healthcheck using Spring Boot Actuator
 HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
-    CMD wget -qO- http://localhost:${SERVER_PORT}/actuator/health | grep -q '"status":"UP"' || exit 1
+    CMD wget -qO- http://localhost:${PORT:-${SERVER_PORT:-8080}}/actuator/health | grep -q '"status":"UP"' || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -Dserver.port=${SERVER_PORT} -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -Dserver.port=${PORT:-${SERVER_PORT:-8080}} -jar app.jar"]
