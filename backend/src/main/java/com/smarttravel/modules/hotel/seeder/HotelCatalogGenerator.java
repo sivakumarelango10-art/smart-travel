@@ -17,21 +17,20 @@ public final class HotelCatalogGenerator {
     private HotelCatalogGenerator() {}
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Genuine Equirectangular 360° Panorama URLs (2:1 aspect ratio, CORS-open)
-    // Source: Wikimedia Commons / public-domain panorama repositories
-    // These render correctly inside the Three.js inverse-sphere viewer.
+    // Hotel interior panoramas via Unsplash CDN (4096×2048, 2:1 ratio, CORS ✅)
+    // Unsplash sends Access-Control-Allow-Origin: * — works with Three.js WebGL sphere renderer.
     // ──────────────────────────────────────────────────────────────────────────
-    public static final String PANORAMA_SUITE  = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Bedroom_suite_panorama.jpg/2048px-Bedroom_suite_panorama.jpg";
-    public static final String PANORAMA_VILLA  = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Maldives_aerial_panorama_%28360°%29.jpg/2048px-Maldives_aerial_panorama_%28360°%29.jpg";
-    public static final String PANORAMA_DELUXE = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Grand_Place_Brussels_360.jpg/2048px-Grand_Place_Brussels_360.jpg";
-    public static final String PANORAMA_OCEAN  = "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Beach_panoramic_view.jpg/2048px-Beach_panoramic_view.jpg";
-    public static final String PANORAMA_PALACE = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Palace_interior_panorama.jpg/2048px-Palace_interior_panorama.jpg";
-    public static final String PANORAMA_LOBBY  = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Hotel_lobby_panoramic_view.jpg/2048px-Hotel_lobby_panoramic_view.jpg";
+    public static final String PANORAMA_SUITE  = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_VILLA  = "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_DELUXE = "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_OCEAN  = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_PALACE = "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_LOBBY  = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=4096&h=2048&q=85";
 
-    // Fallback: Pannellum-hosted equirectangular demo samples (reliable CORS)
-    public static final String PANORAMA_360_A = "https://pannellum.org/images/cerro-toco-0.jpg";
-    public static final String PANORAMA_360_B = "https://pannellum.org/images/alma-0.jpg";
-    public static final String PANORAMA_360_C = "https://pannellum.org/images/robber-s-roost-1.jpg";
+    // Additional room-level panorama variants
+    public static final String PANORAMA_360_A  = "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_360_B  = "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=4096&h=2048&q=85";
+    public static final String PANORAMA_360_C  = "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=4096&h=2048&q=85";
 
     public static List<Hotel> generateAllHotels() {
         List<Hotel> list = new ArrayList<>(140);

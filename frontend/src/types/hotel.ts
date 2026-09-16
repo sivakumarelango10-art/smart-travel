@@ -173,8 +173,9 @@ export interface HotelBooking {
   discountAmount: number;
   totalAmount: number;
   currency: string;
-  status: 'CONFIRMED' | 'CANCELLED' | 'REFUNDED';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REFUNDED' | 'EXPIRED';
   paymentId?: string;
+  razorpayOrderId?: string;
   paymentStatus?: string;
   cancellationPolicy?: string;
   cancelledAt?: string;

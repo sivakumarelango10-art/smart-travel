@@ -469,3 +469,19 @@ body {
   will-change: transform, opacity;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   360° Panorama Viewer — CSS Photo Tour Fallback
+   Used by Panorama360Viewer when WebGL texture load fails (CORS or network).
+   CSS background-image doesn't require CORS, so this always works.
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes panoramaPan {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.panorama-css-pan {
+  animation: panoramaPan 30s linear infinite;
+  will-change: background-position;
+}
+

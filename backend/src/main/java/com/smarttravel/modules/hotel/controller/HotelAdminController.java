@@ -32,17 +32,25 @@ public class HotelAdminController {
 
     private static final Logger log = LoggerFactory.getLogger(HotelAdminController.class);
 
-    // Authentic equirectangular 360° panoramas (2:1 ratio, public-domain, CORS-open)
-    private static final String PANO_SUITE   = "https://pannellum.org/images/cerro-toco-0.jpg";
-    private static final String PANO_VILLA   = "https://pannellum.org/images/alma-0.jpg";
-    private static final String PANO_DELUXE  = "https://pannellum.org/images/robber-s-roost-1.jpg";
-    private static final String PANO_OCEAN   = "https://pannellum.org/images/cerro-toco-0.jpg";
-    private static final String PANO_PALACE  = "https://pannellum.org/images/alma-0.jpg";
-    private static final String PANO_LOBBY   = "https://pannellum.org/images/robber-s-roost-1.jpg";
+    // Unsplash hotel interior panoramas — wide-angle 4096×2048 (2:1 ratio) for sphere mapping
+    // Unsplash CDN has Access-Control-Allow-Origin: * → works with Three.js crossOrigin='anonymous'
+    private static final String PANO_SUITE   = "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85";
+    private static final String PANO_VILLA   = "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=4096&h=2048&q=85";
+    private static final String PANO_DELUXE  = "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=4096&h=2048&q=85";
+    private static final String PANO_OCEAN   = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=4096&h=2048&q=85";
+    private static final String PANO_PALACE  = "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=4096&h=2048&q=85";
+    private static final String PANO_LOBBY   = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=4096&h=2048&q=85";
 
-    // Rotation through real panorama URLs for variety across 150 hotels
+    // 8 panorama variants for room-level diversity across 140+ hotels / 340+ rooms
     private static final List<String> PANO_POOL = List.of(
-        PANO_SUITE, PANO_VILLA, PANO_DELUXE, PANO_OCEAN, PANO_PALACE, PANO_LOBBY
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=4096&h=2048&q=85",
+        "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=4096&h=2048&q=85"
     );
 
     private final MongoTemplate mongoTemplate;

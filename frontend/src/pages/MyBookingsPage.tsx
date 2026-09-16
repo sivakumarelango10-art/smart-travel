@@ -175,13 +175,14 @@ export const MyBookingsPage: React.FC = () => {
     const today = new Date().toISOString().split('T')[0];
 
     if (activeTab === 'UPCOMING') {
-      return hb.status === 'CONFIRMED' && hb.checkInDate >= today;
+      // PENDING bookings need payment — show them as "upcoming action needed"
+      return (hb.status === 'CONFIRMED' && hb.checkInDate >= today) || hb.status === 'PENDING';
     }
     if (activeTab === 'COMPLETED') {
       return hb.status === 'CONFIRMED' && hb.checkOutDate < today;
     }
     if (activeTab === 'CANCELLED') {
-      return hb.status === 'CANCELLED' || hb.status === 'REFUNDED';
+      return hb.status === 'CANCELLED' || hb.status === 'REFUNDED' || hb.status === 'EXPIRED';
     }
     return true;
   });
@@ -493,6 +494,7 @@ export const MyBookingsPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {filteredHotelBookings.map((hb) => {
+                const isPending   = hb.status === 'PENDING';
                 const isConfirmed = hb.status === 'CONFIRMED';
                 const isCancelled = hb.status === 'CANCELLED' || hb.status === 'REFUNDED';
 
@@ -524,12 +526,14 @@ export const MyBookingsPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span
                           className={`text-xs font-bold px-3 py-1 rounded-full ${
-                            isConfirmed
+                            isPending
+                              ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+                              : isConfirmed
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                           }`}
                         >
-                          {hb.status}
+                          {isPending ? '⏳ Payment Pending' : isConfirmed ? '✅ Confirmed' : hb.status}
                         </span>
                       </div>
                     </div>
@@ -568,13 +572,28 @@ export const MyBookingsPage: React.FC = () => {
                     {/* Action Footer */}
                     <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-medium">Total Paid (Taxes Included)</span>
-                        <span className="text-2xl font-black text-amber-400 tracking-tight">
+                        <span className="text-[10px] text-slate-400 block font-medium">
+                          {isPending ? 'Total Amount Due' : 'Total Paid (Taxes Included)'}
+                        </span>
+                        <span className={`text-2xl font-black tracking-tight ${
+                          isPending ? 'text-amber-300' : 'text-amber-400'
+                        }`}>
                           ₹{hb.totalAmount.toLocaleString('en-IN')}
                         </span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
+                        {/* Complete Payment CTA for PENDING bookings */}
+                        {isPending && (
+                          <Link
+                            to={`/hotels/${hb.hotelId}`}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold text-xs flex items-center gap-1.5 shadow-glow-gold transition-transform hover:scale-105"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Complete Payment</span>
+                          </Link>
+                        )}
+
                         <Link
                           to={`/hotels/${hb.hotelId}`}
                           className="px-3.5 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-300 text-xs font-bold flex items-center gap-1.5 border border-white/10 transition"
@@ -582,14 +601,17 @@ export const MyBookingsPage: React.FC = () => {
                           <Compass className="w-3.5 h-3.5 text-amber-400" />
                           <span>View Property / 360°</span>
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => setInvoiceModalBooking(hb)}
-                          className="px-3.5 py-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-400/20 transition cursor-pointer"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-amber-400" />
-                          <span>View Tax Bill</span>
-                        </button>
+
+                        {isConfirmed && (
+                          <button
+                            type="button"
+                            onClick={() => setInvoiceModalBooking(hb)}
+                            className="px-3.5 py-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-amber-400/20 transition cursor-pointer"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-amber-400" />
+                            <span>View Tax Bill</span>
+                          </button>
+                        )}
                         {isConfirmed && (
                           <button
                             type="button"

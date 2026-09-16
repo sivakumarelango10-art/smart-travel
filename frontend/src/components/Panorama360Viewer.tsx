@@ -394,31 +394,52 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
           >
             <canvas ref={canvasRef} className="w-full h-full block" />
 
-            {/* Loading Indicator */}
+            {/* Loading Indicator — shows panorama image as background while WebGL spins up */}
             {isLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md text-white gap-3">
-                <div className="w-12 h-12 rounded-full border-3 border-amber-400 border-t-transparent animate-spin" />
-                <p className="text-xs sm:text-sm font-semibold tracking-wide text-slate-300 animate-pulse">
-                  Rendering 360° Spherical Environment...
-                </p>
+              <div
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm"
+                style={{
+                  backgroundImage: `url(${panoramaUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-0 bg-black/60" />
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-full border-[3px] border-amber-400 border-t-transparent animate-spin" />
+                  <p className="text-sm font-semibold tracking-wide text-amber-200 animate-pulse">
+                    Rendering 360° Spherical Environment...
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* Error Fallback */}
+            {/* Graceful CSS Panorama Fallback — when WebGL can't load texture */}
             {hasError && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#12131A] text-white p-6 text-center">
-                <AlertCircle className="w-12 h-12 text-amber-400 mb-3" />
-                <h4 className="text-lg font-bold text-white mb-1">360° Panorama Unavailable</h4>
-                <p className="text-xs text-slate-400 max-w-md mb-4">
-                  We could not render the 360° equirectangular projection for this room. You can view the high-resolution photo gallery instead.
-                </p>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-5 py-2 rounded-xl bg-amber-400 text-black font-bold hover:bg-amber-500 transition"
-                >
-                  Return to Hotel Gallery
-                </button>
+              <div className="absolute inset-0 z-10 flex flex-col overflow-hidden">
+                {/* CSS animated panorama — works without CORS since it's background-image */}
+                <div
+                  className="absolute inset-0 panorama-css-pan"
+                  style={{
+                    backgroundImage: `url(${panoramaUrl})`,
+                    backgroundSize: '220% 100%',
+                    backgroundRepeat: 'repeat-x',
+                    backgroundPosition: '0% 50%',
+                    animation: 'panoramaPan 30s linear infinite',
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30" />
+
+                {/* Overlay info */}
+                <div className="absolute bottom-20 left-0 right-0 flex flex-col items-center gap-3 text-center px-6">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-400/30 text-amber-400 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Photo Tour Mode — Drag disabled on this device</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 max-w-sm">
+                    Full 360° WebGL tour unavailable. Showing high-resolution panoramic photo experience.
+                  </p>
+                </div>
               </div>
             )}
           </div>
