@@ -59,7 +59,7 @@ public class CheckInController {
             @PathVariable String bookingId,
             @RequestBody(required = false) CheckInRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         CheckInResponse response = checkInService.performCheckIn(bookingId, request, userId, false);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Check-in completed successfully", response));
@@ -79,7 +79,7 @@ public class CheckInController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         CheckInResponse response = checkInService.getCheckInByBookingId(bookingId, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Check-in retrieved successfully", response));
@@ -99,7 +99,7 @@ public class CheckInController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         List<BoardingPassResponse> response = checkInService.getBoardingPasses(bookingId, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Boarding passes retrieved successfully", response));
@@ -119,7 +119,7 @@ public class CheckInController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         byte[] pdfBytes = checkInService.getBoardingPassPdf(bookingId, userId, false);
 

@@ -31,10 +31,16 @@ export const FlightSearchPage: React.FC = () => {
   const cabinClass = (searchParams.get('cabinClass') as CabinClass) || 'ECONOMY';
   const passengers = parseInt(searchParams.get('passengers') || '1', 10);
 
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const initialParams = { origin, destination, departureDate, cabinClass, passengers };
+  const initialCached = flightService.getCachedSearch(initialParams);
+  const initialFlightList = initialCached?.data?.data
+    ? (Array.isArray(initialCached.data.data) ? initialCached.data.data : (initialCached.data.data as any)?.content || [])
+    : [];
+
+  const [flights, setFlights] = useState<Flight[]>(initialFlightList);
+  const [loading, setLoading] = useState<boolean>(initialFlightList.length === 0);
   const [slowMessage, setSlowMessage] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
   const [timeAgoText, setTimeAgoText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showModifySearch, setShowModifySearch] = useState<boolean>(false);
@@ -75,9 +81,9 @@ export const FlightSearchPage: React.FC = () => {
   const fetchFlights = useCallback(async () => {
     const searchParamsObj = { origin, destination, departureDate, cabinClass, passengers };
     
-    // Check if we have instant cached data to display immediately
+    // Check cached authentic data for instant display if available
     const cached = flightService.getCachedSearch(searchParamsObj);
-    if (cached && cached.data && cached.data.data) {
+    if (cached?.data?.data) {
       applyFlightData(cached.data.data);
       setLoading(false);
     } else {
@@ -90,25 +96,23 @@ export const FlightSearchPage: React.FC = () => {
     // Warm-up timeout indicator for Render backend if request takes longer
     slowTimerRef.current = setTimeout(() => {
       setSlowMessage('Connecting to live airline reservation systems. Synchronizing real-time seat availability...');
-    }, 3500);
+    }, 2500);
 
     try {
       const res = await flightService.searchFlights(searchParamsObj);
       if (res && res.data) {
         applyFlightData(res.data);
-      } else {
-        setFlights([]);
       }
     } catch (err: any) {
-      if (flights.length === 0) {
-        setError(err.message || 'Failed to retrieve flights for this route.');
+      if (!cached) {
+        setError(err?.message || 'No flights found for this route and date.');
       }
     } finally {
       if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       setLoading(false);
       setSlowMessage(null);
     }
-  }, [origin, destination, departureDate, cabinClass, passengers, applyFlightData, flights.length]);
+  }, [origin, destination, departureDate, cabinClass, passengers, applyFlightData]);
 
   useEffect(() => {
     fetchFlights();

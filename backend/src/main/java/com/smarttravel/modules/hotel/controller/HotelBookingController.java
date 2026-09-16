@@ -42,8 +42,8 @@ public class HotelBookingController {
     public ResponseEntity<ApiResponse<HotelBookingDto.HotelBookingResponse>> createBooking(
             @Valid @RequestBody HotelBookingDto.CreateHotelBookingRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
-        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getCurrentUserEmail().orElse("traveler@smarttravel.com");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getRequiredCurrentUserEmail();
 
         HotelBookingDto.HotelBookingResponse response = hotelBookingService.createBooking(request, userId, userEmail);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -57,7 +57,7 @@ public class HotelBookingController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
         Page<HotelBookingDto.HotelBookingResponse> bookings = hotelBookingService.getUserBookings(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Hotel bookings retrieved successfully", bookings));
@@ -69,7 +69,7 @@ public class HotelBookingController {
     public ResponseEntity<ApiResponse<HotelBookingDto.HotelBookingResponse>> getBookingById(
             @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         HotelBookingDto.HotelBookingResponse booking = hotelBookingService.getBookingById(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Hotel booking retrieved successfully", booking));
     }
@@ -80,7 +80,7 @@ public class HotelBookingController {
     public ResponseEntity<ApiResponse<HotelBookingDto.HotelBookingResponse>> getBookingByReference(
             @PathVariable String reference,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         HotelBookingDto.HotelBookingResponse booking = hotelBookingService.getBookingByReference(reference, userId);
         return ResponseEntity.ok(ApiResponse.success("Hotel booking retrieved successfully", booking));
     }
@@ -92,7 +92,7 @@ public class HotelBookingController {
             @PathVariable String id,
             @RequestBody(required = false) HotelBookingDto.CancelHotelBookingRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         String reason = request != null ? request.cancellationReason() : "Traveler requested cancellation";
         HotelBookingDto.HotelBookingResponse cancelled = hotelBookingService.cancelBooking(id, userId, reason);
         return ResponseEntity.ok(ApiResponse.success("Hotel reservation cancelled successfully", cancelled));
@@ -104,7 +104,7 @@ public class HotelBookingController {
     public ResponseEntity<ApiResponse<HotelBookingDto.HotelRefundCalculation>> getRefundPreview(
             @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         HotelBookingDto.HotelRefundCalculation preview = hotelBookingService.calculateRefund(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Refund preview calculated", preview));
     }

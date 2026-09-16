@@ -1,6 +1,7 @@
 package com.smarttravel.modules.review.controller;
 
 import com.smarttravel.common.response.ApiResponse;
+import com.smarttravel.common.security.SecurityUtils;
 import com.smarttravel.modules.review.model.ReviewReply;
 import com.smarttravel.modules.review.service.ReviewReplyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,8 +41,8 @@ public class ReviewReplyController {
             @PathVariable String reviewId,
             @Valid @RequestBody CreateReplyRequest request,
             Authentication authentication) {
-        String userId = authentication.getName();
-        String userName = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
+        String userName = SecurityUtils.getCurrentUserEmail().orElse(userId);
         if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails ud) {
             userName = ud.getUsername();
         }
@@ -62,7 +63,7 @@ public class ReviewReplyController {
             @PathVariable String replyId,
             @Valid @RequestBody UpdateReplyRequest request,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         ReviewReply updated = replyService.updateReply(replyId, userId, request.content(), isAdmin);
@@ -76,7 +77,7 @@ public class ReviewReplyController {
             @PathVariable String reviewId,
             @PathVariable String replyId,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         replyService.deleteReply(replyId, userId, isAdmin);

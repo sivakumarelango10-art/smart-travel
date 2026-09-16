@@ -17,33 +17,51 @@ export const HotelSearchPage: React.FC = () => {
   const initialCity = searchParams.get('city') || '';
   const initialStars = searchParams.get('minStars') ? Number(searchParams.get('minStars')) : undefined;
 
+  const initialData = hotelService.getInstantSearch({
+    city: initialCity.trim() || undefined,
+    minStars: initialStars,
+    page: 0,
+    size: 12,
+  });
+
   const [city, setCity] = useState(initialCity);
   const [minStars, setMinStars] = useState<number | undefined>(initialStars);
   const [only360, setOnly360] = useState(false);
   const maxPrice = undefined;
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [hotels, setHotels] = useState<Hotel[]>(initialData.content);
+  const [totalCount, setTotalCount] = useState(initialData.totalElements);
+  const [loading, setLoading] = useState(initialData.content.length === 0);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialData.totalPages);
 
   // Active 360 Panorama Modal
   const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
-    setLoading(true);
+    const searchObj = {
+      city: city.trim() || undefined,
+      minStars,
+      maxPrice,
+      page,
+      size: 12,
+    };
+
+    // Instant local preview for zero-delay responsiveness
+    const instantPreview = hotelService.getInstantSearch(searchObj);
+    if (instantPreview.content.length > 0) {
+      setHotels(instantPreview.content);
+      setTotalCount(instantPreview.totalElements);
+      setTotalPages(instantPreview.totalPages);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     hotelService
-      .searchHotels({
-        city: city.trim() || undefined,
-        minStars,
-        maxPrice,
-        page,
-        size: 12,
-      })
+      .searchHotels(searchObj)
       .then((res) => {
-        if (isCurrent) {
+        if (isCurrent && res && res.content && res.content.length > 0) {
           setHotels(res.content);
           setTotalCount(res.totalElements);
           setTotalPages(res.totalPages);

@@ -111,206 +111,6 @@ function setStorageCache<T>(key: string, data: CacheEntry<T>): void {
   }
 }
 
-export const INSTANT_FLIGHT_SCHEDULES = [
-  { num: 101, airline: 'Air India', code: 'AI', hour: 6, min: 30, dur: 130, model: 'Airbus A320neo', base: 4250, orig: 'DEL', dest: 'BOM' },
-  { num: 204, airline: 'IndiGo', code: '6E', hour: 8, min: 45, dur: 125, model: 'Airbus A321neo', base: 3890, orig: 'BOM', dest: 'BLR' },
-  { num: 955, airline: 'Vistara', code: 'UK', hour: 11, min: 15, dur: 130, model: 'Boeing 787-9 Dreamliner', base: 4950, orig: 'DEL', dest: 'BOM' },
-  { num: 1102, airline: 'Akasa Air', code: 'QP', hour: 13, min: 40, dur: 125, model: 'Boeing 737 MAX 8', base: 3650, orig: 'BOM', dest: 'BLR' },
-  { num: 605, airline: 'IndiGo', code: '6E', hour: 16, min: 20, dur: 125, model: 'Airbus A320neo', base: 4100, orig: 'DEL', dest: 'HYD' },
-  { num: 1301, airline: 'Akasa Air', code: 'QP', hour: 18, min: 50, dur: 130, model: 'Boeing 737 MAX 8', base: 3950, orig: 'BLR', dest: 'BOM' },
-  { num: 103, airline: 'Air India', code: 'AI', hour: 20, min: 30, dur: 130, model: 'Airbus A321neo', base: 4400, orig: 'BOM', dest: 'DEL' },
-  { num: 801, airline: 'Air India Express', code: 'IX', hour: 22, min: 15, dur: 125, model: 'Boeing 737 MAX 8', base: 3750, orig: 'DEL', dest: 'COK' },
-];
-
-/**
- * Deterministically reconstructs a full Flight entity from an instant ID (e.g. instant_qp_1102_20260917).
- * Guarantees zero 404 errors when returning from login, bookmarks, or direct URLs.
- */
-export function reconstructInstantFlight(flightId: string, fallbackOrigin?: string, fallbackDest?: string): Flight | null {
-  if (!flightId || !flightId.startsWith('instant_')) return null;
-
-  const parts = flightId.split('_');
-  if (parts.length < 3) return null;
-
-  const code = parts[1].toUpperCase();
-  const num = parseInt(parts[2], 10);
-  const rawDate = parts[3]; // e.g. '20260917'
-  const dateStr = rawDate && rawDate.length === 8
-    ? `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`
-    : new Date().toISOString().split('T')[0];
-
-  const template = INSTANT_FLIGHT_SCHEDULES.find((s) => s.code === code && s.num === num) || {
-    num,
-    airline: code === 'QP' ? 'Akasa Air' : code === '6E' ? 'IndiGo' : code === 'AI' ? 'Air India' : code === 'UK' ? 'Vistara' : 'SmartTravel Airline',
-    code,
-    hour: 14,
-    min: 0,
-    dur: 120,
-    model: 'Boeing 737 MAX 8',
-    base: 3800,
-    orig: fallbackOrigin || 'BOM',
-    dest: fallbackDest || 'BLR',
-  };
-
-  const getAirport = (c: string): AirportInfo => {
-    const match = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === c.toUpperCase());
-    if (match) return match;
-    return { code: c, name: `${c} International Airport`, city: c, country: 'India', terminal: 'T1' };
-  };
-
-  const originAirport = getAirport(fallbackOrigin || template.orig || 'BOM');
-  const destAirport = getAirport(fallbackDest || template.dest || 'BLR');
-
-  const dep = new Date(`${dateStr}T${template.hour.toString().padStart(2, '0')}:${template.min.toString().padStart(2, '0')}:00Z`);
-  const arr = new Date(dep.getTime() + template.dur * 60 * 1000);
-
-  const cabinInventories: CabinInventory[] = [
-    {
-      cabinClass: 'ECONOMY',
-      totalSeats: 140,
-      availableSeats: 108,
-      basePrice: template.base,
-      taxAmount: Math.round(template.base * 0.05),
-      feeAmount: 150,
-      totalPrice: template.base + Math.round(template.base * 0.05) + 150,
-    },
-    {
-      cabinClass: 'PREMIUM_ECONOMY',
-      totalSeats: 24,
-      availableSeats: 18,
-      basePrice: Math.round(template.base * 1.5),
-      taxAmount: Math.round(template.base * 1.5 * 0.05),
-      feeAmount: 150,
-      totalPrice: Math.round(template.base * 1.5 * 1.05) + 150,
-    },
-    {
-      cabinClass: 'BUSINESS',
-      totalSeats: 16,
-      availableSeats: 9,
-      basePrice: Math.round(template.base * 2.8),
-      taxAmount: Math.round(template.base * 2.8 * 0.05),
-      feeAmount: 200,
-      totalPrice: Math.round(template.base * 2.8 * 1.05) + 200,
-    },
-  ];
-
-  return {
-    id: flightId,
-    flightNumber: `${template.code}-${template.num}`,
-    airline: template.airline,
-    airlineCode: template.code,
-    departureAirport: originAirport,
-    arrivalAirport: destAirport,
-    departureTime: dep.toISOString(),
-    arrivalTime: arr.toISOString(),
-    aircraftModel: template.model,
-    durationMinutes: template.dur,
-    stops: 0,
-    basePrice: template.base,
-    totalSeats: 180,
-    availableSeats: 135,
-    cabinClasses: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS'],
-    cabinInventories,
-    status: 'ON_TIME',
-    active: true,
-    isBookable: true,
-    dataSource: 'LIVE',
-  };
-}
-
-/**
- * Instantly synthesizes authentic scheduled flights for any route and date.
- * Used for zero-delay instant UI response when cloud instances are waking from cold start.
- */
-function generateInstantFlights(params: FlightSearchParams): FlightSearchResponse {
-  const originCode = (params.origin || 'DEL').toUpperCase().trim();
-  const destCode = (params.destination || 'BOM').toUpperCase().trim();
-  const dateStr = params.departureDate || new Date().toISOString().split('T')[0];
-
-  const getAirport = (code: string): AirportInfo => {
-    const match = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === code.toUpperCase());
-    if (match) return match;
-    return { code, name: `${code} International Airport`, city: code, country: 'India', terminal: 'T1' };
-  };
-
-  const originAirport = getAirport(originCode);
-  const destAirport = getAirport(destCode);
-
-  const flights: Flight[] = INSTANT_FLIGHT_SCHEDULES.map((s, idx) => {
-    const dep = new Date(`${dateStr}T${s.hour.toString().padStart(2, '0')}:${s.min.toString().padStart(2, '0')}:00Z`);
-    const arr = new Date(dep.getTime() + s.dur * 60 * 1000);
-
-    const cabinInventories: CabinInventory[] = [
-      {
-        cabinClass: 'ECONOMY',
-        totalSeats: 140,
-        availableSeats: 115 - (idx * 7),
-        basePrice: s.base,
-        taxAmount: Math.round(s.base * 0.05),
-        feeAmount: 150,
-        totalPrice: s.base + Math.round(s.base * 0.05) + 150,
-      },
-      {
-        cabinClass: 'PREMIUM_ECONOMY',
-        totalSeats: 24,
-        availableSeats: 18,
-        basePrice: Math.round(s.base * 1.5),
-        taxAmount: Math.round(s.base * 1.5 * 0.05),
-        feeAmount: 150,
-        totalPrice: Math.round(s.base * 1.5 * 1.05) + 150,
-      },
-      {
-        cabinClass: 'BUSINESS',
-        totalSeats: 16,
-        availableSeats: 9,
-        basePrice: Math.round(s.base * 2.8),
-        taxAmount: Math.round(s.base * 2.8 * 0.05),
-        feeAmount: 200,
-        totalPrice: Math.round(s.base * 2.8 * 1.05) + 200,
-      },
-    ];
-
-    const flightItem: Flight = {
-      id: `instant_${s.code.toLowerCase()}_${s.num}_${dateStr.replace(/-/g, '')}`,
-      flightNumber: `${s.code}-${s.num}`,
-      airline: s.airline,
-      airlineCode: s.code,
-      departureAirport: originAirport,
-      arrivalAirport: destAirport,
-      departureTime: dep.toISOString(),
-      arrivalTime: arr.toISOString(),
-      aircraftModel: s.model,
-      durationMinutes: s.dur,
-      stops: 0,
-      basePrice: s.base,
-      totalSeats: 180,
-      availableSeats: 142,
-      cabinClasses: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS'],
-      cabinInventories,
-      status: 'ON_TIME',
-      active: true,
-      isBookable: true,
-      dataSource: 'LIVE',
-    };
-
-    // Cache each instant flight immediately so subsequent lookups (like /book/instant_...) hydrate with 0ms delay
-    const fKey = `flight_${flightItem.id}`;
-    const fEntry = { timestamp: Date.now(), data: flightItem };
-    MEMORY_FLIGHT_CACHE.set(fKey, fEntry);
-    setStorageCache(fKey, fEntry);
-
-    return flightItem;
-  });
-
-  return {
-    content: flights,
-    totalElements: flights.length,
-    totalPages: 1,
-    size: flights.length,
-    number: 0,
-  } as any;
-}
-
 export const flightService = {
   getCachedSearch(params: FlightSearchParams): CachedSearchResult | null {
     const cacheKey = normalizeSearchKey(params);
@@ -334,70 +134,45 @@ export const flightService = {
     const cached = this.getCachedSearch(params);
 
     if (!options?.forceRefresh && cached) {
-      // Return cached instantly; revalidate in background if older than 45 seconds
+      // Return cached authentic data instantly; revalidate in background if older than 45 seconds
       if (Date.now() - cached.timestamp > 45 * 1000) {
         this.revalidateSearchInBackground(params, cacheKey);
       }
       return cached.data;
     }
 
-    // Set up rapid fallback race: if cloud server is in cold sleep (> 4.2s), return synthetic schedules
-    const timeoutPromise = new Promise<ApiResponse<FlightSearchResponse>>((resolve) => {
-      setTimeout(() => {
-        const instantData = generateInstantFlights(params);
-        resolve({
-          success: true,
-          message: 'Live flight schedules synchronized',
-          data: instantData,
-          timestamp: new Date().toISOString(),
-        });
-      }, 4200);
-    });
-
-    const networkPromise = apiClient
-      .get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', {
+    try {
+      const res = await apiClient.get<ApiResponse<FlightSearchResponse>>('/v1/flights/search', {
         params,
         signal: options?.signal,
-      })
-      .then((res) => {
-        if (res.data && res.data.success) {
-          const cacheEntry: CachedSearchResult = { timestamp: Date.now(), data: res.data };
-          MEMORY_SEARCH_CACHE.set(cacheKey, cacheEntry);
-          setStorageCache(cacheKey, cacheEntry);
-
-          const flightList = Array.isArray(res.data.data)
-            ? res.data.data
-            : (res.data.data as any)?.content;
-          if (Array.isArray(flightList)) {
-            flightList.forEach((f: Flight) => {
-              if (f && f.id) {
-                const fKey = `flight_${f.id}`;
-                const fEntry: CacheEntry<Flight> = { timestamp: Date.now(), data: f };
-                MEMORY_FLIGHT_CACHE.set(fKey, fEntry);
-                setStorageCache(fKey, fEntry);
-              }
-            });
-          }
-        }
-        return res.data;
       });
 
-    try {
-      // Race network with fast-fallback so user never stares at a frozen screen
-      const result = await Promise.race([networkPromise, timeoutPromise]);
-      return result;
+      if (res.data && res.data.success) {
+        const cacheEntry: CachedSearchResult = { timestamp: Date.now(), data: res.data };
+        MEMORY_SEARCH_CACHE.set(cacheKey, cacheEntry);
+        setStorageCache(cacheKey, cacheEntry);
+
+        const flightList = Array.isArray(res.data.data)
+          ? res.data.data
+          : (res.data.data as any)?.content;
+        if (Array.isArray(flightList)) {
+          flightList.forEach((f: Flight) => {
+            if (f && f.id) {
+              const fKey = `flight_${f.id}`;
+              const fEntry: CacheEntry<Flight> = { timestamp: Date.now(), data: f };
+              MEMORY_FLIGHT_CACHE.set(fKey, fEntry);
+              setStorageCache(fKey, fEntry);
+            }
+          });
+        }
+      }
+
+      return res.data;
     } catch (err: any) {
       if (cached) {
         return cached.data;
       }
-      // Offline fallback
-      const fallbackData = generateInstantFlights(params);
-      return {
-        success: true,
-        message: 'Live flight schedules synchronized (offline mode)',
-        data: fallbackData,
-        timestamp: new Date().toISOString(),
-      };
+      throw err;
     }
   },
 
@@ -408,6 +183,20 @@ export const flightService = {
         const cacheEntry: CachedSearchResult = { timestamp: Date.now(), data: res.data };
         MEMORY_SEARCH_CACHE.set(cacheKey, cacheEntry);
         setStorageCache(cacheKey, cacheEntry);
+
+        const flightList = Array.isArray(res.data.data)
+          ? res.data.data
+          : (res.data.data as any)?.content;
+        if (Array.isArray(flightList)) {
+          flightList.forEach((f: Flight) => {
+            if (f && f.id) {
+              const fKey = `flight_${f.id}`;
+              const fEntry: CacheEntry<Flight> = { timestamp: Date.now(), data: f };
+              MEMORY_FLIGHT_CACHE.set(fKey, fEntry);
+              setStorageCache(fKey, fEntry);
+            }
+          });
+        }
       }
     } catch {
       // Background revalidation silently ignored
@@ -433,18 +222,6 @@ export const flightService = {
       MEMORY_FLIGHT_CACHE.set(key, session);
       return session.data;
     }
-
-    // Deterministic instant reconstruction fallback
-    if (flightId.startsWith('instant_')) {
-      const reconstructed = reconstructInstantFlight(flightId);
-      if (reconstructed) {
-        const entry: CacheEntry<Flight> = { timestamp: Date.now(), data: reconstructed };
-        MEMORY_FLIGHT_CACHE.set(key, entry);
-        setStorageCache(key, entry);
-        return reconstructed;
-      }
-    }
-
     return null;
   },
 
@@ -473,27 +250,11 @@ export const flightService = {
       if (cached) {
         return {
           success: true,
-          message: 'Flight retrieved from cache (offline fallback)',
+          message: 'Flight retrieved from cache',
           data: cached,
           timestamp: new Date().toISOString(),
         };
       }
-
-      if (flightId && flightId.startsWith('instant_')) {
-        const reconstructed = reconstructInstantFlight(flightId);
-        if (reconstructed) {
-          const entry: CacheEntry<Flight> = { timestamp: Date.now(), data: reconstructed };
-          MEMORY_FLIGHT_CACHE.set(key, entry);
-          setStorageCache(key, entry);
-          return {
-            success: true,
-            message: 'Flight retrieved instantly',
-            data: reconstructed,
-            timestamp: new Date().toISOString(),
-          };
-        }
-      }
-
       throw err;
     }
   },
@@ -512,3 +273,4 @@ export const flightService = {
     return POPULAR_AIRPORTS;
   },
 };
+

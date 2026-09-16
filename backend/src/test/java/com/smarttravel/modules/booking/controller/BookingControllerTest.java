@@ -65,6 +65,9 @@ class BookingControllerTest {
 
     @BeforeEach
     void setUp() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("user-1", null, java.util.List.of())
+        );
         sampleResponse = BookingResponse.builder()
                 .id("66c1e101f1a2b3c4d5e6f801")
                 .bookingReference("ST8K4P2Q")
@@ -84,6 +87,11 @@ class BookingControllerTest {
                 .status(BookingStatus.CONFIRMED)
                 .createdAt(Instant.now())
                 .build();
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
     @Test

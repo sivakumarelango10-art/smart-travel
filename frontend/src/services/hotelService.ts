@@ -2,11 +2,93 @@ import { apiClient } from './api';
 import { ApiResponse, Hotel, HotelSearchParams, RoomType } from '../types/api';
 
 const hotelSearchCache = new Map<string, { timestamp: number; data: any }>();
-const CACHE_TTL_MS = 3 * 60 * 1000;
+const hotelDetailCache = new Map<string, { timestamp: number; data: Hotel }>();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const STORAGE_PREFIX = 'smarttravel_hotel_cache_';
+
+function getStorage<T>(key: string): { timestamp: number; data: T } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + key) || sessionStorage.getItem(STORAGE_PREFIX + key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Date.now() - parsed.timestamp < CACHE_TTL_MS) {
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+function setStorage<T>(key: string, data: { timestamp: number; data: T }): void {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data));
+  } catch {
+    try {
+      sessionStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data));
+    } catch {}
+  }
+}
 
 export const hotelService = {
   /**
-   * Search hotels with pagination and filters.
+   * Fast retrieval from in-memory or storage cache for sub-5ms instant rendering.
+   */
+  getCachedSearch(params?: HotelSearchParams): {
+    content: Hotel[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+  } | null {
+    const cacheKey = JSON.stringify(params || {});
+    const mem = hotelSearchCache.get(cacheKey);
+    if (mem && Date.now() - mem.timestamp < CACHE_TTL_MS) return mem.data;
+
+    const stored = getStorage<{ content: Hotel[]; totalElements: number; totalPages: number; page: number }>(cacheKey);
+    if (stored) {
+      hotelSearchCache.set(cacheKey, stored);
+      return stored.data;
+    }
+
+    return null;
+  },
+
+  getInstantSearch(params?: HotelSearchParams): {
+    content: Hotel[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+  } {
+    return this.getCachedSearch(params) || {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      page: 0,
+    };
+  },
+
+  /**
+   * Fast single hotel lookup from cache.
+   */
+  getCachedHotel(hotelId: string): Hotel | null {
+    if (!hotelId) return null;
+    const cleanId = hotelId.trim().toLowerCase();
+    const mem = hotelDetailCache.get(cleanId);
+    if (mem && Date.now() - mem.timestamp < CACHE_TTL_MS) return mem.data;
+
+    const stored = getStorage<Hotel>(`detail_${cleanId}`);
+    if (stored) {
+      hotelDetailCache.set(cleanId, stored);
+      return stored.data;
+    }
+
+    return null;
+  },
+
+  getInstantHotel(hotelId: string): Hotel | null {
+    return this.getCachedHotel(hotelId);
+  },
+
+  /**
+   * Search hotels from live MongoDB Atlas database with Stale-While-Revalidate (SWR).
    */
   async searchHotels(params?: HotelSearchParams): Promise<{
     content: Hotel[];
@@ -15,47 +97,99 @@ export const hotelService = {
     page: number;
   }> {
     const cacheKey = JSON.stringify(params || {});
-    const cached = hotelSearchCache.get(cacheKey);
+    const cached = this.getCachedSearch(params);
 
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.data;
+    const networkPromise = apiClient
+      .get<
+        ApiResponse<{
+          content: Hotel[];
+          totalElements: number;
+          totalPages: number;
+          number: number;
+        }>
+      >('/v1/hotels', { params })
+      .then((response) => {
+        const data = response.data?.data;
+        if (data && Array.isArray(data.content)) {
+          const result = {
+            content: data.content,
+            totalElements: data.totalElements,
+            totalPages: data.totalPages,
+            page: data.number,
+          };
+          const entry = { timestamp: Date.now(), data: result };
+          hotelSearchCache.set(cacheKey, entry);
+          setStorage(cacheKey, entry);
+
+          // Populate individual hotels into detail cache for 0ms navigation
+          data.content.forEach((h: Hotel) => {
+            if (h && h.id) {
+              const hEntry = { timestamp: Date.now(), data: h };
+              hotelDetailCache.set(h.id.toLowerCase(), hEntry);
+              setStorage(`detail_${h.id.toLowerCase()}`, hEntry);
+            }
+          });
+
+          return result;
+        }
+        return cached || { content: [], totalElements: 0, totalPages: 0, page: 0 };
+      });
+
+    if (cached) {
+      // Revalidate in background while returning cached data immediately
+      networkPromise.catch(() => {});
+      return cached;
     }
 
-    const response = await apiClient.get<
-      ApiResponse<{
-        content: Hotel[];
-        totalElements: number;
-        totalPages: number;
-        number: number;
-      }>
-    >('/v1/hotels', { params });
-    const data = response.data.data;
-    const result = {
-      content: data?.content || [],
-      totalElements: data?.totalElements || 0,
-      totalPages: data?.totalPages || 0,
-      page: data?.number || 0,
-    };
-    hotelSearchCache.set(cacheKey, { timestamp: Date.now(), data: result });
-    return result;
+    return networkPromise;
   },
 
   /**
-   * Get single hotel details.
+   * Get single hotel details from MongoDB Atlas with SWR caching.
    */
   async getHotel(hotelId: string): Promise<Hotel> {
     const cleanId = hotelId ? hotelId.trim().replace(/\s+/g, '-').replace(/_+/g, '-') : '';
-    const response = await apiClient.get<ApiResponse<Hotel>>(`/v1/hotels/${encodeURIComponent(cleanId)}`);
-    return response.data.data;
+    const cached = this.getCachedHotel(cleanId);
+
+    const networkPromise = apiClient
+      .get<ApiResponse<Hotel>>(`/v1/hotels/${encodeURIComponent(cleanId)}`)
+      .then((response) => {
+        const serverHotel = response.data?.data;
+        if (serverHotel) {
+          const entry = { timestamp: Date.now(), data: serverHotel };
+          hotelDetailCache.set(cleanId.toLowerCase(), entry);
+          setStorage(`detail_${cleanId.toLowerCase()}`, entry);
+          return serverHotel;
+        }
+        if (cached) return cached;
+        throw new Error('Hotel not found');
+      });
+
+    if (cached) {
+      networkPromise.catch(() => {});
+      return cached;
+    }
+
+    return networkPromise;
   },
+
 
   /**
    * Get available room types for a hotel.
    */
   async getRoomTypes(hotelId: string): Promise<RoomType[]> {
     const cleanId = hotelId ? hotelId.trim().replace(/\s+/g, '-').replace(/_+/g, '-') : '';
-    const response = await apiClient.get<ApiResponse<RoomType[]>>(`/v1/hotels/${encodeURIComponent(cleanId)}/rooms`);
-    return response.data.data || [];
+    const instant = this.getInstantHotel(cleanId);
+    const instantRooms = instant?.roomTypes || [];
+
+    try {
+      const response = await apiClient.get<ApiResponse<RoomType[]>>(`/v1/hotels/${encodeURIComponent(cleanId)}/rooms`, {
+        timeout: 4000,
+      });
+      return response.data?.data || instantRooms;
+    } catch {
+      return instantRooms;
+    }
   },
 
   /**

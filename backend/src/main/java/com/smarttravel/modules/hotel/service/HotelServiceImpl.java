@@ -52,19 +52,53 @@ public class HotelServiceImpl implements HotelService {
     )
     public Page<Hotel> searchHotels(String city, String airportCode, Integer minStars,
                                      BigDecimal maxPrice, Pageable pageable) {
-        if (airportCode != null && !airportCode.isBlank()) {
+        boolean hasCity = city != null && !city.isBlank();
+        boolean hasAirport = airportCode != null && !airportCode.isBlank();
+        boolean hasStars = minStars != null && minStars > 0;
+        boolean hasPrice = maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) > 0;
+
+        if (hasAirport && !hasCity && !hasStars && !hasPrice) {
             return hotelRepository.findByNearestAirportCodeAndActiveTrue(airportCode.toUpperCase().trim(), pageable);
         }
-        if (city != null && !city.isBlank()) {
-            if (minStars != null) {
-                return hotelRepository.searchByCityAndStars(city, minStars, pageable);
-            }
-            if (maxPrice != null) {
-                return hotelRepository.searchByCityAndMaxPrice(city, maxPrice, pageable);
-            }
-            return hotelRepository.findByCityContainingIgnoreCaseAndActiveTrue(city, pageable);
+        if (hasCity && hasStars && !hasPrice && !hasAirport) {
+            return hotelRepository.searchByCityAndStars(city.trim(), minStars, pageable);
         }
-        return hotelRepository.findByActiveTrueOrderByAverageRatingDesc(pageable);
+        if (hasCity && hasPrice && !hasStars && !hasAirport) {
+            return hotelRepository.searchByCityAndMaxPrice(city.trim(), maxPrice, pageable);
+        }
+        if (hasCity && !hasStars && !hasPrice && !hasAirport) {
+            return hotelRepository.findByCityContainingIgnoreCaseAndActiveTrue(city.trim(), pageable);
+        }
+        if (!hasCity && !hasAirport && !hasStars && !hasPrice) {
+            return hotelRepository.findByActiveTrueOrderByAverageRatingDesc(pageable);
+        }
+
+        Query query = new Query();
+        List<Criteria> criteriaList = new java.util.ArrayList<>();
+        criteriaList.add(Criteria.where("active").is(true));
+
+        if (hasAirport) {
+            criteriaList.add(Criteria.where("nearestAirportCode").is(airportCode.toUpperCase().trim()));
+        }
+        if (hasCity) {
+            criteriaList.add(Criteria.where("address.city").regex(java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(city.trim()), java.util.regex.Pattern.CASE_INSENSITIVE)));
+        }
+        if (hasStars) {
+            criteriaList.add(Criteria.where("starRating").gte(minStars));
+        }
+        if (hasPrice) {
+            criteriaList.add(Criteria.where("baseNightlyRate").lte(maxPrice));
+        }
+
+        query.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
+
+        long total = mongoTemplate.count(query, Hotel.class);
+        if (pageable.getSort().isUnsorted()) {
+            query.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "averageRating"));
+        }
+        query.with(pageable);
+        List<Hotel> hotels = mongoTemplate.find(query, Hotel.class);
+        return new org.springframework.data.domain.PageImpl<>(hotels, pageable, total);
     }
 
     @Override
@@ -124,6 +158,10 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(
+            value = {com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_SEARCH},
+            allEntries = true
+    )
     public RoomType holdRoom(String hotelId, String roomTypeId, int roomCount) {
         if (roomCount <= 0) throw new BadRequestException("Room count must be at least 1");
 
@@ -166,6 +204,10 @@ public class HotelServiceImpl implements HotelService {
     }
 
     @Override
+    @org.springframework.cache.annotation.CacheEvict(
+            value = {com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_STATIC, com.smarttravel.common.config.CacheConfig.CACHE_HOTEL_SEARCH},
+            allEntries = true
+    )
     public void releaseRoom(String hotelId, String roomTypeId, int roomCount) {
         if (roomCount <= 0) return;
 

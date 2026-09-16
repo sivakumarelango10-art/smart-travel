@@ -73,6 +73,12 @@ export const startKeepAliveHeartbeat = () => {
   warmupBackend();
   preloadPaymentSdk();
 
+  // Proactively warm up search APIs in idle time so subsequent navigation is instantaneous
+  setTimeout(() => {
+    import('./hotelService').then((m) => m.hotelService.searchHotels({ page: 0, size: 12 })).catch(() => {});
+    import('./flightService').then((m) => m.flightService.searchFlights({ origin: 'DEL', destination: 'BOM' })).catch(() => {});
+  }, 1000);
+
   if (warmupInterval) return;
 
   warmupInterval = setInterval(() => {

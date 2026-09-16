@@ -58,6 +58,11 @@ public class MongoIndexConfig {
                     .on("active", Sort.Direction.ASC)
                     .on("basePrice", Sort.Direction.ASC)
                     .named("idx_flight_cheapest_composite"));
+            ensureIndexSafely("flights", new Index().on("departureAirport.city", Sort.Direction.ASC)
+                    .on("arrivalAirport.city", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .on("departureTime", Sort.Direction.ASC)
+                    .named("idx_flight_cities_date_active"));
             ensureIndexSafely("flights", new Index().on("flightNumber", Sort.Direction.ASC)
                     .named("idx_flight_number"));
             ensureIndexSafely("flights", new Index().on("status", Sort.Direction.ASC)
@@ -98,6 +103,10 @@ public class MongoIndexConfig {
                     .on("active", Sort.Direction.ASC)
                     .on("starRating", Sort.Direction.DESC)
                     .named("idx_hotel_address_city_rating"));
+            ensureIndexSafely("hotels", new Index().on("address.city", Sort.Direction.ASC)
+                    .on("active", Sort.Direction.ASC)
+                    .on("baseNightlyRate", Sort.Direction.ASC)
+                    .named("idx_hotel_city_price_active"));
             ensureIndexSafely("hotels", new Index().on("nearestAirportCode", Sort.Direction.ASC)
                     .on("active", Sort.Direction.ASC)
                     .named("idx_hotel_airport_active"));

@@ -6,6 +6,9 @@ import com.smarttravel.modules.payment.gateway.dto.RazorpayOrderDto;
 import com.smarttravel.modules.payment.gateway.dto.RazorpayRefundDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -37,6 +40,9 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
 
     private final RazorpayProperties properties;
     private final RestTemplate restTemplate;
+
+    @Autowired(required = false)
+    private Environment environment;
 
     @org.springframework.beans.factory.annotation.Autowired
     public RazorpayPaymentGatewayImpl(RazorpayProperties properties) {
@@ -126,9 +132,14 @@ public class RazorpayPaymentGatewayImpl implements RazorpayPaymentGateway {
             return false;
         }
 
-        // Support simulated signatures in development/test/sandbox mode
-        if (signature.startsWith("sim_") || signature.startsWith("mock_") || signature.startsWith("rzp_test_")
-                || signature.startsWith("sig_mock_") || signature.startsWith("sig_sim_") || signature.startsWith("test_")) {
+        // Support simulated signatures strictly in development/test/sandbox mode — NEVER in production!
+        boolean isSimulated = signature.startsWith("sim_") || signature.startsWith("mock_") || signature.startsWith("rzp_test_")
+                || signature.startsWith("sig_mock_") || signature.startsWith("sig_sim_") || signature.startsWith("test_");
+        if (isSimulated) {
+            if (environment != null && environment.acceptsProfiles(Profiles.of("prod"))) {
+                log.error("SECURITY ALERT: Simulated/mock payment signature rejected in production environment for orderId: {}", orderId);
+                return false;
+            }
             log.info("Sandbox/simulated payment signature accepted for orderId: {}", orderId);
             return true;
         }

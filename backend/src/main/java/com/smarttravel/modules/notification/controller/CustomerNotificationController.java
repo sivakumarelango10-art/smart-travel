@@ -43,7 +43,7 @@ public class CustomerNotificationController {
     public ResponseEntity<ApiResponse<PageResponse<NotificationResponse>>> getUserNotifications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         PageResponse<NotificationResponse> response = notificationService.getUserNotifications(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Notifications retrieved successfully", response));
     }
@@ -52,7 +52,7 @@ public class CustomerNotificationController {
     @Operation(summary = "Get Unread Notifications Count", description = "Retrieves total unread notification badge count for authenticated customer")
     public ResponseEntity<ApiResponse<UnreadCountResponse>> getUnreadCount(
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         UnreadCountResponse response = notificationService.getUnreadCount(userId);
         return ResponseEntity.ok(ApiResponse.success("Unread count retrieved", response));
     }
@@ -62,7 +62,7 @@ public class CustomerNotificationController {
     public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(
             @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = principal != null && principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         NotificationResponse response = notificationService.markAsRead(id, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read", response));

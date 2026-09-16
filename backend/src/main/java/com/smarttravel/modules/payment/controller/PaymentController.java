@@ -56,8 +56,8 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentOrderResponse>> createPaymentOrder(
             @Valid @RequestBody PaymentOrderCreateRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
-        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getCurrentUserEmail().orElse("user@smarttravel.com");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getRequiredCurrentUserEmail();
 
         PaymentOrderResponse response = paymentService.createPaymentOrder(request, userId, userEmail);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -80,8 +80,8 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentResponse>> verifyPayment(
             @Valid @RequestBody PaymentVerificationRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
-        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getCurrentUserEmail().orElse("user@smarttravel.com");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getRequiredCurrentUserEmail();
 
         PaymentResponse response = paymentService.verifyPayment(request, userId, userEmail);
         return ResponseEntity.ok(ApiResponse.success("Payment verified successfully", response));
@@ -102,7 +102,7 @@ public class PaymentController {
             @Parameter(description = "Payment MongoDB ID", example = "66c1e101f1a2b3c4d5e6f901")
             @PathVariable String paymentId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         PaymentResponse response = paymentService.getPaymentById(paymentId, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Payment retrieved successfully", response));
@@ -123,7 +123,7 @@ public class PaymentController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         PaymentResponse response = paymentService.getPaymentByBookingId(bookingId, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Payment retrieved successfully", response));

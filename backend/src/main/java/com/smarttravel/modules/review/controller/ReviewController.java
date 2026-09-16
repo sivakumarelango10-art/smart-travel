@@ -1,6 +1,7 @@
 package com.smarttravel.modules.review.controller;
 
 import com.smarttravel.common.response.ApiResponse;
+import com.smarttravel.common.security.SecurityUtils;
 import com.smarttravel.modules.review.dto.ReviewStatsDto;
 import com.smarttravel.modules.review.model.Review;
 import com.smarttravel.modules.review.model.ReviewTargetType;
@@ -38,8 +39,8 @@ public class ReviewController {
             @Valid @RequestBody CreateReviewRequest request,
             Authentication authentication) {
 
-        String userId = authentication.getName();
-        String userFullName = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
+        String userFullName = SecurityUtils.getCurrentUserEmail().orElse(userId);
 
         if (authentication.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails ud) {
             userFullName = ud.getUsername();
@@ -124,7 +125,7 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<Review>> voteHelpful(
             @PathVariable String reviewId,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         Review review = reviewService.voteHelpful(reviewId, userId);
         return ResponseEntity.ok(ApiResponse.success("Helpfulness vote recorded", review));
     }
@@ -135,7 +136,7 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<Review>> flagReview(
             @PathVariable String reviewId,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         Review review = reviewService.flagReview(reviewId, userId);
         return ResponseEntity.ok(ApiResponse.success("Review flagged for moderation", review));
     }
@@ -147,7 +148,7 @@ public class ReviewController {
             @PathVariable String reviewId,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         Review updated = reviewService.attachPhoto(reviewId, userId, file, isAdmin);
@@ -171,7 +172,7 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<Void>> deleteReview(
             @PathVariable String reviewId,
             Authentication authentication) {
-        String userId = authentication.getName();
+        String userId = SecurityUtils.getRequiredCurrentUserId();
         reviewService.deleteReview(reviewId, userId);
         return ResponseEntity.ok(ApiResponse.success("Review deleted"));
     }

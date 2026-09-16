@@ -44,7 +44,7 @@ public class TicketController {
     public ResponseEntity<ApiResponse<PageResponse<TicketResponse>>> getUserTickets(
             @PageableDefault(size = 20, sort = "issuedAt", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         PageResponse<TicketResponse> response = ticketService.getUserTickets(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("User tickets retrieved successfully", response));
     }
@@ -58,7 +58,7 @@ public class TicketController {
     public ResponseEntity<ApiResponse<TicketResponse>> getTicketById(
             @Parameter(description = "Ticket MongoDB ID", required = true) @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         TicketResponse response = ticketService.getTicketById(id, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Ticket retrieved successfully", response));
     }
@@ -68,7 +68,7 @@ public class TicketController {
     public ResponseEntity<ApiResponse<TicketResponse>> getTicketByNumber(
             @Parameter(description = "Public Ticket Number", required = true) @PathVariable String ticketNumber,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         TicketResponse response = ticketService.getTicketByNumber(ticketNumber, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Ticket retrieved successfully", response));
     }
@@ -78,7 +78,7 @@ public class TicketController {
     public ResponseEntity<ApiResponse<TicketResponse>> getTicketByBookingId(
             @Parameter(description = "Booking ID", required = true) @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         TicketResponse response = ticketService.getTicketByBookingId(bookingId, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Ticket retrieved successfully", response));
     }
@@ -88,7 +88,7 @@ public class TicketController {
     public ResponseEntity<byte[]> downloadTicketPdf(
             @Parameter(description = "Ticket ID", required = true) @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         TicketResponse ticket = ticketService.getTicketById(id, userId, false);
         byte[] pdfBytes = ticketService.generateTicketPdf(id, userId, false);

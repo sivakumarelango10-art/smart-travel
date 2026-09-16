@@ -42,8 +42,16 @@ export const HotelDetailsPage: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
   const { user } = useAuth();
 
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cleanHotelId = useMemo(() => {
+    return hotelId ? decodeURIComponent(hotelId).trim() : '';
+  }, [hotelId]);
+
+  const instantHotel = useMemo(() => {
+    return cleanHotelId ? hotelService.getInstantHotel(cleanHotelId) : null;
+  }, [cleanHotelId]);
+
+  const [hotel, setHotel] = useState<Hotel | null>(instantHotel);
+  const [loading, setLoading] = useState(!instantHotel);
   const [error, setError] = useState<string | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [errorCode, setErrorCode] = useState<number | null>(null);
@@ -108,34 +116,41 @@ export const HotelDetailsPage: React.FC = () => {
     enabled: !!hotelId,
   });
 
-  const cleanHotelId = useMemo(() => {
-    return hotelId ? decodeURIComponent(hotelId).trim() : '';
-  }, [hotelId]);
-
   useEffect(() => {
     if (!cleanHotelId) return;
 
-    setLoading(true);
+    // Check instant catalog or memory cache first
+    const instant = hotelService.getInstantHotel(cleanHotelId);
+    if (instant) {
+      setHotel(instant);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     setErrorCode(null);
+
     hotelService
       .getHotel(cleanHotelId)
       .then((data) => {
-        setHotel(data);
-        setActivePhotoIndex(0);
-        // Track view activity
-        recommendationService.trackActivity({
-          activityType: 'VIEW_HOTEL',
-          targetId: cleanHotelId,
-          targetType: 'HOTEL',
-          metadata: { name: data.name, city: data.address?.city },
-        });
+        if (data) {
+          setHotel(data);
+          // Track view activity
+          recommendationService.trackActivity({
+            activityType: 'VIEW_HOTEL',
+            targetId: cleanHotelId,
+            targetType: 'HOTEL',
+            metadata: { name: data.name, city: data.address?.city },
+          });
+        }
       })
       .catch((err: any) => {
-        const status = err.status || err.response?.status || err.response?.data?.status || 0;
-        setErrorCode(status);
-        const msg = err.response?.data?.message || err.message || 'Hotel property not found in catalog.';
-        setError(msg);
+        if (!hotel && !instant) {
+          const status = err.status || err.response?.status || err.response?.data?.status || 0;
+          setErrorCode(status);
+          const msg = err.response?.data?.message || err.message || 'Hotel property not found in catalog.';
+          setError(msg);
+        }
       })
       .finally(() => {
         setLoading(false);

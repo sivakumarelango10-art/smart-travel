@@ -49,6 +49,17 @@ class CheckInControllerTest {
     @MockBean
     private CustomUserDetailsService userDetailsService;
 
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("user-1", null, java.util.List.of())
+        );
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
 
     @Test
     @DisplayName("POST /api/v1/bookings/{bookingId}/check-in returns 201 with CheckInResponse")

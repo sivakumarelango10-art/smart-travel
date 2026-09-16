@@ -66,8 +66,8 @@ public class BookingController {
     public ResponseEntity<ApiResponse<BookingResponse>> createBooking(
             @Valid @RequestBody BookingCreateRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
-        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getCurrentUserEmail().orElse("user@smarttravel.com");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+        String userEmail = principal != null ? principal.getEmail() : SecurityUtils.getRequiredCurrentUserEmail();
 
         BookingResponse response = bookingService.createBooking(request, userId, userEmail);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -89,7 +89,7 @@ public class BookingController {
             @Parameter(description = "Pagination and sorting parameters")
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         PageResponse<BookingResponse> response = bookingService.getUserBookings(userId, status, pageable);
         return ResponseEntity.ok(ApiResponse.success("User bookings retrieved successfully", response));
@@ -109,7 +109,7 @@ public class BookingController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         BookingResponse response = bookingService.getBookingById(id, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Booking retrieved successfully", response));
@@ -129,7 +129,7 @@ public class BookingController {
             @Parameter(description = "PNR Booking Reference", example = "ST8K4P2Q")
             @PathVariable String bookingReference,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         BookingResponse response = bookingService.getBookingByReference(bookingReference, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Booking retrieved successfully", response));
@@ -151,7 +151,7 @@ public class BookingController {
             @PathVariable String id,
             @RequestBody(required = false) BookingCancelRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
 
         BookingResponse response = bookingService.cancelBooking(id, request, userId, false);
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled successfully", response));
@@ -171,7 +171,7 @@ public class BookingController {
             @Parameter(description = "Booking MongoDB ID", example = "66c1e101f1a2b3c4d5e6f801")
             @PathVariable String id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         if (refundService == null) {
             return ResponseEntity.ok(ApiResponse.success("Refund service not available", null));
         }

@@ -52,7 +52,7 @@ public class CustomerDisruptionController {
     public ResponseEntity<ApiResponse<List<FlightDisruptionDto>>> getBookingDisruptions(
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = principal != null && principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         List<FlightDisruptionDto> response = disruptionService.getDisruptionsForBooking(bookingId, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Booking disruptions retrieved successfully", response));
@@ -65,7 +65,7 @@ public class CustomerDisruptionController {
     public ResponseEntity<ApiResponse<RefundResponse>> getBookingRefund(
             @PathVariable String bookingId,
             @AuthenticationPrincipal UserPrincipal principal) {
-        String userId = principal != null ? principal.getId() : SecurityUtils.getCurrentUserId().orElse("user-1");
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
         boolean isAdmin = principal != null && principal.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         RefundResponse response = refundService.getRefundByBookingId(bookingId, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Booking refund retrieved successfully", response));
