@@ -681,14 +681,124 @@ export const HotelDetailsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. VERIFIED GUEST REVIEWS */}
+      {/* 5. 360° VIRTUAL TOUR GALLERY */}
+      {(() => {
+        // Collect all available panorama tours (hotel-level + per-room)
+        const allTours: Array<{ url: string; title: string; subtitle: string; thumbnail?: string; label?: string }> = [];
+
+        if (hotel.virtualTour?.enabled && hotel.virtualTour?.panoramaUrl) {
+          allTours.push({
+            url: hotel.virtualTour.panoramaUrl,
+            thumbnail: hotel.virtualTour.thumbnailUrl || hotel.virtualTour.panoramaUrl,
+            title: hotel.name,
+            subtitle: 'Hotel-wide 360° Virtual Experience',
+            label: '🏨 Hotel Tour',
+          });
+        }
+
+        hotel.roomTypes?.forEach((room) => {
+          const pano = room.virtualTour?.panoramaUrl;
+          if (pano) {
+            allTours.push({
+              url: pano,
+              thumbnail: room.virtualTour?.thumbnailUrl || pano,
+              title: `${room.name}`,
+              subtitle: `${hotel.name} · ${room.category} Category`,
+              label: room.category,
+            });
+          }
+        });
+
+        if (allTours.length === 0) return null;
+
+        return (
+          <section className="space-y-5">
+            {/* Section Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-bold mb-2">
+                  <Compass className="w-3.5 h-3.5 animate-spin-slow" />
+                  <span>INTERACTIVE 360° VIRTUAL TOURS</span>
+                </div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Eye className="w-6 h-6 text-amber-400" />
+                  Explore Every Space in 360°
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Drag, zoom, and explore {hotel.name} from any angle before you book.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#14161F] border border-amber-400/20 text-amber-400 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{allTours.length} Panoramic Tour{allTours.length > 1 ? 's' : ''} Available</span>
+              </div>
+            </div>
+
+            {/* Tour Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {allTours.map((tour, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActive360({ url: tour.url, title: tour.title, subtitle: tour.subtitle })}
+                  className="group relative rounded-2xl overflow-hidden border border-white/10 hover:border-amber-400/60 bg-[#14161F] transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/10 hover:scale-[1.02] text-left w-full"
+                  id={`tour-card-${idx}`}
+                >
+                  {/* Panorama Thumbnail */}
+                  <div className="relative h-44 overflow-hidden bg-[#0B0C10]">
+                    <ImageWithFallback
+                      src={tour.thumbnail || ''}
+                      alt={tour.title}
+                      containerClassName="w-full h-full"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* 360° Badge */}
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black tracking-wider shadow-glow-gold">
+                      360°
+                    </div>
+
+                    {/* Play Overlay on Hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="w-14 h-14 rounded-full bg-amber-400/90 flex items-center justify-center shadow-glow-gold">
+                        <Compass className="w-7 h-7 text-black animate-spin" />
+                      </div>
+                    </div>
+
+                    {/* Category label */}
+                    {tour.label && (
+                      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-amber-400 text-[10px] font-bold border border-amber-400/20">
+                        {tour.label}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tour Info */}
+                  <div className="p-4">
+                    <h3 className="text-sm font-bold text-white truncate">{tour.title}</h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">{tour.subtitle}</p>
+                    <div className="mt-3 flex items-center gap-1.5 text-amber-400 text-xs font-bold">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Launch 360° Tour</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* 6. VERIFIED GUEST REVIEWS */}
       <ReviewSection
         targetId={hotel.id}
         targetType="HOTEL"
         targetName={hotel.name}
       />
 
-      {/* 6. CONTEXTUAL HOTEL RECOMMENDATIONS */}
+      {/* 7. CONTEXTUAL HOTEL RECOMMENDATIONS */}
       <RecommendationsSection
         context="HOTEL_DETAILS"
         destination={hotel.address?.city}
