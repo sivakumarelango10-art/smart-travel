@@ -202,52 +202,8 @@ export const HotelReservationModal: React.FC<HotelReservationModalProps> = ({
       }
     }
 
-    // High-resilience instant offline recovery: synthesize genuine confirmed booking
-    const pnr = 'HTL-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const nights = priceData?.nights || Math.max(1, Math.round((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000));
-    const fallbackBooking: HotelBooking = {
-      id: 'hbk-' + Date.now().toString(36),
-      bookingReference: pnr,
-      userId: user?.id || 'usr-guest',
-      userEmail: guestEmail.trim(),
-      hotelId: hotel.id,
-      hotelName: hotel.name,
-      hotelCity: hotel.address?.city || 'Delhi',
-      hotelAddress: hotel.address?.line1 || '',
-      hotelImageUrl: hotel.imageUrls?.[0] || '',
-      roomTypeId: room.id,
-      roomTypeName: room.name,
-      roomCategory: room.category,
-      checkInDate,
-      checkOutDate,
-      nights,
-      guestCount,
-      roomCount,
-      primaryGuestName: guestName.trim(),
-      primaryGuestEmail: guestEmail.trim(),
-      primaryGuestPhone: guestPhone.trim(),
-      specialRequests: specialRequests.trim() || undefined,
-      nightlyRate: priceData?.nightlyRate || room.nightlyRate || 15000,
-      baseAmount: priceData?.baseAmount || (nights * (room.nightlyRate || 15000)),
-      taxAmount: priceData?.taxAmount || Math.round((nights * (room.nightlyRate || 15000)) * 0.12),
-      discountAmount: priceData?.discountAmount || 0,
-      totalAmount: priceData?.totalAmount || 403200,
-      currency: hotel.currency || 'INR',
-      status: 'CONFIRMED',
-      paymentId: 'TXN-' + method + '-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
-      paymentStatus: 'PAID - VERIFIED',
-      cancellationPolicy: 'Free cancellation up to 7 days before check-in (100% refund).',
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save to localStorage so it is immediately visible in MyBookingsPage
-    try {
-      const existing = JSON.parse(localStorage.getItem('smarttravel_local_hotel_bookings') || '[]');
-      existing.unshift(fallbackBooking);
-      localStorage.setItem('smarttravel_local_hotel_bookings', JSON.stringify(existing));
-    } catch {}
-
-    return fallbackBooking;
+    // API failed after retries — show real error, don't synthesize fake bookings
+    throw lastError || new Error('Reservation failed. Please check your connection and try again.');
   };
 
   const handleCompleteBooking = async (e?: React.FormEvent, overrideMethod?: string) => {
@@ -625,23 +581,43 @@ export const HotelReservationModal: React.FC<HotelReservationModalProps> = ({
             </form>
           )}
 
-          {/* Step 3: Instant Luxury Confirmation */}
+          {/* Step 3: Confirmation (adapts for PENDING or CONFIRMED) */}
           {step === 'CONFIRMED' && bookingResult && (
             <div className="p-6 sm:p-8 space-y-6 text-center animate-fade-in">
-              {/* Success Badge */}
+              {/* Status Badge */}
               <div className="space-y-2">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-glow-emerald">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold tracking-wider uppercase">
-                  ✓ RESERVATION CONFIRMED & GUARANTEED
-                </div>
-                <h3 className="text-2xl font-black text-white">
-                  Your Stay at {bookingResult.hotelName} is Confirmed!
-                </h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  A confirmation voucher & receipt has been dispatched to <strong>{bookingResult.primaryGuestEmail}</strong> and WhatsApp notification to <strong>{bookingResult.primaryGuestPhone}</strong>.
-                </p>
+                {bookingResult.status === 'PENDING' ? (
+                  <>
+                    <div className="w-16 h-16 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/30 flex items-center justify-center mx-auto shadow-glow-gold">
+                      <Clock className="w-8 h-8" />
+                    </div>
+                    <div className="inline-block px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-extrabold tracking-wider uppercase">
+                      ⏳ Reservation Received — Payment Pending
+                    </div>
+                    <h3 className="text-2xl font-black text-white">
+                      Booking Created — Complete Payment
+                    </h3>
+                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                      Your reservation at <strong>{bookingResult.hotelName}</strong> has been held.
+                      Complete your payment to confirm the stay. Reference: <strong className="font-mono text-amber-400">{bookingResult.bookingReference}</strong>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-glow-emerald">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold tracking-wider uppercase">
+                      ✓ RESERVATION CONFIRMED &amp; GUARANTEED
+                    </div>
+                    <h3 className="text-2xl font-black text-white">
+                      Your Stay at {bookingResult.hotelName} is Confirmed!
+                    </h3>
+                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                      A confirmation voucher &amp; receipt has been dispatched to <strong>{bookingResult.primaryGuestEmail}</strong> and WhatsApp notification to <strong>{bookingResult.primaryGuestPhone}</strong>.
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Digital Check-in Pass Card with Scannable QR Code */}
