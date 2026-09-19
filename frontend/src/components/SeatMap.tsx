@@ -9,6 +9,7 @@ interface SeatMapProps {
   flightId: string;
   cabinClass?: string;
   seats: Seat[];
+  loading?: boolean;
   requiredCount: number;
   selectedSeats: string[];
   onSeatSelect: (seats: string[]) => void;
@@ -20,6 +21,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   flightId,
   cabinClass,
   seats,
+  loading = false,
   requiredCount,
   selectedSeats = [],
   onSeatSelect,
@@ -73,6 +75,9 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     enabled: !!flightId,
   });
 
+  // Active cabin filter state: 'ALL' or specific cabin like 'ECONOMY', 'BUSINESS', 'PREMIUM_ECONOMY'
+  const [activeCabinFilter, setActiveCabinFilter] = useState<'ALL' | string>('ALL');
+
   // Helper to safely extract row number
   const getSeatRow = (seat: Seat): number => {
     if (typeof seat.rowNumber === 'number' && !isNaN(seat.rowNumber)) return seat.rowNumber;
@@ -100,7 +105,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     const pref = effectivePreference.toUpperCase();
     if (pref === 'WINDOW' && (col === 'A' || col === 'F')) return true;
     if (pref === 'AISLE' && (col === 'C' || col === 'D')) return true;
-    if (pref === 'EXTRA_LEGROOM' && (rowNum === 1 || rowNum === 12 || (seat.priceAdjustment && seat.priceAdjustment > 0))) return true;
+    if (pref === 'EXTRA_LEGROOM' && (rowNum === 1 || rowNum === 7 || rowNum === 12 || (seat.priceAdjustment && seat.priceAdjustment > 0))) return true;
     if (pref === 'MIDDLE' && (col === 'B' || col === 'E')) return true;
     return false;
   };
@@ -112,39 +117,101 @@ export const SeatMap: React.FC<SeatMapProps> = ({
     ? (localSeats as any).seats
     : [];
 
-  // Reliable fallback if empty
-  const safeSeats: Seat[] = rawSeats.length > 0 ? rawSeats : Array.from({ length: 20 * 6 }, (_, i) => {
-    const r = Math.floor(i / 6) + 1;
-    const col = ['A', 'B', 'C', 'D', 'E', 'F'][i % 6];
-    return {
-      seatNumber: `${r}${col}`,
-      rowNumber: r,
-      column: col,
-      cabinClass: (cabinClass as any) || 'ECONOMY',
-      status: 'AVAILABLE' as const,
-      extraLegroom: r === 1 || r === 12,
-      isEmergencyExit: r === 12,
-      isWindow: col === 'A' || col === 'F',
-      isAisle: col === 'C' || col === 'D',
-      isMiddle: col === 'B' || col === 'E',
-      price: 0,
-      priceAdjustment: r === 1 ? 500 : r === 12 ? 350 : 0,
-    };
-  });
+  // Reliable fallback matching aircraft cabin structure
+  const safeSeats: Seat[] = useMemo(() => {
+    if (rawSeats.length > 0) return rawSeats;
+    // When loading, don't generate fake seats to avoid layout jumping
+    if (loading) return [];
+
+    // Fallback narrowbody layout if data not available
+    const fallback: Seat[] = [];
+    // Rows 1-3: Business Class (2x2 layout: A, C | D, F)
+    for (let r = 1; r <= 3; r++) {
+      for (const col of ['A', 'C', 'D', 'F']) {
+        fallback.push({
+          seatNumber: `${r}${col}`,
+          rowNumber: r,
+          column: col,
+          cabinClass: 'BUSINESS' as any,
+          status: 'AVAILABLE' as const,
+          extraLegroom: true,
+          price: 1000,
+          priceAdjustment: 1000,
+        });
+      }
+    }
+    // Rows 4-6: Premium Economy (3x3 layout)
+    for (let r = 4; r <= 6; r++) {
+      for (const col of ['A', 'B', 'C', 'D', 'E', 'F']) {
+        fallback.push({
+          seatNumber: `${r}${col}`,
+          rowNumber: r,
+          column: col,
+          cabinClass: 'PREMIUM_ECONOMY' as any,
+          status: 'AVAILABLE' as const,
+          price: 600,
+          priceAdjustment: 600,
+        });
+      }
+    }
+    // Rows 7-20: Economy (3x3 layout)
+    for (let r = 7; r <= 20; r++) {
+      for (const col of ['A', 'B', 'C', 'D', 'E', 'F']) {
+        const isExit = r === 12;
+        const isBulkhead = r === 7;
+        fallback.push({
+          seatNumber: `${r}${col}`,
+          rowNumber: r,
+          column: col,
+          cabinClass: 'ECONOMY' as any,
+          status: 'AVAILABLE' as const,
+          extraLegroom: isBulkhead || isExit,
+          isEmergencyExit: isExit,
+          price: isBulkhead || isExit ? 350 : 0,
+          priceAdjustment: isBulkhead || isExit ? 350 : 0,
+        });
+      }
+    }
+    return fallback;
+  }, [rawSeats, loading]);
 
   // Group seats by row
-  const rowsMap = new Map<number, Seat[]>();
-  safeSeats.forEach((seat) => {
-    if (seat && seat.seatNumber) {
-      const r = getSeatRow(seat);
-      if (!rowsMap.has(r)) {
-        rowsMap.set(r, []);
+  const rowsMap = useMemo(() => {
+    const map = new Map<number, Seat[]>();
+    safeSeats.forEach((seat) => {
+      if (seat && seat.seatNumber) {
+        const r = getSeatRow(seat);
+        if (!map.has(r)) {
+          map.set(r, []);
+        }
+        map.get(r)!.push(seat);
       }
-      rowsMap.get(r)!.push(seat);
-    }
-  });
+    });
+    return map;
+  }, [safeSeats]);
 
-  const sortedRows = Array.from(rowsMap.keys()).sort((a, b) => a - b);
+  const sortedRows = useMemo(() => {
+    return Array.from(rowsMap.keys()).sort((a, b) => a - b);
+  }, [rowsMap]);
+
+  // Distinct cabins present in the aircraft
+  const distinctCabins = useMemo(() => {
+    const set = new Set<string>();
+    safeSeats.forEach((s) => {
+      if (s.cabinClass) set.add(s.cabinClass);
+    });
+    const order = ['BUSINESS', 'PREMIUM_ECONOMY', 'ECONOMY', 'FIRST'];
+    return Array.from(set).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  }, [safeSeats]);
+
+  // Visible rows filtered by active tab
+  const visibleRows = useMemo(() => {
+    if (activeCabinFilter === 'ALL') return sortedRows;
+    return sortedRows.filter((r) => {
+      const rSeats = rowsMap.get(r) || [];
+      return rSeats.some((s) => s.cabinClass === activeCabinFilter);
+    });
+  }, [sortedRows, rowsMap, activeCabinFilter]);
 
   // Total seat upsell price calculation
   const totalSeatUpgradeCost = useMemo(() => {
@@ -182,6 +249,59 @@ export const SeatMap: React.FC<SeatMapProps> = ({
       }
       onSeatSelect([...selectedSeats, seat.seatNumber]);
     }
+  };
+
+  // Reusable seat button renderer
+  const renderSeatButton = (seat: Seat, is2x2: boolean) => {
+    const isWrongCabin = Boolean(cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass);
+    const isSelected = selectedSeats.includes(seat.seatNumber);
+    const isAvailable = seat.status === 'AVAILABLE' && !isWrongCabin;
+    const rowNum = getSeatRow(seat);
+    const col = getSeatColumn(seat);
+    const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 7 || rowNum === 12;
+    const matchesPref = isPreferredSeat(seat, rowNum, col);
+    const sizeClass = is2x2 ? 'w-[52px] h-8' : 'w-8 h-8';
+
+    return (
+      <motion.button
+        key={seat.seatNumber}
+        type="button"
+        disabled={!isAvailable && !isSelected}
+        onClick={() => handleSeatClick(seat)}
+        whileHover={{ scale: isAvailable || isSelected ? 1.08 : 1 }}
+        whileTap={{ scale: isAvailable || isSelected ? 0.92 : 1 }}
+        animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
+        transition={{ duration: 0.2 }}
+        title={
+          isWrongCabin
+            ? `${seat.seatNumber} • Reserved for ${seat.cabinClass?.replace('_', ' ')} travelers`
+            : `${seat.seatNumber} • ${seat.cabinClass?.replace('_', ' ')} ${
+                isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
+              } ${matchesPref ? '• Matches your preference!' : ''}`
+        }
+        className={`${sizeClass} rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
+          isSelected
+            ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
+            : isWrongCabin
+            ? 'bg-[#0B0C10] border border-white/5 text-slate-700 opacity-25 cursor-not-allowed'
+            : isAvailable
+            ? isExtraLegroom
+              ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
+              : matchesPref
+              ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300'
+              : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200'
+            : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
+        }`}
+      >
+        {isSelected ? (
+          <Check className="w-3.5 h-3.5 text-black" />
+        ) : matchesPref && isAvailable && !isExtraLegroom ? (
+          <span className="text-[10px] text-amber-400 font-bold">{col}</span>
+        ) : (
+          col
+        )}
+      </motion.button>
+    );
   };
 
   return (
@@ -242,6 +362,53 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         </div>
       </div>
 
+      {/* Cabin Class Quick Filter Bar */}
+      {distinctCabins.length > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 p-2 rounded-2xl bg-[#14161F] border border-white/10 max-w-md mx-auto">
+          <button
+            type="button"
+            onClick={() => setActiveCabinFilter('ALL')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeCabinFilter === 'ALL'
+                ? 'bg-amber-400 text-black shadow-glow-gold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            All Cabins
+          </button>
+          {distinctCabins.map((c) => {
+            const isUserCabin = cabinClass === c;
+            const label =
+              c === 'BUSINESS'
+                ? '👑 Business'
+                : c === 'PREMIUM_ECONOMY'
+                ? '✨ Prem. Economy'
+                : '💺 Economy';
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setActiveCabinFilter(c)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  activeCabinFilter === c
+                    ? 'bg-amber-400 text-black shadow-glow-gold'
+                    : isUserCabin
+                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>{label}</span>
+                {isUserCabin && (
+                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 font-black">
+                    Your Cabin
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <AnimatePresence>
         {conflictError && (
           <motion.div
@@ -259,37 +426,55 @@ export const SeatMap: React.FC<SeatMapProps> = ({
       {/* Airplane Fuselage Layout */}
       <div className="max-w-md mx-auto p-6 sm:p-8 rounded-[40px] bg-[#12131A] border-2 border-white/10 shadow-2xl relative">
         {/* Cockpit Front Nose Curve */}
-        <div className="w-32 h-14 mx-auto mb-8 rounded-t-full border-t-2 border-x-2 border-white/10 bg-[#0B0C10] flex items-center justify-center shadow-inner">
+        <div className="w-32 h-14 mx-auto mb-6 rounded-t-full border-t-2 border-x-2 border-white/10 bg-[#0B0C10] flex items-center justify-center shadow-inner">
           <span className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Cockpit</span>
         </div>
 
         {/* Column Labels Header */}
         <div className="flex items-center justify-between px-3 pb-3 text-xs font-mono font-black text-slate-400 border-b border-white/10 mb-4">
-          <div className="flex gap-2">
-            <span className="w-8 text-center text-amber-400">A</span>
-            <span className="w-8 text-center text-amber-400">B</span>
-            <span className="w-8 text-center text-amber-400">C</span>
+          <div className="flex gap-2 w-[112px] justify-around">
+            {activeCabinFilter === 'BUSINESS' ? (
+              <>
+                <span className="w-12 text-center text-amber-400">A</span>
+                <span className="w-12 text-center text-amber-400">C</span>
+              </>
+            ) : (
+              <>
+                <span className="w-8 text-center text-amber-400">A</span>
+                <span className="w-8 text-center text-amber-400">B</span>
+                <span className="w-8 text-center text-amber-400">C</span>
+              </>
+            )}
           </div>
-          <span className="text-[10px] uppercase text-slate-500 font-bold">Aisle</span>
-          <div className="flex gap-2">
-            <span className="w-8 text-center text-amber-400">D</span>
-            <span className="w-8 text-center text-amber-400">E</span>
-            <span className="w-8 text-center text-amber-400">F</span>
+          <span className="w-8 text-center text-[10px] uppercase text-slate-500 font-bold">Aisle</span>
+          <div className="flex gap-2 w-[112px] justify-around">
+            {activeCabinFilter === 'BUSINESS' ? (
+              <>
+                <span className="w-12 text-center text-amber-400">D</span>
+                <span className="w-12 text-center text-amber-400">F</span>
+              </>
+            ) : (
+              <>
+                <span className="w-8 text-center text-amber-400">D</span>
+                <span className="w-8 text-center text-amber-400">E</span>
+                <span className="w-8 text-center text-amber-400">F</span>
+              </>
+            )}
           </div>
         </div>
 
         {/* Rows Container */}
-        {sortedRows.length === 0 ? (
+        {loading || visibleRows.length === 0 ? (
           <div className="space-y-3 py-2 animate-pulse">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="flex items-center justify-between px-2 py-2 rounded-xl bg-white/[0.02]">
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-[112px] justify-around">
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
                 </div>
-                <span className="w-6 text-center text-xs font-mono text-slate-600 font-bold">{i}</span>
-                <div className="flex gap-2">
+                <span className="w-8 text-center text-xs font-mono text-slate-600 font-bold">{i}</span>
+                <div className="flex gap-2 w-[112px] justify-around">
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
                   <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/5" />
@@ -302,74 +487,114 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {sortedRows.map((rowNum) => {
+            {visibleRows.map((rowNum, index) => {
               const rowSeats = rowsMap.get(rowNum) || [];
+              const rowCabin = rowSeats[0]?.cabinClass || 'ECONOMY';
+              const prevRow = index > 0 ? visibleRows[index - 1] : null;
+              const prevCabin = prevRow ? (rowsMap.get(prevRow)?.[0]?.cabinClass || 'ECONOMY') : null;
+              const isCabinStart = index === 0 || rowCabin !== prevCabin;
+
               const leftSeats = rowSeats.filter((s) => ['A', 'B', 'C'].includes(getSeatColumn(s)));
               const rightSeats = rowSeats.filter((s) => ['D', 'E', 'F'].includes(getSeatColumn(s)));
+
+              // 2x2 layout detection: Business rows or rows without middle seats B and E
+              const is2x2 =
+                rowCabin === 'BUSINESS' ||
+                rowCabin === 'FIRST' ||
+                (leftSeats.length <= 2 &&
+                  rightSeats.length <= 2 &&
+                  !rowSeats.some((s) => ['B', 'E'].includes(getSeatColumn(s))));
+
               const isExitRow = rowSeats.some((s) => s.isEmergencyExit || rowNum === 12);
+              const isBulkheadRow = rowNum === 7 && rowCabin === 'ECONOMY';
 
               return (
                 <div key={rowNum} className="space-y-1">
-                  {isExitRow && (
+                  {/* Cabin Section Divider Banner */}
+                  {isCabinStart && (
+                    <div className="pt-2 pb-1">
+                      {rowCabin === 'BUSINESS' ? (
+                        <div className="py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+                              <span>👑</span> Business Class
+                            </span>
+                            <span className="text-[10px] text-amber-400/70 font-mono font-medium">(2×2 Luxury Recliners)</span>
+                          </div>
+                          {cabinClass && cabinClass !== 'BUSINESS' ? (
+                            <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                              Reserved for Business
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+                              Your Cabin
+                            </span>
+                          )}
+                        </div>
+                      ) : rowCabin === 'PREMIUM_ECONOMY' ? (
+                        <div className="py-2 px-3 rounded-2xl bg-gradient-to-r from-purple-500/15 via-purple-500/5 to-transparent border border-purple-500/30 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-purple-300 flex items-center gap-1.5">
+                              <span>✨</span> Premium Economy
+                            </span>
+                            <span className="text-[10px] text-purple-400/70 font-mono font-medium">(Extra Legroom)</span>
+                          </div>
+                          {cabinClass && cabinClass !== 'PREMIUM_ECONOMY' ? (
+                            <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                              Reserved for Prem. Economy
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-purple-400 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">
+                              Your Cabin
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="py-2 px-3 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent border border-emerald-500/30 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5">
+                              <span>💺</span> Economy Class
+                            </span>
+                            <span className="text-[10px] text-emerald-400/70 font-mono font-medium">(Standard 3×3 Seating)</span>
+                          </div>
+                          {cabinClass === 'ECONOMY' ? (
+                            <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                              Your Active Cabin
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                              Economy
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Special Row Banners */}
+                  {isBulkheadRow && (
+                    <div className="py-1 text-center text-[9px] uppercase tracking-wider font-bold text-emerald-400 bg-emerald-500/10 border-y border-emerald-500/20 rounded-xl my-2">
+                      ⭐ Front Row Bulkhead — Extra Legroom (+₹350)
+                    </div>
+                  )}
+                  {isExitRow && !isBulkheadRow && (
                     <div className="py-1 text-center text-[9px] uppercase tracking-wider font-bold text-amber-400 bg-amber-500/10 border-y border-amber-500/20 rounded-xl my-2">
-                      ⚠️ Emergency Exit Row (Extra Legroom +₹350)
+                      ⚠️ Emergency Exit Row — Extra Legroom (+₹350)
                     </div>
                   )}
 
                   <div className="flex items-center justify-between gap-2">
-                    {/* Left Side (ABC) */}
-                    <div className="flex gap-2">
-                      {['A', 'B', 'C'].map((col) => {
-                        const seat = leftSeats.find((s) => getSeatColumn(s) === col);
-                        if (!seat) return <div key={col} className="w-8 h-8"></div>;
-
-                        const isWrongCabin = Boolean(cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass);
-                        const isSelected = selectedSeats.includes(seat.seatNumber);
-                        const isAvailable = seat.status === 'AVAILABLE' && !isWrongCabin;
-                        const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
-                        const matchesPref = isPreferredSeat(seat, rowNum, col);
-
-                        return (
-                          <motion.button
-                            key={seat.seatNumber}
-                            type="button"
-                            disabled={!isAvailable && !isSelected}
-                            onClick={() => handleSeatClick(seat)}
-                            whileHover={{ scale: isAvailable || isSelected ? 1.1 : 1 }}
-                            whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
-                            animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            title={
-                              isWrongCabin
-                                ? `${seat.seatNumber} • Reserved for ${seat.cabinClass?.replace('_', ' ')} travelers`
-                                : `${seat.seatNumber} • ${seat.cabinClass} ${
-                                    isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
-                                  } ${matchesPref ? '• Matches your preference!' : ''}`
-                            }
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
-                                : isWrongCabin
-                                ? 'bg-[#0B0C10] border border-white/5 text-slate-700 opacity-25 cursor-not-allowed'
-                                : isAvailable
-                                ? isExtraLegroom
-                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
-                                  : matchesPref
-                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300'
-                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200'
-                                : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
-                            }`}
-                          >
-                            {isSelected ? (
-                              <Check className="w-3.5 h-3.5 text-black" />
-                            ) : matchesPref && isAvailable && !isExtraLegroom ? (
-                              <span className="text-[10px] text-amber-400 font-bold">{col}</span>
-                            ) : (
-                              col
-                            )}
-                          </motion.button>
-                        );
-                      })}
+                    {/* Left Side (ABC or AC in 2x2) */}
+                    <div className="flex gap-2 w-[112px] justify-between">
+                      {is2x2
+                        ? leftSeats
+                            .sort((a, b) => getSeatColumn(a).localeCompare(getSeatColumn(b)))
+                            .map((seat) => renderSeatButton(seat, true))
+                        : ['A', 'B', 'C'].map((col) => {
+                            const seat = leftSeats.find((s) => getSeatColumn(s) === col);
+                            if (!seat) return <div key={col} className="w-8 h-8" />;
+                            return renderSeatButton(seat, false);
+                          })}
                     </div>
 
                     {/* Aisle & Row Number */}
@@ -377,59 +602,17 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                       {rowNum}
                     </span>
 
-                    {/* Right Side (DEF) */}
-                    <div className="flex gap-2">
-                      {['D', 'E', 'F'].map((col) => {
-                        const seat = rightSeats.find((s) => getSeatColumn(s) === col);
-                        if (!seat) return <div key={col} className="w-8 h-8"></div>;
-
-                        const isWrongCabin = Boolean(cabinClass && seat.cabinClass && seat.cabinClass !== cabinClass);
-                        const isSelected = selectedSeats.includes(seat.seatNumber);
-                        const isAvailable = seat.status === 'AVAILABLE' && !isWrongCabin;
-                        const isExtraLegroom = seat.extraLegroom || (seat.priceAdjustment !== undefined && seat.priceAdjustment > 0) || rowNum === 1 || rowNum === 12;
-                        const matchesPref = isPreferredSeat(seat, rowNum, col);
-
-                        return (
-                          <motion.button
-                            key={seat.seatNumber}
-                            type="button"
-                            disabled={!isAvailable && !isSelected}
-                            onClick={() => handleSeatClick(seat)}
-                            whileHover={{ scale: isAvailable || isSelected ? 1.1 : 1 }}
-                            whileTap={{ scale: isAvailable || isSelected ? 0.9 : 1 }}
-                            animate={isSelected ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                            title={
-                              isWrongCabin
-                                ? `${seat.seatNumber} • Reserved for ${seat.cabinClass?.replace('_', ' ')} travelers`
-                                : `${seat.seatNumber} • ${seat.cabinClass} ${
-                                    isExtraLegroom ? `(+₹${seat.priceAdjustment || 350})` : '(Free Standard)'
-                                  } ${matchesPref ? '• Matches your preference!' : ''}`
-                            }
-                            className={`w-8 h-8 rounded-xl font-mono text-xs font-black transition-colors duration-150 flex items-center justify-center relative ${
-                              isSelected
-                                ? 'bg-gradient-to-r from-amber-400 to-amber-500 border border-amber-300 text-black shadow-glow-gold'
-                                : isWrongCabin
-                                ? 'bg-[#0B0C10] border border-white/5 text-slate-700 opacity-25 cursor-not-allowed'
-                                : isAvailable
-                                ? isExtraLegroom
-                                  ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
-                                  : matchesPref
-                                  ? 'bg-[#181A22] hover:bg-[#1F222E] border-2 border-amber-400 text-amber-300'
-                                  : 'bg-[#181A22] hover:bg-[#1F222E] border border-white/10 text-slate-200'
-                                : 'bg-[#0B0C10] border border-white/5 text-slate-600 opacity-40 cursor-not-allowed'
-                            }`}
-                          >
-                            {isSelected ? (
-                              <Check className="w-3.5 h-3.5 text-black" />
-                            ) : matchesPref && isAvailable && !isExtraLegroom ? (
-                              <span className="text-[10px] text-amber-400 font-bold">{col}</span>
-                            ) : (
-                              col
-                            )}
-                          </motion.button>
-                        );
-                      })}
+                    {/* Right Side (DEF or DF in 2x2) */}
+                    <div className="flex gap-2 w-[112px] justify-between">
+                      {is2x2
+                        ? rightSeats
+                            .sort((a, b) => getSeatColumn(a).localeCompare(getSeatColumn(b)))
+                            .map((seat) => renderSeatButton(seat, true))
+                        : ['D', 'E', 'F'].map((col) => {
+                            const seat = rightSeats.find((s) => getSeatColumn(s) === col);
+                            if (!seat) return <div key={col} className="w-8 h-8" />;
+                            return renderSeatButton(seat, false);
+                          })}
                     </div>
                   </div>
                 </div>

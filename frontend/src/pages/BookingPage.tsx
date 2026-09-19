@@ -281,7 +281,12 @@ export const BookingPage: React.FC = () => {
         const matchingCabinSeats = seatList.filter(
           (s) => s.status === 'AVAILABLE' && (!cabinClass || s.cabinClass === cabinClass)
         );
-        const available = (matchingCabinSeats.length > 0 ? matchingCabinSeats : seatList.filter((s) => s.status === 'AVAILABLE')).slice(0, passengerCount);
+        // Prioritize free standard seats (₹0 adjustment) so the user is not automatically charged an unexpected extra fee
+        const freeSeats = matchingCabinSeats.filter(
+          (s) => !s.priceAdjustment || s.priceAdjustment === 0
+        );
+        const candidates = freeSeats.length >= passengerCount ? freeSeats : matchingCabinSeats.length > 0 ? matchingCabinSeats : seatList.filter((s) => s.status === 'AVAILABLE');
+        const available = candidates.slice(0, passengerCount);
         if (available.length > 0) {
           setSelectedSeats(available.map((s) => s.seatNumber));
         }
@@ -547,6 +552,7 @@ export const BookingPage: React.FC = () => {
                 flightId={flight.id}
                 cabinClass={cabinClass}
                 seats={seats}
+                loading={seatsLoading}
                 requiredCount={passengerCount}
                 selectedSeats={selectedSeats}
                 onSeatSelect={setSelectedSeats}
