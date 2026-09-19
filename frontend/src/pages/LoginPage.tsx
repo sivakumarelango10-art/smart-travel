@@ -109,7 +109,42 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-
+        {/* Quick Demo Credentials Autofill */}
+        <div className="p-3 rounded-2xl bg-[#181A22] border border-white/10 space-y-2">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-slate-400 font-medium flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Quick Demo Logins:
+            </span>
+            <span className="text-[10px] text-amber-400/80 font-mono">Click to autofill</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('user@smarttravel.com');
+                setPassword('User@123');
+                setError(null);
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/30 text-left transition group cursor-pointer"
+            >
+              <div className="text-[11px] font-bold text-white group-hover:text-amber-400">Demo User</div>
+              <div className="text-[10px] text-slate-400 font-mono truncate">User@123</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@smarttravel.com');
+                setPassword('Admin@123');
+                setError(null);
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-amber-400/10 border border-white/10 hover:border-amber-400/30 text-left transition group cursor-pointer"
+            >
+              <div className="text-[11px] font-bold text-white group-hover:text-amber-400">Admin Account</div>
+              <div className="text-[10px] text-slate-400 font-mono truncate">Admin@123</div>
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">

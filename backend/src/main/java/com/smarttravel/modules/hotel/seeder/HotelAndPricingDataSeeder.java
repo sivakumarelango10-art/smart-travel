@@ -68,6 +68,7 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         seedAdminUser();
+        seedDemoCustomerUser();
         seedHotels();
         seedPricingRules();
         seedPriceHistory();
@@ -101,6 +102,36 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
 
             userRepository.save(admin);
             log.info("Default Administrator account successfully created: {} / Admin@123", adminEmail);
+        }
+    }
+
+    private void seedDemoCustomerUser() {
+        String userEmail = "user@smarttravel.com";
+        String normalizedEmail = "user@smarttravel.com";
+        if (userRepository.findByEmail(userEmail).isEmpty() && userRepository.findByNormalizedEmail(normalizedEmail).isEmpty()) {
+            log.info("Seeding default Demo Traveler account: {}", userEmail);
+            Set<Role> roles = new HashSet<>();
+            roles.add(Role.ROLE_USER);
+
+            User demoUser = User.builder()
+                    .fullName("Demo Traveler")
+                    .firstName("Demo")
+                    .lastName("Traveler")
+                    .email(userEmail)
+                    .normalizedEmail(normalizedEmail)
+                    .phoneNumber("+919876543211")
+                    .passwordHash(passwordEncoder.encode("User@123"))
+                    .roles(roles)
+                    .accountStatus(AccountStatus.ACTIVE)
+                    .active(true)
+                    .emailVerified(true)
+                    .preferences(new UserPreferences())
+                    .createdAt(Instant.now())
+                    .updatedAt(Instant.now())
+                    .build();
+
+            userRepository.save(demoUser);
+            log.info("Default Demo Traveler account successfully created: {} / User@123", userEmail);
         }
     }
 
