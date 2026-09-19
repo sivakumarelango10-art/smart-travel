@@ -37,6 +37,7 @@ import { recommendationService } from '../services/recommendationService';
 import { useAuth } from '../context/AuthContext';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 import { useHotelRoomWebSocket } from '../hooks/useHotelRoomWebSocket';
+import { resolveSafePanoramaUrl } from '../utils/panoramaRegistry';
 
 export const HotelDetailsPage: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
@@ -88,7 +89,7 @@ export const HotelDetailsPage: React.FC = () => {
   const [authPromptOpen, setAuthPromptOpen] = useState<boolean>(false);
 
   // 360 Panorama Modal State
-  const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+  const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string; category?: string } | null>(null);
 
   // Real-time room availability notification
   const [roomUpdateNotice, setRoomUpdateNotice] = useState<string | null>(null);
@@ -277,9 +278,10 @@ export const HotelDetailsPage: React.FC = () => {
                   onClick={() => {
                     if (hotel.virtualTour?.panoramaUrl) {
                       setActive360({
-                        url: hotel.virtualTour.panoramaUrl,
+                        url: resolveSafePanoramaUrl(hotel.virtualTour.panoramaUrl, 'LOBBY', hotel.name),
                         title: hotel.name,
                         subtitle: 'Drag in 360° to explore the hotel environment',
+                        category: 'LOBBY',
                       });
                     }
                   }}
@@ -626,9 +628,10 @@ export const HotelDetailsPage: React.FC = () => {
                           type="button"
                           onClick={() => {
                             setActive360({
-                              url: roomPano,
+                              url: resolveSafePanoramaUrl(roomPano, room.category, `${hotel.name} — ${room.name}`),
                               title: `${hotel.name} — ${room.name}`,
                               subtitle: 'Interactive 360° Room Perspective • Drag to look around',
+                              category: room.category,
                             });
                           }}
                           className="w-full py-2 px-3 rounded-xl bg-[#181A22] hover:bg-amber-400 hover:text-black border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition hover:scale-[1.02] shadow-glow-gold cursor-pointer"
@@ -815,6 +818,7 @@ export const HotelDetailsPage: React.FC = () => {
           panoramaUrl={active360.url}
           title={active360.title}
           subtitle={active360.subtitle}
+          roomCategory={active360.category}
           onClose={() => setActive360(null)}
         />
       )}

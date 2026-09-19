@@ -11,6 +11,7 @@ import { Panorama360Viewer } from '../components/Panorama360Viewer';
 import { recommendationService } from '../services/recommendationService';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 import { staggerContainerVariants, cardEntranceVariants } from '../lib/motion';
+import { resolveSafePanoramaUrl } from '../utils/panoramaRegistry';
 
 export const HotelSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,7 +36,7 @@ export const HotelSearchPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(initialData.totalPages);
 
   // Active 360 Panorama Modal
-  const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+  const [active360, setActive360] = useState<{ url: string; title: string; subtitle?: string; category?: string } | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -303,9 +304,10 @@ export const HotelSearchPage: React.FC = () => {
                             e.stopPropagation();
                             if (hotel.virtualTour?.panoramaUrl) {
                               setActive360({
-                                url: hotel.virtualTour.panoramaUrl,
+                                url: resolveSafePanoramaUrl(hotel.virtualTour.panoramaUrl, 'LOBBY', hotel.name),
                                 title: hotel.name,
                                 subtitle: 'Drag in 360° to explore the property perspective',
+                                category: 'LOBBY',
                               });
                             }
                           }}
@@ -411,6 +413,7 @@ export const HotelSearchPage: React.FC = () => {
           panoramaUrl={active360.url}
           title={active360.title}
           subtitle={active360.subtitle}
+          roomCategory={active360.category}
           onClose={() => setActive360(null)}
         />
       )}

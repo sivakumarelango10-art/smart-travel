@@ -7,9 +7,12 @@
  */
 
 const PANO_URLS = [
+  "https://pannellum.org/images/bma-0.jpg",
   "https://pannellum.org/images/cerro-toco-0.jpg",
-  "https://pannellum.org/images/alma-0.jpg",
-  "https://pannellum.org/images/robber-s-roost-1.jpg"
+  "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=4096&h=2048&q=85",
+  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=4096&h=2048&q=85",
+  "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85",
+  "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=4096&h=2048&q=85"
 ];
 
 const db = db.getSiblingDB("smarttravel");

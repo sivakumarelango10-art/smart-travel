@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import {
   X,
@@ -11,15 +11,16 @@ import {
   Pause,
   Compass,
   Sparkles,
-  AlertCircle,
   Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { resolveSafePanoramaUrl, VERIFIED_PANORAMAS } from '../utils/panoramaRegistry';
 
 export interface Panorama360ViewerProps {
   panoramaUrl: string;
   title?: string;
   subtitle?: string;
+  roomCategory?: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -28,6 +29,7 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
   panoramaUrl,
   title = '360° Interactive Virtual Tour',
   subtitle = 'Drag to explore in 360° • Pinch or scroll to zoom',
+  roomCategory,
   isOpen,
   onClose,
 }) => {
@@ -39,6 +41,15 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const [currentFov, setCurrentFov] = useState(75);
+
+  // Sanitize and resolve reliable panorama URLs
+  const effectivePanoramaUrl = useMemo(() => {
+    return resolveSafePanoramaUrl(panoramaUrl, roomCategory, title);
+  }, [panoramaUrl, roomCategory, title]);
+
+  const fallbackPanoramaUrl = useMemo(() => {
+    return VERIFIED_PANORAMAS.DELUXE;
+  }, []);
 
   // Three.js instances ref
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -127,43 +138,56 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
       alpha: false,
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height);
+    renderer.setSize(width, height, false);
     rendererRef.current = renderer;
 
     // 3. Inverted Equirectangular Sphere (500 radius)
     const geometry = new THREE.SphereGeometry(500, 60, 40);
     geometry.scale(-1, 1, 1); // Invert normals so texture is visible inside
 
-    // 4. Texture Loader with cross-origin support & graceful error handler
+    // 4. Texture Loader with cross-origin support & graceful error handler with fallback retry
+    let isDestroyed = false;
     const textureLoader = new THREE.TextureLoader();
     textureLoader.setCrossOrigin('anonymous');
 
-    textureLoader.load(
-      panoramaUrl,
-      (texture) => {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.LinearFilter;
-        texture.generateMipmaps = false;
-        textureRef.current = texture;
+    const loadTextureWithFallback = (urlToLoad: string, isRetry = false) => {
+      textureLoader.load(
+        urlToLoad,
+        (texture) => {
+          if (isDestroyed) {
+            texture.dispose();
+            return;
+          }
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.minFilter = THREE.LinearFilter;
+          texture.generateMipmaps = false;
+          textureRef.current = texture;
 
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-        sphereMeshRef.current = mesh;
+          const material = new THREE.MeshBasicMaterial({ map: texture });
+          const mesh = new THREE.Mesh(geometry, material);
+          scene.add(mesh);
+          sphereMeshRef.current = mesh;
 
-        setIsLoading(false);
-      },
-      undefined,
-      (err) => {
-        console.warn('360 panorama texture failed to load:', panoramaUrl, err);
-        setHasError(true);
-        setIsLoading(false);
-      }
-    );
+          setIsLoading(false);
+          setHasError(false);
+        },
+        undefined,
+        (err) => {
+          console.warn('360 panorama texture failed to load:', urlToLoad, err);
+          if (!isRetry && urlToLoad !== fallbackPanoramaUrl) {
+            console.log('Attempting verified fallback panorama texture:', fallbackPanoramaUrl);
+            loadTextureWithFallback(fallbackPanoramaUrl, true);
+          } else {
+            setHasError(true);
+            setIsLoading(false);
+          }
+        }
+      );
+    };
+
+    loadTextureWithFallback(effectivePanoramaUrl);
 
     // 5. Render Loop with Smooth Damping & Auto-Rotation
-    let isDestroyed = false;
-
     const animate = () => {
       if (isDestroyed) return;
       animFrameIdRef.current = requestAnimationFrame(animate);
@@ -193,7 +217,7 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
 
     animate();
 
-    // 6. Resize Observer
+    // 6. Resize Observer & Settle Triggers
     const handleResize = () => {
       if (!container || !camera || !renderer) return;
       const w = container.clientWidth;
@@ -201,17 +225,30 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
       if (w > 0 && h > 0) {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
+        renderer.setSize(w, h, false);
       }
     };
+
+    handleResize();
+    const rafId = requestAnimationFrame(handleResize);
+    const settleTimer = setTimeout(handleResize, 150);
 
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
 
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      console.warn('WebGL context lost in 360 viewer');
+    };
+    canvas.addEventListener('webglcontextlost', handleContextLost, false);
+
     return () => {
       isDestroyed = true;
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      cancelAnimationFrame(rafId);
+      clearTimeout(settleTimer);
       resizeObserver.disconnect();
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
 
       if (rendererRef.current) {
         rendererRef.current.dispose();
@@ -221,7 +258,7 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
       }
       geometry.dispose();
     };
-  }, [isOpen, panoramaUrl, isAutoRotating]);
+  }, [isOpen, effectivePanoramaUrl, fallbackPanoramaUrl, isAutoRotating]);
 
   // Pointer / Mouse Event Handlers
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -399,12 +436,12 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
               <div
                 className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm"
                 style={{
-                  backgroundImage: `url(${panoramaUrl})`,
+                  backgroundImage: `url(${effectivePanoramaUrl})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }}
               >
-                <div className="absolute inset-0 bg-black/60" />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <div className="w-14 h-14 rounded-full border-[3px] border-amber-400 border-t-transparent animate-spin" />
                   <p className="text-sm font-semibold tracking-wide text-amber-200 animate-pulse">
@@ -421,7 +458,7 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
                 <div
                   className="absolute inset-0 panorama-css-pan"
                   style={{
-                    backgroundImage: `url(${panoramaUrl})`,
+                    backgroundImage: `url(${effectivePanoramaUrl})`,
                     backgroundSize: '220% 100%',
                     backgroundRepeat: 'repeat-x',
                     backgroundPosition: '0% 50%',
@@ -434,10 +471,10 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
                 <div className="absolute bottom-20 left-0 right-0 flex flex-col items-center gap-3 text-center px-6">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-400/30 text-amber-400 text-xs font-bold">
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Photo Tour Mode — Drag disabled on this device</span>
+                    <span>Photo Tour Mode</span>
                   </div>
                   <p className="text-[11px] text-slate-300 max-w-sm">
-                    Full 360° WebGL tour unavailable. Showing high-resolution panoramic photo experience.
+                    Showing high-resolution panoramic photo experience.
                   </p>
                 </div>
               </div>
