@@ -5,18 +5,14 @@ import com.smarttravel.modules.hotel.model.Hotel;
 import com.smarttravel.modules.hotel.model.RoomType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,16 +28,7 @@ public class HotelAdminController {
 
     private static final Logger log = LoggerFactory.getLogger(HotelAdminController.class);
 
-    // Unsplash hotel interior panoramas — wide-angle 4096×2048 (2:1 ratio) for sphere mapping
-    // Unsplash CDN has Access-Control-Allow-Origin: * → works with Three.js crossOrigin='anonymous'
-    private static final String PANO_SUITE   = "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85";
-    private static final String PANO_VILLA   = "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=4096&h=2048&q=85";
-    private static final String PANO_DELUXE  = "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=4096&h=2048&q=85";
-    private static final String PANO_OCEAN   = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=4096&h=2048&q=85";
-    private static final String PANO_PALACE  = "https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=4096&h=2048&q=85";
-    private static final String PANO_LOBBY   = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=4096&h=2048&q=85";
-
-    // 8 panorama variants for room-level diversity across 140+ hotels / 340+ rooms
+    // 8 panorama variants for room-level diversity across 140+ hotels / 340+ rooms (Unsplash CDN has Access-Control-Allow-Origin: *)
     private static final List<String> PANO_POOL = List.of(
         "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=4096&h=2048&q=85",
         "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=4096&h=2048&q=85",

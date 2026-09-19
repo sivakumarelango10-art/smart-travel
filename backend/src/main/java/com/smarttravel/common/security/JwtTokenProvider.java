@@ -11,10 +11,7 @@ import io.jsonwebtoken.security.SecurityException;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -38,14 +35,7 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs; // 24 hours default
 
-    @Autowired(required = false)
-    private Environment environment;
-
     public JwtTokenProvider() {}
-
-    public JwtTokenProvider(Environment environment) {
-        this.environment = environment;
-    }
 
     @PostConstruct
     public void validateSecret() {
