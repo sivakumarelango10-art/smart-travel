@@ -198,6 +198,14 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST,
                                 "/api/v1/payments/webhook", "/v1/payments/webhook", "/api/payments/webhook", "/payments/webhook"
                         ).permitAll()
+                        // Razorpay Standard Checkout Endpoints (order creation, signature verification, public config)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST,
+                                "/api/create-order", "/create-order", "/api/v1/payments/create-order", "/v1/payments/create-order",
+                                "/api/verify-payment", "/verify-payment", "/api/v1/payments/verify-payment", "/v1/payments/verify-payment"
+                        ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/razorpay/config", "/api/v1/payments/razorpay/config"
+                        ).permitAll()
                         // Admin Endpoints
                         .requestMatchers("/api/admin/**", "/api/v1/admin/**", "/v1/admin/**", "/admin/**").hasRole("ADMIN")
                         // WebSocket Handshake Endpoint

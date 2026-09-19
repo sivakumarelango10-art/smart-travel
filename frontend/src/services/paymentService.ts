@@ -26,6 +26,44 @@ export const paymentService = {
     return res.data;
   },
 
+  // =========================================================================
+  // Standard Web Checkout API endpoints (/api/create-order & /api/verify-payment)
+  // =========================================================================
+  async createStandardOrder(request: {
+    amount: number; // in paise
+    currency?: string;
+    receipt?: string;
+    notes?: Record<string, any>;
+  }): Promise<{
+    order_id: string;
+    amount: number;
+    currency: string;
+    key_id: string;
+    receipt?: string;
+  }> {
+    const res = await apiClient.post('/api/create-order', request);
+    return res.data;
+  },
+
+  async verifyStandardPayment(request: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    order_id?: string;
+    payment_id?: string;
+  }> {
+    const res = await apiClient.post('/api/verify-payment', request);
+    return res.data;
+  },
+
+  async getRazorpayConfig(): Promise<{ key_id: string; currency: string }> {
+    const res = await apiClient.get('/api/razorpay/config');
+    return res.data;
+  },
+
   async simulateWebhookPayment(razorpayOrderId: string, amountPaise: number): Promise<ApiResponse<any>> {
     const eventId = 'evt_' + Math.random().toString(36).substring(2, 12);
     const paymentId = 'pay_' + Math.random().toString(36).substring(2, 12);
@@ -53,3 +91,4 @@ export const paymentService = {
     return res.data;
   },
 };
+

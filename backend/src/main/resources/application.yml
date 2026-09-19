@@ -61,8 +61,8 @@ smarttravel:
   payment:
     razorpay:
       enabled: ${RAZORPAY_ENABLED:true}
-      key-id: ${RAZORPAY_KEY_ID:rzp_test_TRufciEcT5Hkyx}
-      key-secret: ${RAZORPAY_KEY_SECRET:p8J2nAdeypF79JlMmeXljM0g}
+      key-id: ${RAZORPAY_KEY_ID:rzp_test_TdmwlBNwLKKPnN}
+      key-secret: ${RAZORPAY_KEY_SECRET:BsKfWsuT3TMxdLf5zE7CJISs}
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
 

@@ -148,12 +148,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }
       const activeOrder = await ensureActiveOrder();
       const options = {
-        key: activeOrder.keyId || activeOrder.razorpayKeyId || 'rzp_test_placeholder',
+        key:
+          activeOrder.keyId ||
+          activeOrder.razorpayKeyId ||
+          (import.meta.env.VITE_RAZORPAY_KEY_ID as string) ||
+          'rzp_test_TdmwlBNwLKKPnN',
         amount: activeOrder.amount,
         currency: activeOrder.currency || 'INR',
         name: 'SmartTravel Global',
         description: `Booking PNR ${booking.bookingReference}`,
         order_id: activeOrder.razorpayOrderId,
+        modal: {
+          ondismiss: function () {
+            setPayLoading(false);
+          },
+        },
         handler: async function (response: any) {
           try {
             const verifyRes = await paymentService.verifyPayment({
