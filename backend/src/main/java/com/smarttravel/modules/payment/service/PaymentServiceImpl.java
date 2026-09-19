@@ -216,8 +216,13 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 5. Transition payment status to VERIFIED
-        paymentStateMachine.validateTransition(payment.getPaymentStatus(), PaymentStatus.VERIFIED);
+        if (payment.getPaymentStatus() != PaymentStatus.FAILED) {
+            paymentStateMachine.validateTransition(payment.getPaymentStatus(), PaymentStatus.VERIFIED);
+        } else {
+            log.info("Payment for order ID: {} previously marked FAILED is now successfully verified upon retry", orderId);
+        }
         payment.setPaymentStatus(PaymentStatus.VERIFIED);
+        payment.setFailureReason(null);
         payment.setRazorpayPaymentId(request.getRazorpayPaymentId());
         payment.setRazorpaySignature(request.getRazorpaySignature());
         payment.setVerifiedAt(Instant.now());

@@ -127,9 +127,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           onPaymentSuccess();
         }, 1200);
       } else {
+        setOrder(null);
         setError(verifyRes.message || 'Instant payment verification was declined.');
       }
     } catch (err: any) {
+      setOrder(null);
       setError(err.message || 'Instant payment failed');
     } finally {
       setPayLoading(false);
@@ -165,9 +167,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 onPaymentSuccess();
               }, 1200);
             } else {
+              setOrder(null);
               setError(verifyRes.message || 'Signature verification failed.');
             }
           } catch (err: any) {
+            setOrder(null);
             setError(err.message || 'Payment verification failed');
           }
         },
@@ -183,10 +187,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (resp: any) {
+        setOrder(null);
         setError(resp.error?.description || 'Gateway transaction declined');
       });
       rzp.open();
     } catch (err: any) {
+      setOrder(null);
       setError(err.message || 'Failed to initialize gateway checkout');
     } finally {
       setPayLoading(false);
