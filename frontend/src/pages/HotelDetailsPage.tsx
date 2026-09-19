@@ -37,7 +37,7 @@ import { recommendationService } from '../services/recommendationService';
 import { useAuth } from '../context/AuthContext';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 import { useHotelRoomWebSocket } from '../hooks/useHotelRoomWebSocket';
-import { resolveSafePanoramaUrl } from '../utils/panoramaRegistry';
+import { resolveSafePanoramaUrl, resolveDistinctPanorama } from '../utils/panoramaRegistry';
 
 export const HotelDetailsPage: React.FC = () => {
   const { hotelId } = useParams<{ hotelId: string }>();
@@ -230,7 +230,13 @@ export const HotelDetailsPage: React.FC = () => {
     );
   }
 
-  const hasHotel360 = Boolean(hotel.virtualTour?.enabled && hotel.virtualTour?.panoramaUrl);
+  const hotelPano = resolveDistinctPanorama(
+    hotel.id || cleanHotelId,
+    'LOBBY',
+    hotel.name,
+    0,
+    hotel.virtualTour?.panoramaUrl
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -271,26 +277,22 @@ export const HotelDetailsPage: React.FC = () => {
                 {hotel.starRating}-Star Luxury Property
               </span>
 
-              {/* 360 CTA in Hero Header */}
-              {hasHotel360 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (hotel.virtualTour?.panoramaUrl) {
-                      setActive360({
-                        url: resolveSafePanoramaUrl(hotel.virtualTour.panoramaUrl, 'LOBBY', hotel.name),
-                        title: hotel.name,
-                        subtitle: 'Drag in 360° to explore the hotel environment',
-                        category: 'LOBBY',
-                      });
-                    }
-                  }}
-                  className="pointer-events-auto px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs flex items-center gap-2 shadow-glow-gold transition-all duration-200 hover:scale-105 cursor-pointer"
-                >
-                  <Compass className="w-4 h-4 animate-spin-slow text-black" />
-                  <span>Explore in 360° Virtual Tour</span>
-                </button>
-              )}
+              {/* 360 CTA in Hero Header — 100% Available on Every Hotel */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActive360({
+                    url: hotelPano,
+                    title: hotel.name,
+                    subtitle: 'Drag in 360° to explore the property perspective',
+                    category: 'LOBBY',
+                  });
+                }}
+                className="pointer-events-auto px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs flex items-center gap-2 shadow-glow-gold transition-all duration-200 hover:scale-105 cursor-pointer"
+              >
+                <Compass className="w-4 h-4 animate-spin-slow text-black" />
+                <span>Explore in 360° Virtual Tour</span>
+              </button>
             </div>
 
             <div>
@@ -537,13 +539,19 @@ export const HotelDetailsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {hotel.roomTypes?.map((room) => {
+          {hotel.roomTypes?.map((room, roomIdx) => {
             const isAvailable = room.availableRooms > 0;
             const matchesPref = userPreferredRoomType && room.category === userPreferredRoomType;
             const nightlyRate = room.totalNightlyRate || room.nightlyRate || 0;
             const totalStayEstimated = nightlyRate * stayNights * roomCount;
             const upgradeDelta = (room.nightlyRate || 0) - baseRoomPrice;
-            const roomPano = room.virtualTour?.panoramaUrl || hotel.virtualTour?.panoramaUrl;
+            const roomPano = resolveDistinctPanorama(
+              hotel.id || cleanHotelId,
+              room.category,
+              `${hotel.name} ${room.name}`,
+              roomIdx,
+              room.virtualTour?.panoramaUrl
+            );
 
             return (
               <div
@@ -621,26 +629,24 @@ export const HotelDetailsPage: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* 360 Virtual Tour Launch Button */}
-                    {roomPano && (
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActive360({
-                              url: resolveSafePanoramaUrl(roomPano, room.category, `${hotel.name} — ${room.name}`),
-                              title: `${hotel.name} — ${room.name}`,
-                              subtitle: 'Interactive 360° Room Perspective • Drag to look around',
-                              category: room.category,
-                            });
-                          }}
-                          className="w-full py-2 px-3 rounded-xl bg-[#181A22] hover:bg-amber-400 hover:text-black border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition hover:scale-[1.02] shadow-glow-gold cursor-pointer"
-                        >
-                          <Compass className="w-4 h-4 animate-spin-slow" />
-                          <span>Explore Room in 360°</span>
-                        </button>
-                      </div>
-                    )}
+                    {/* 360 Virtual Tour Launch Button — 100% Guaranteed for Every Room */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActive360({
+                            url: roomPano,
+                            title: `${hotel.name} — ${room.name}`,
+                            subtitle: 'Interactive 360° Room Perspective • Drag to look around',
+                            category: room.category,
+                          });
+                        }}
+                        className="w-full py-2 px-3 rounded-xl bg-[#181A22] hover:bg-amber-400 hover:text-black border border-amber-400/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition hover:scale-[1.02] shadow-glow-gold cursor-pointer"
+                      >
+                        <Compass className="w-4 h-4 animate-spin-slow" />
+                        <span>Explore Room in 360°</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 

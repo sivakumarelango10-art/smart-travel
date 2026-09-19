@@ -48,8 +48,10 @@ export const Panorama360Viewer: React.FC<Panorama360ViewerProps> = ({
   }, [panoramaUrl, roomCategory, title]);
 
   const fallbackPanoramaUrl = useMemo(() => {
-    return VERIFIED_PANORAMAS.DELUXE;
-  }, []);
+    return effectivePanoramaUrl === VERIFIED_PANORAMAS.DELUXE
+      ? VERIFIED_PANORAMAS.SUITE
+      : VERIFIED_PANORAMAS.DELUXE;
+  }, [effectivePanoramaUrl]);
 
   // Three.js instances ref
   const sceneRef = useRef<THREE.Scene | null>(null);

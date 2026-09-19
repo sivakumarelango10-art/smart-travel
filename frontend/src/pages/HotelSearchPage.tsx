@@ -11,7 +11,7 @@ import { Panorama360Viewer } from '../components/Panorama360Viewer';
 import { recommendationService } from '../services/recommendationService';
 import { resolveHotelPhotos } from '../utils/hotelImageRegistry';
 import { staggerContainerVariants, cardEntranceVariants } from '../lib/motion';
-import { resolveSafePanoramaUrl } from '../utils/panoramaRegistry';
+import { resolveSafePanoramaUrl, resolveDistinctPanorama } from '../utils/panoramaRegistry';
 
 export const HotelSearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -269,10 +269,16 @@ export const HotelSearchPage: React.FC = () => {
             animate="visible"
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {filteredHotels.map((hotel) => {
+            {filteredHotels.map((hotel, hIdx) => {
               const photos = resolveHotelPhotos(hotel);
               const thumbnail = photos[0];
-              const hasVirtualTour = Boolean(hotel.virtualTour?.enabled && hotel.virtualTour?.panoramaUrl);
+              const propertyPano = resolveDistinctPanorama(
+                hotel.id,
+                'LOBBY',
+                hotel.name,
+                hIdx,
+                hotel.virtualTour?.panoramaUrl
+              );
 
               return (
                 <motion.div
@@ -295,29 +301,25 @@ export const HotelSearchPage: React.FC = () => {
                         {hotel.starRating}-Star
                       </span>
 
-                      {/* 360 Tour Interactive Badge */}
-                      {hasVirtualTour && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (hotel.virtualTour?.panoramaUrl) {
-                              setActive360({
-                                url: resolveSafePanoramaUrl(hotel.virtualTour.panoramaUrl, 'LOBBY', hotel.name),
-                                title: hotel.name,
-                                subtitle: 'Drag in 360° to explore the property perspective',
-                                category: 'LOBBY',
-                              });
-                            }
-                          }}
-                          className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-black/80 hover:bg-amber-400 hover:text-black text-amber-400 border border-amber-400/40 backdrop-blur-md text-[11px] font-black flex items-center gap-1.5 shadow-glow-gold transition-all duration-200 hover:scale-105"
-                          title="Click to explore 360° Virtual Tour"
-                        >
-                          <Compass className="w-3.5 h-3.5 animate-spin-slow" />
-                          <span>360° Tour</span>
-                        </button>
-                      )}
+                      {/* 360 Tour Interactive Badge — 100% Available for Every Hotel */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setActive360({
+                            url: propertyPano,
+                            title: hotel.name,
+                            subtitle: 'Drag in 360° to explore the property perspective',
+                            category: 'LOBBY',
+                          });
+                        }}
+                        className="absolute bottom-3 left-3 px-3 py-1 rounded-full bg-black/80 hover:bg-amber-400 hover:text-black text-amber-400 border border-amber-400/40 backdrop-blur-md text-[11px] font-black flex items-center gap-1.5 shadow-glow-gold transition-all duration-200 hover:scale-105 cursor-pointer"
+                        title="Click to explore 360° Virtual Tour"
+                      >
+                        <Compass className="w-3.5 h-3.5 animate-spin-slow" />
+                        <span>360° Tour</span>
+                      </button>
 
                       {hotel.nearestAirportCode && (
                         <span className="absolute top-3 right-3 px-2 py-0.5 rounded-md bg-[#0B0C10]/85 text-amber-400 font-mono text-[10px] font-bold border border-white/10">
