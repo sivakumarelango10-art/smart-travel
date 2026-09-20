@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   X,
@@ -426,10 +427,10 @@ export const HotelReservationModal: React.FC<HotelReservationModalProps> = ({
   const totalPayAmount = priceData?.totalAmount || (room.nightlyRate ? room.nightlyRate * (priceData?.nights || 1) * roomCount : 20160);
   const upiPaymentUri = `upi://pay?pa=smarttravel@icici&pn=SmartTravel%20Hotels&am=${totalPayAmount}&cu=INR&tn=Hotel%20Stay%20${encodeURIComponent(hotel.name)}`;
 
-  return (
+  const modalContent = (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-        <div className="relative w-full max-w-2xl bg-[#14161F] border border-white/15 rounded-3xl shadow-2xl overflow-hidden my-6">
+        <div className="relative w-full max-w-2xl bg-[#14161F] border border-white/15 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] overflow-y-auto">
           {/* Modal Header */}
           <div className="p-6 bg-[#181A24] border-b border-white/10 flex items-center justify-between">
             <div>
@@ -1156,4 +1157,6 @@ export const HotelReservationModal: React.FC<HotelReservationModalProps> = ({
       )}
     </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

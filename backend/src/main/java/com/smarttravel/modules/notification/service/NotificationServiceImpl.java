@@ -149,6 +149,22 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public long markAllAsRead(String userId) {
+        java.util.List<Notification> unreadList = notificationRepository.findByUserIdAndReadFalse(userId);
+        if (unreadList.isEmpty()) {
+            return 0;
+        }
+        Instant now = Instant.now();
+        for (Notification n : unreadList) {
+            n.setRead(true);
+            n.setReadAt(now);
+        }
+        notificationRepository.saveAll(unreadList);
+        log.info("Marked {} notifications as read for user {}", unreadList.size(), userId);
+        return unreadList.size();
+    }
+
+    @Override
     public NotificationResponse retryNotification(String notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", "id", notificationId));

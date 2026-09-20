@@ -47,6 +47,14 @@ public interface NotificationService {
     NotificationResponse markAsRead(String notificationId, String userId, boolean isAdmin);
 
     /**
+     * Marks all unread notifications for a customer as read.
+     *
+     * @param userId Customer user ID
+     * @return Number of notifications marked as read
+     */
+    long markAllAsRead(String userId);
+
+    /**
      * Retries delivery for a failed notification (Admin only).
      *
      * @param notificationId Notification MongoDB ID

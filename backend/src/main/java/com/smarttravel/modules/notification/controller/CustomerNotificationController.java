@@ -67,4 +67,13 @@ public class CustomerNotificationController {
         NotificationResponse response = notificationService.markAsRead(id, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read", response));
     }
+
+    @PatchMapping("/read-all")
+    @Operation(summary = "Mark All Notifications as Read", description = "Marks all unread notifications for authenticated customer as read")
+    public ResponseEntity<ApiResponse<Long>> markAllAsRead(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+        long count = notificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", count));
+    }
 }

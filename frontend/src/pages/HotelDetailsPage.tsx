@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import {
   Star,
@@ -843,11 +844,24 @@ export const HotelDetailsPage: React.FC = () => {
       )}
 
       {/* GUEST AUTHENTICATION PROMPT MODAL (LOGGED OUT) */}
-      {authPromptOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#14161F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-5 text-center">
+      {authPromptOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAuthPromptOpen(false);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-prompt-title"
+        >
+          <div
+            className="relative w-full max-w-md bg-[#14161F] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-5 text-center my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
+              type="button"
               onClick={() => setAuthPromptOpen(false)}
+              aria-label="Close sign in dialog"
               className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
             >
               <X className="w-5 h-5" />
@@ -858,7 +872,7 @@ export const HotelDetailsPage: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-white">Sign In to Complete Reservation</h3>
+              <h3 id="auth-prompt-title" className="text-xl font-bold text-white">Sign In to Complete Reservation</h3>
               <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                 Log in to securely book <strong>{hotel.name}</strong>, lock in exclusive member rates, and receive your instant confirmation voucher.
               </p>
@@ -880,7 +894,8 @@ export const HotelDetailsPage: React.FC = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

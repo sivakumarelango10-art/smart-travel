@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star,
@@ -135,6 +136,29 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
+
+  // Lock body scroll and listen for Escape key when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = showModal || !!activePhotoUrl || !!flaggingReviewId;
+    if (isAnyModalOpen && typeof document !== 'undefined') {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (activePhotoUrl) setActivePhotoUrl(null);
+          else if (flaggingReviewId) setFlaggingReviewId(null);
+          else if (showModal) setShowModal(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [showModal, activePhotoUrl, flaggingReviewId]);
 
   const loadReplies = async (reviewId: string) => {
     try {
@@ -850,18 +874,31 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       </div>
 
       {/* MODAL: WRITE A REVIEW */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-[#141620] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-8">
+      {showModal && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="write-review-title"
+        >
+          <div
+            className="relative w-full max-w-xl max-h-[90vh] bg-[#141620] border border-white/15 rounded-3xl p-5 sm:p-7 md:p-8 shadow-2xl space-y-5 my-auto overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
+              type="button"
               onClick={() => setShowModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
+              aria-label="Close review modal"
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div>
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 id="write-review-title" className="text-xl font-bold text-white flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                 Write Your Review
               </h3>
@@ -887,7 +924,8 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                       key={s}
                       type="button"
                       onClick={() => setRating(s)}
-                      className="p-1 cursor-pointer transition hover:scale-110"
+                      className="p-1 cursor-pointer transition hover:scale-110 focus:outline-none focus:ring-1 focus:ring-amber-400 rounded-lg"
+                      aria-label={`${s} Star${s > 1 ? 's' : ''}`}
                     >
                       <Star
                         className={`w-7 h-7 ${
@@ -907,7 +945,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   <select
                     value={cleanliness}
                     onChange={(e) => setCleanliness(Number(e.target.value))}
-                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold"
+                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400"
                   >
                     {[5, 4, 3, 2, 1].map((s) => (
                       <option key={s} value={s}>{s} Stars</option>
@@ -919,7 +957,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   <select
                     value={service}
                     onChange={(e) => setService(Number(e.target.value))}
-                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold"
+                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400"
                   >
                     {[5, 4, 3, 2, 1].map((s) => (
                       <option key={s} value={s}>{s} Stars</option>
@@ -931,7 +969,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   <select
                     value={value}
                     onChange={(e) => setValue(Number(e.target.value))}
-                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold"
+                    className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400"
                   >
                     {[5, 4, 3, 2, 1].map((s) => (
                       <option key={s} value={s}>{s} Stars</option>
@@ -962,7 +1000,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   placeholder="Tell future travelers about check-in, amenities, dining, location, and tips..."
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
-                  className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 leading-relaxed"
+                  className="w-full bg-[#1C1F2C] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 leading-relaxed resize-y"
                 />
               </div>
 
@@ -980,6 +1018,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                         type="button"
                         onClick={() => handleRemovePhoto(idx)}
                         className="absolute top-1 right-1 p-0.5 rounded-full bg-black/70 text-rose-400 hover:text-white"
+                        aria-label="Remove photo"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1007,49 +1046,66 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold hover:text-white transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-extrabold rounded-xl shadow-glow-gold transition-all hover:scale-105 flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-extrabold rounded-xl shadow-glow-gold transition-all hover:scale-105 flex items-center gap-2 cursor-pointer"
                 >
                   {submitting ? 'Publishing...' : 'Publish Review'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL: PHOTO FULLSCREEN VIEWER */}
-      {activePhotoUrl && (
+      {activePhotoUrl && typeof document !== 'undefined' && createPortal(
         <div
           onClick={() => setActivePhotoUrl(null)}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-fade-in cursor-zoom-out"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged review photo"
         >
-          <div className="relative max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+          <div className="relative max-w-4xl max-h-[85vh] rounded-2xl overflow-hidden border border-white/20 shadow-2xl my-auto">
             <img src={activePhotoUrl} alt="Enlarged review photo" className="w-full h-full object-contain" />
             <button
               onClick={() => setActivePhotoUrl(null)}
               className="absolute top-4 right-4 p-2 rounded-xl bg-black/60 hover:bg-black text-white transition"
+              aria-label="Close photo preview"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL: REPORT REVIEW CONFIRMATION */}
-      {flaggingReviewId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#141620] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 text-center">
+      {flaggingReviewId && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setFlaggingReviewId(null);
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="report-review-title"
+        >
+          <div
+            className="relative w-full max-w-md bg-[#141620] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 text-center my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto">
               <Flag className="w-6 h-6" />
             </div>
-            <h4 className="text-lg font-bold text-white">Report Inappropriate Content</h4>
+            <h4 id="report-review-title" className="text-lg font-bold text-white">Report Inappropriate Content</h4>
             <p className="text-xs text-slate-400 leading-relaxed">
               Are you sure you want to flag this review? Flagged content will be sent to the moderation team for review and potential removal.
             </p>
@@ -1070,7 +1126,8 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

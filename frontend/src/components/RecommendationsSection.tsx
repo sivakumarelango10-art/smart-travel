@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -638,9 +639,18 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
         )}
       </div>
 
-      {activeExplanationItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg bg-[#141622] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+      {activeExplanationItem && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={() => setActiveExplanationItem(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rec-explanation-title"
+        >
+          <div
+            className="relative w-full max-w-lg bg-[#141622] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-auto max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setActiveExplanationItem(null)}
               className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition"
@@ -654,7 +664,7 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-white">Why We Picked This For You</h3>
+                <h3 id="rec-explanation-title" className="text-lg font-black text-white">Why We Picked This For You</h3>
                 <p className="text-xs text-slate-400">
                   Transparent reasoning for <strong>{activeExplanationItem.title}</strong>
                 </p>
@@ -730,7 +740,8 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );

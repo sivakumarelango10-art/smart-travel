@@ -92,4 +92,15 @@ class CustomerNotificationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.read").value(true));
     }
+
+    @Test
+    @DisplayName("Customer can mark all notifications as read")
+    @WithMockUser(username = "sarah@smarttravel.com")
+    void shouldMarkAllNotificationsAsRead() throws Exception {
+        when(notificationService.markAllAsRead(any())).thenReturn(3L);
+
+        mockMvc.perform(patch("/api/v1/notifications/read-all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(3));
+    }
 }
