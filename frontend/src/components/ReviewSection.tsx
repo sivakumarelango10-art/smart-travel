@@ -1042,7 +1042,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+              <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 pt-4 pb-1 border-t border-white/10 bg-[#141620]/95 backdrop-blur-sm -mx-5 sm:-mx-7 md:-mx-8 px-5 sm:px-7 md:px-8">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}

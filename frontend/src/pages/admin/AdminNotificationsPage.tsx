@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bell, CheckCheck, AlertCircle, Clock, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { notificationService } from '../../services/notificationService';
 import { Notification } from '../../types/notification';
@@ -53,8 +53,9 @@ export const AdminNotificationsPage: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const notifIcon = (n: Notification) => {
-    if (n.type.includes('CANCEL') || n.priority === 'URGENT') return <AlertCircle className="w-4 h-4 text-rose-400" />;
-    if (n.type.includes('DELAY') || n.type.includes('RESCHEDULE')) return <Clock className="w-4 h-4 text-amber-400" />;
+    const notifType = (n.type || n.notificationType || '');
+    if (notifType.includes('CANCEL') || n.priority === 'URGENT') return <AlertCircle className="w-4 h-4 text-rose-400" />;
+    if (notifType.includes('DELAY') || notifType.includes('RESCHEDULE')) return <Clock className="w-4 h-4 text-amber-400" />;
     return <Sparkles className="w-4 h-4 text-sky-400" />;
   };
 

@@ -152,7 +152,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           activeOrder.keyId ||
           activeOrder.razorpayKeyId ||
           (import.meta.env.VITE_RAZORPAY_KEY_ID as string) ||
-          'rzp_test_TdmwlBNwLKKPnN',
+          '',
         amount: activeOrder.amount,
         currency: activeOrder.currency || 'INR',
         name: 'SmartTravel Global',

@@ -1,5 +1,6 @@
 package com.smarttravel.modules.notification.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.smarttravel.modules.notification.model.NotificationChannel;
 import com.smarttravel.modules.notification.model.NotificationStatus;
 import com.smarttravel.modules.notification.model.NotificationType;
@@ -113,6 +114,26 @@ public class NotificationResponse {
 
     public Instant getSentAt() { return sentAt; }
     public void setSentAt(Instant sentAt) { this.sentAt = sentAt; }
+
+    @JsonProperty("title")
+    public String getTitle() {
+        return subject;
+    }
+
+    @JsonProperty("message")
+    public String getMessage() {
+        return content;
+    }
+
+    @JsonProperty("isRead")
+    public boolean getIsRead() {
+        return read;
+    }
+
+    @JsonProperty("type")
+    public String getType() {
+        return notificationType != null ? notificationType.name() : null;
+    }
 
     public static class Builder {
         private String id;

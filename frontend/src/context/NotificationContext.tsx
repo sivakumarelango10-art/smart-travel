@@ -22,10 +22,33 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
+  const normalizeNotification = useCallback((raw: any): Notification => {
+    const isRead = raw.isRead ?? raw.read ?? false;
+    const title = raw.title || raw.subject || 'Notification';
+    const message = raw.message || raw.content || '';
+    const type = raw.type || raw.notificationType || 'BOOKING_CONFIRMED';
+    return {
+      ...raw,
+      id: raw.id,
+      userId: raw.userId,
+      type,
+      notificationType: raw.notificationType || type,
+      title,
+      subject: raw.subject || title,
+      message,
+      content: raw.content || message,
+      priority: raw.priority || 'MEDIUM',
+      isRead,
+      read: isRead,
+      createdAt: raw.createdAt || new Date().toISOString(),
+    };
+  }, []);
+
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) {
       setNotifications([]);
       setUnreadCount(0);
+      setLoading(false);
       return;
     }
     try {
@@ -35,7 +58,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notificationService.getUnreadCount(),
       ]);
       if (listRes.success && listRes.data?.content) {
-        setNotifications(listRes.data.content);
+        setNotifications(listRes.data.content.map(normalizeNotification));
       }
       if (countRes.success && countRes.data) {
         setUnreadCount(countRes.data.unreadCount ?? 0);
@@ -45,7 +68,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, normalizeNotification]);
 
   useEffect(() => {
     fetchNotifications();
@@ -77,12 +100,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const handleRealtimeNotification = (incoming: any) => {
       if (!incoming) return;
+      const normalized = normalizeNotification(incoming);
+
       setNotifications((prev) => {
-        if (prev.some((n) => n.id === incoming.id)) return prev;
-        return [incoming, ...prev];
+        if (prev.some((n) => n.id === normalized.id)) {
+          return prev;
+        }
+        if (!normalized.isRead) {
+          setUnreadCount((c) => c + 1);
+          notify(normalized.title, normalized.message, 'INFO');
+        }
+        return [normalized, ...prev];
       });
-      setUnreadCount((prev) => prev + 1);
-      notify(incoming.subject || 'New Notification', incoming.content || '', 'INFO');
     };
 
     const unsubscribe = flightStatusWebSocketManager.subscribeNotifications(
@@ -93,13 +122,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return () => {
       unsubscribe();
     };
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, normalizeNotification]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {
       await notificationService.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (n.id === id ? { ...n, isRead: true, read: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
@@ -110,7 +139,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAllAsRead = useCallback(async () => {
     try {
       await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
       setUnreadCount(0);
     } catch (err) {
       console.error('Failed to mark all as read', err);

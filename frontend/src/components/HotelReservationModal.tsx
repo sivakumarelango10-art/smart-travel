@@ -360,14 +360,14 @@ export const HotelReservationModal: React.FC<HotelReservationModalProps> = ({
           order_id: `order_htl_${Date.now()}`,
           amount: amountPaise,
           currency: 'INR',
-          key_id: (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || 'rzp_test_TdmwlBNwLKKPnN',
+          key_id: (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || '',
         };
       }
 
       const keyId =
         order?.key_id ||
         (import.meta.env.VITE_RAZORPAY_KEY_ID as string) ||
-        'rzp_test_TdmwlBNwLKKPnN';
+        '';
 
       const options = {
         key: keyId,

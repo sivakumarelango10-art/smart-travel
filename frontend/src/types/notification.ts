@@ -16,11 +16,18 @@ export interface Notification {
   id: string;
   userId: string;
   type: NotificationType;
+  notificationType?: NotificationType;
   title: string;
+  subject?: string;
   message: string;
-  priority: NotificationPriority;
+  content?: string;
+  priority?: NotificationPriority;
   isRead: boolean;
+  read?: boolean;
   referenceId?: string;
+  bookingId?: string;
+  flightId?: string;
+  channel?: string;
   createdAt: string;
 }
 
