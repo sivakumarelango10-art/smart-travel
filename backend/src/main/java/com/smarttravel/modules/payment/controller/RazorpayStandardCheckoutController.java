@@ -8,8 +8,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -133,10 +135,15 @@ public class RazorpayStandardCheckoutController {
             }
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(reqBody, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(RAZORPAY_ORDERS_URL, requestEntity, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    RAZORPAY_ORDERS_URL,
+                    HttpMethod.POST,
+                    requestEntity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map responseBody = response.getBody();
+                Map<String, Object> responseBody = response.getBody();
                 String orderId = (String) responseBody.get("id");
                 log.info("Razorpay Standard Order created successfully: {}", orderId);
 
