@@ -41,6 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final PushNotificationProvider pushProvider;
     private final SimpMessagingTemplate messagingTemplate;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public NotificationServiceImpl(NotificationRepository notificationRepository,
                                    EmailNotificationProvider emailProvider,
                                    SmsNotificationProvider smsProvider,
