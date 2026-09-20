@@ -23,4 +23,19 @@ export const ticketService = {
     });
     return res.data;
   },
+
+  async downloadTicketByBookingId(bookingId: string): Promise<Blob> {
+    try {
+      const res = await apiClient.get(`/v1/tickets/booking/${bookingId}/pdf`, {
+        responseType: 'blob',
+      });
+      return res.data;
+    } catch {
+      const tRes = await this.getTicketByBookingId(bookingId);
+      if (tRes.data?.id) {
+        return this.downloadTicketPdf(tRes.data.id);
+      }
+      throw new Error('Ticket not available for this booking');
+    }
+  },
 };

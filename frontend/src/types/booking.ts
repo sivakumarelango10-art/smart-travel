@@ -51,6 +51,9 @@ export interface Booking {
   status: BookingStatus;
   ticketId?: string;
   ticketNumber?: string;
+  checkedIn?: boolean;
+  checkInNumber?: string;
+  checkedInAt?: string;
   expiresAt?: string;
   cancelledAt?: string;
   cancellationReason?: string;

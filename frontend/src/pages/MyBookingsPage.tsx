@@ -20,13 +20,15 @@ import {
   MapPin,
   Compass,
   AlertCircle,
-  Loader2
+  Loader2,
+  Download
 } from 'lucide-react';
 import { Booking, RefundDetails } from '../types/api';
 import { HotelBooking, HotelRefundCalculation } from '../types/hotel';
 import { bookingService } from '../services/bookingService';
 import { hotelService } from '../services/hotelService';
 import { paymentService } from '../services/paymentService';
+import { ticketService } from '../services/ticketService';
 import { BookingSkeleton } from '../components/BookingSkeleton';
 import { notify } from '../utils/toast';
 import { AirlineLogo } from '../components/AirlineLogo';
@@ -56,6 +58,84 @@ export const MyBookingsPage: React.FC = () => {
   const [cancelLoading, setCancelLoading] = useState<boolean>(false);
   const [refundInfo, setRefundInfo] = useState<RefundDetails | null>(null);
   const [viewingRefundBooking, setViewingRefundBooking] = useState<Booking | null>(null);
+  const [downloadingTicketId, setDownloadingTicketId] = useState<string | null>(null);
+
+  const handleDownloadTicket = async (b: Booking) => {
+    try {
+      setDownloadingTicketId(b.id);
+      const blob = await ticketService.downloadTicketByBookingId(b.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SmartTravel-Ticket-${b.bookingReference}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      notify('Ticket Downloaded', `E-Ticket for PNR ${b.bookingReference} downloaded successfully.`, 'SUCCESS');
+    } catch (err: any) {
+      notify('Download Failed', err?.message || 'Failed to download ticket PDF. Please try again.', 'ERROR');
+    } finally {
+      setDownloadingTicketId(null);
+    }
+  };
+
+  const getCheckInState = (b: Booking) => {
+    if (b.status === 'CANCELLED' || b.status === 'EXPIRED') {
+      return null;
+    }
+
+    // State C: Passenger already checked in
+    const isCheckedIn = b.status === 'CHECKED_IN' || b.checkedIn || Boolean(b.checkInNumber);
+    if (isCheckedIn) {
+      return {
+        type: 'CHECKED_IN' as const,
+        label: 'Check-in Completed',
+        subtext: b.checkInNumber ? `Check-in No: ${b.checkInNumber}` : 'Boarding pass is ready for departure',
+        buttonText: 'View Boarding Pass',
+        url: `/boarding-pass/${b.id}`,
+        canAct: true,
+      };
+    }
+
+    // Departure time calculations
+    const depTime = new Date(b.departureTime).getTime();
+    const now = Date.now();
+    const hoursRemaining = (depTime - now) / (1000 * 60 * 60);
+    const minutesRemaining = (depTime - now) / (1000 * 60);
+
+    // Closed: less than 60 mins before departure or departed
+    if (minutesRemaining < 60) {
+      return {
+        type: 'CLOSED' as const,
+        label: 'Online Check-in Closed',
+        subtext: 'Online window closed (60m prior). Please check in at the airport counter.',
+        buttonText: 'Check-in Closed',
+        canAct: false,
+      };
+    }
+
+    // State A: More than 48 hours before departure
+    if (hoursRemaining > 48) {
+      return {
+        type: 'NOT_AVAILABLE' as const,
+        label: 'Online Check-in',
+        subtext: 'Available 48 hours before departure',
+        buttonText: 'Check-in Not Available',
+        canAct: false,
+      };
+    }
+
+    // State B: Within 48 hours before departure
+    return {
+      type: 'AVAILABLE' as const,
+      label: 'Online Check-in',
+      subtext: 'Check-in is open! Select seats and generate boarding passes.',
+      buttonText: 'Check In Now',
+      url: `/check-in/${b.id}`,
+      canAct: true,
+    };
+  };
 
   const CANCELLATION_REASONS = [
     'Personal schedule change',
@@ -415,6 +495,99 @@ export const MyBookingsPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Travelers & Passenger Seat Numbers */}
+                    {b.passengers && b.passengers.length > 0 && (
+                      <div className="pt-3 border-t border-white/5 space-y-2">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          <Users className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Passenger Details & Seats</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {b.passengers.map((pax, pIdx) => (
+                            <div
+                              key={pIdx}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#181A22] border border-white/10 text-xs shadow-sm"
+                            >
+                              <span className="font-semibold text-white">
+                                {pax.title ? `${pax.title} ` : ''}{pax.firstName} {pax.lastName}
+                              </span>
+                              <span className="text-white/20">•</span>
+                              <span className="font-mono font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20 flex items-center gap-1">
+                                Seat: {pax.seatNumber ? pax.seatNumber : 'Pending Check-in'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Online Check-in Status Banner */}
+                    {(() => {
+                      const checkInInfo = getCheckInState(b);
+                      if (!checkInInfo) return null;
+
+                      return (
+                        <div className="p-4 rounded-xl bg-[#10121A] border border-white/10 flex flex-wrap items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                checkInInfo.type === 'CHECKED_IN'
+                                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                  : checkInInfo.type === 'AVAILABLE'
+                                  ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30'
+                                  : 'bg-white/5 text-slate-500 border border-white/10'
+                              }`}
+                            >
+                              {checkInInfo.type === 'CHECKED_IN' ? (
+                                <CheckCircle2 className="w-5 h-5" />
+                              ) : (
+                                <Plane className="w-5 h-5 transform -rotate-45" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-white text-sm">{checkInInfo.label}</span>
+                                {checkInInfo.type === 'CHECKED_IN' && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    COMPLETED
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-400 mt-0.5">{checkInInfo.subtext}</p>
+                            </div>
+                          </div>
+
+                          <div>
+                            {checkInInfo.type === 'CHECKED_IN' ? (
+                              <Link
+                                to={checkInInfo.url!}
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>{checkInInfo.buttonText}</span>
+                              </Link>
+                            ) : checkInInfo.type === 'AVAILABLE' ? (
+                              <Link
+                                to={checkInInfo.url!}
+                                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-black text-xs flex items-center gap-1.5 shadow-glow-gold transition cursor-pointer"
+                              >
+                                <Plane className="w-3.5 h-3.5 transform -rotate-45" />
+                                <span>{checkInInfo.buttonText}</span>
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled
+                                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-500 font-bold text-xs cursor-not-allowed opacity-75"
+                              >
+                                {checkInInfo.buttonText}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Action Footer */}
                     <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -425,15 +598,33 @@ export const MyBookingsPage: React.FC = () => {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {b.ticketId && (
-                          <Link
-                            to={`/ticket/${b.id}`}
-                            className="px-3.5 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-300 text-xs font-bold flex items-center gap-1.5 border border-white/10 transition"
+                        {/* Download Ticket PDF Button */}
+                        {b.status !== 'CANCELLED' && (
+                          <button
+                            type="button"
+                            disabled={downloadingTicketId === b.id}
+                            onClick={() => handleDownloadTicket(b)}
+                            className="px-3.5 py-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                            title="Download official PDF ticket"
                           >
-                            <FileText className="w-3.5 h-3.5 text-amber-400" />
-                            <span>View Ticket</span>
-                          </Link>
+                            {downloadingTicketId === b.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5 text-amber-400" />
+                            )}
+                            <span>{downloadingTicketId === b.id ? 'Downloading...' : 'Download Ticket (PDF)'}</span>
+                          </button>
                         )}
+
+                        {/* View Ticket Link */}
+                        <Link
+                          to={`/ticket/${b.id}`}
+                          className="px-3.5 py-2 rounded-xl bg-[#181A22] hover:bg-[#1F222E] text-slate-300 text-xs font-bold flex items-center gap-1.5 border border-white/10 transition"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-slate-400" />
+                          <span>View Ticket</span>
+                        </Link>
+
                         {b.status === 'CONFIRMED' && (
                           <button
                             type="button"

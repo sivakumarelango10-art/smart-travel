@@ -225,7 +225,10 @@ public class CheckInServiceImpl implements CheckInService {
                         .build());
             }
 
-            // Persist boarding passes and update booking passenger seats
+            // Persist boarding passes and update booking passenger seats & check-in status
+            booking.setCheckedIn(true);
+            booking.setCheckInNumber(checkInNumber);
+            booking.setCheckedInAt(now);
             boardingPassRepository.saveAll(boardingPasses);
             bookingRepository.save(booking);
 

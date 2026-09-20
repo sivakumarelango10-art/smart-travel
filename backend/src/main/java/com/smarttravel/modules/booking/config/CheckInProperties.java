@@ -16,9 +16,9 @@ public class CheckInProperties {
     private boolean enabled = true;
 
     /**
-     * Window in hours before flight departure when online check-in opens (default: 24 hours).
+     * Window in hours before flight departure when online check-in opens (default: 48 hours).
      */
-    private int openingHoursBeforeDeparture = 24;
+    private int openingHoursBeforeDeparture = 48;
 
     /**
      * Window in minutes before flight departure when online check-in closes (default: 60 minutes).

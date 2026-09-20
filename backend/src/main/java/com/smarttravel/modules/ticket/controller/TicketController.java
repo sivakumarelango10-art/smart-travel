@@ -101,4 +101,23 @@ public class TicketController {
                 .header(HttpHeaders.CACHE_CONTROL, "must-revalidate, post-check=0, pre-check=0")
                 .body(pdfBytes);
     }
+
+    @GetMapping(value = "/booking/{bookingId}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Download Ticket PDF by Booking ID", description = "Streams a deterministic binary PDF document for the specified booking ID.")
+    public ResponseEntity<byte[]> downloadTicketPdfByBookingId(
+            @Parameter(description = "Booking ID", required = true) @PathVariable String bookingId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        String userId = principal != null ? principal.getId() : SecurityUtils.getRequiredCurrentUserId();
+
+        TicketResponse ticket = ticketService.getTicketByBookingId(bookingId, userId, false);
+        byte[] pdfBytes = ticketService.generateTicketPdf(ticket.getId(), userId, false);
+
+        String filename = "SmartTravel-Ticket-" + ticket.getTicketNumber() + ".pdf";
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "must-revalidate, post-check=0, pre-check=0")
+                .body(pdfBytes);
+    }
 }

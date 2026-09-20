@@ -97,6 +97,21 @@ public class BookingResponse {
     @Schema(description = "Discount amount deducted", example = "1500.00")
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
+    @Schema(description = "E-Ticket MongoDB ID (if issued)", example = "66c1e101f1a2b3c4d5e6f855")
+    private String ticketId;
+
+    @Schema(description = "Official Ticket Number", example = "ST-8K4P2Q7X9Y1Z")
+    private String ticketNumber;
+
+    @Schema(description = "Whether online check-in has been completed")
+    private boolean checkedIn = false;
+
+    @Schema(description = "Check-in confirmation number", example = "CI-8K4P2Q7X")
+    private String checkInNumber;
+
+    @Schema(description = "Timestamp when passenger checked in")
+    private Instant checkedInAt;
+
     public BookingResponse() {
     }
 
@@ -165,6 +180,11 @@ public class BookingResponse {
         private Instant expiresAt;
         private Instant createdAt;
         private Instant updatedAt;
+        private String ticketId;
+        private String ticketNumber;
+        private boolean checkedIn = false;
+        private String checkInNumber;
+        private Instant checkedInAt;
 
         public Builder id(String id) {
             this.id = id;
@@ -304,6 +324,31 @@ public class BookingResponse {
             return this;
         }
 
+        public Builder ticketId(String ticketId) {
+            this.ticketId = ticketId;
+            return this;
+        }
+
+        public Builder ticketNumber(String ticketNumber) {
+            this.ticketNumber = ticketNumber;
+            return this;
+        }
+
+        public Builder checkedIn(boolean checkedIn) {
+            this.checkedIn = checkedIn;
+            return this;
+        }
+
+        public Builder checkInNumber(String checkInNumber) {
+            this.checkInNumber = checkInNumber;
+            return this;
+        }
+
+        public Builder checkedInAt(Instant checkedInAt) {
+            this.checkedInAt = checkedInAt;
+            return this;
+        }
+
         public BookingResponse build() {
             BookingResponse response = new BookingResponse(id, bookingReference, userId, userEmail, flightId, flightNumber,
                     airline, airlineCode, departureAirport, arrivalAirport, departureTime,
@@ -312,6 +357,11 @@ public class BookingResponse {
                     expiresAt, createdAt, updatedAt);
             response.setCouponCode(couponCode);
             response.setDiscountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO);
+            response.setTicketId(ticketId);
+            response.setTicketNumber(ticketNumber);
+            response.setCheckedIn(checkedIn);
+            response.setCheckInNumber(checkInNumber);
+            response.setCheckedInAt(checkedInAt);
             return response;
         }
     }
@@ -530,5 +580,45 @@ public class BookingResponse {
 
     public void setDiscountAmount(BigDecimal discountAmount) {
         this.discountAmount = discountAmount;
+    }
+
+    public String getTicketId() {
+        return ticketId;
+    }
+
+    public void setTicketId(String ticketId) {
+        this.ticketId = ticketId;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
+    }
+
+    public boolean isCheckedIn() {
+        return checkedIn;
+    }
+
+    public void setCheckedIn(boolean checkedIn) {
+        this.checkedIn = checkedIn;
+    }
+
+    public String getCheckInNumber() {
+        return checkInNumber;
+    }
+
+    public void setCheckInNumber(String checkInNumber) {
+        this.checkInNumber = checkInNumber;
+    }
+
+    public Instant getCheckedInAt() {
+        return checkedInAt;
+    }
+
+    public void setCheckedInAt(Instant checkedInAt) {
+        this.checkedInAt = checkedInAt;
     }
 }

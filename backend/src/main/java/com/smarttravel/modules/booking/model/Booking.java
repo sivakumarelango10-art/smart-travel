@@ -82,6 +82,12 @@ public class Booking {
 
     private String ticketNumber;
 
+    private boolean checkedIn = false;
+
+    private String checkInNumber;
+
+    private Instant checkedInAt;
+
     private String couponCode;
 
     private BigDecimal discountAmount = BigDecimal.ZERO;
@@ -160,6 +166,9 @@ public class Booking {
         private Instant expiresAt;
         private String ticketId;
         private String ticketNumber;
+        private boolean checkedIn = false;
+        private String checkInNumber;
+        private Instant checkedInAt;
         private String couponCode;
         private BigDecimal discountAmount;
         private Instant createdAt;
@@ -310,6 +319,21 @@ public class Booking {
             return this;
         }
 
+        public Builder checkedIn(boolean checkedIn) {
+            this.checkedIn = checkedIn;
+            return this;
+        }
+
+        public Builder checkInNumber(String checkInNumber) {
+            this.checkInNumber = checkInNumber;
+            return this;
+        }
+
+        public Builder checkedInAt(Instant checkedInAt) {
+            this.checkedInAt = checkedInAt;
+            return this;
+        }
+
         public Booking build() {
             Booking booking = new Booking(id, bookingReference, userId, userEmail, flightId, flightNumber,
                     airline, airlineCode, departureAirport, arrivalAirport, departureTime,
@@ -318,6 +342,9 @@ public class Booking {
                     expiresAt, createdAt, updatedAt);
             booking.setTicketId(ticketId);
             booking.setTicketNumber(ticketNumber);
+            booking.setCheckedIn(checkedIn);
+            booking.setCheckInNumber(checkInNumber);
+            booking.setCheckedInAt(checkedInAt);
             booking.setCouponCode(couponCode);
             booking.setDiscountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO);
             return booking;
@@ -554,6 +581,30 @@ public class Booking {
 
     public void setDiscountAmount(BigDecimal discountAmount) {
         this.discountAmount = discountAmount;
+    }
+
+    public boolean isCheckedIn() {
+        return checkedIn;
+    }
+
+    public void setCheckedIn(boolean checkedIn) {
+        this.checkedIn = checkedIn;
+    }
+
+    public String getCheckInNumber() {
+        return checkInNumber;
+    }
+
+    public void setCheckInNumber(String checkInNumber) {
+        this.checkInNumber = checkInNumber;
+    }
+
+    public Instant getCheckedInAt() {
+        return checkedInAt;
+    }
+
+    public void setCheckedInAt(Instant checkedInAt) {
+        this.checkedInAt = checkedInAt;
     }
 
     @Override

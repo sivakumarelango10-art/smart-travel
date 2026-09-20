@@ -169,15 +169,15 @@ class CheckInServiceTest {
     }
 
     @Test
-    @DisplayName("performCheckIn throws ConflictException if before check-in window (e.g. 48h before)")
+    @DisplayName("performCheckIn throws ConflictException if before check-in window (e.g. 72h before)")
     void testPerformCheckInTooEarly() {
-        sampleBooking.setDepartureTime(Instant.now().plusSeconds(3600 * 48)); // 48 hours away
+        sampleBooking.setDepartureTime(Instant.now().plusSeconds(3600 * 72)); // 72 hours away
         when(bookingRepository.findByIdAndUserId("bk-100", "user-sarah")).thenReturn(Optional.of(sampleBooking));
         when(ticketRepository.findFirstByBookingId("bk-100")).thenReturn(Optional.of(sampleTicket));
 
         assertThatThrownBy(() -> checkInService.performCheckIn("bk-100", null, "user-sarah", false))
                 .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("Online check-in opens 24 hours before flight departure");
+                .hasMessageContaining("Online check-in opens 48 hours before flight departure");
     }
 
     @Test

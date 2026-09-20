@@ -19,9 +19,50 @@ import java.util.UUID;
 @Component
 public class BookingMapper {
 
+    private final com.smarttravel.modules.ticket.repository.TicketRepository ticketRepository;
+    private final com.smarttravel.modules.booking.repository.CheckInRepository checkInRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BookingMapper(
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.ticket.repository.TicketRepository ticketRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.smarttravel.modules.booking.repository.CheckInRepository checkInRepository) {
+        this.ticketRepository = ticketRepository;
+        this.checkInRepository = checkInRepository;
+    }
+
+    public BookingMapper() {
+        this(null, null);
+    }
+
     public BookingResponse toResponse(Booking booking) {
         if (booking == null) {
             return null;
+        }
+
+        String ticketId = booking.getTicketId();
+        String ticketNumber = booking.getTicketNumber();
+        if ((ticketId == null || ticketId.isBlank()) && ticketRepository != null && booking.getId() != null) {
+            try {
+                com.smarttravel.modules.ticket.model.Ticket ticket = ticketRepository.findFirstByBookingId(booking.getId()).orElse(null);
+                if (ticket != null) {
+                    ticketId = ticket.getId();
+                    ticketNumber = ticket.getTicketNumber();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        boolean checkedIn = booking.isCheckedIn();
+        String checkInNumber = booking.getCheckInNumber();
+        java.time.Instant checkedInAt = booking.getCheckedInAt();
+        if (!checkedIn && checkInRepository != null && booking.getId() != null) {
+            try {
+                com.smarttravel.modules.booking.model.CheckIn ci = checkInRepository.findByBookingId(booking.getId()).orElse(null);
+                if (ci != null) {
+                    checkedIn = true;
+                    checkInNumber = ci.getCheckInNumber();
+                    checkedInAt = ci.getCheckedInAt();
+                }
+            } catch (Exception ignored) {}
         }
 
         return BookingResponse.builder()
@@ -52,6 +93,11 @@ public class BookingMapper {
                 .expiresAt(booking.getExpiresAt())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
+                .ticketId(ticketId)
+                .ticketNumber(ticketNumber)
+                .checkedIn(checkedIn)
+                .checkInNumber(checkInNumber)
+                .checkedInAt(checkedInAt)
                 .build();
     }
 

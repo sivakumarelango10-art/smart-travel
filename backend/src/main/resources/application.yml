@@ -65,6 +65,10 @@ smarttravel:
       key-secret: ${RAZORPAY_KEY_SECRET:BsKfWsuT3TMxdLf5zE7CJISs}
       webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
       currency: ${RAZORPAY_CURRENCY:INR}
+  checkin:
+    enabled: true
+    opening-hours-before-departure: 48
+    closing-minutes-before-departure: 60
 
 # Keep-Alive Scheduler (prevents Render free-tier cold starts)
 keepalive:
