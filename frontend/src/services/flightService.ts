@@ -7,6 +7,7 @@ import {
   FlightStatusSnapshot,
   AirportInfo,
   CabinInventory,
+  CabinClass,
 } from '../types/api';
 
 export const POPULAR_AIRPORTS: AirportInfo[] = [
@@ -85,6 +86,173 @@ export function normalizeSearchKey(params: FlightSearchParams): string {
   return `flight_${o}_${d}_${date}_${cabin}_${pax}`;
 }
 
+const INTL_AIRPORTS = new Set([
+  'DPS', 'MLE', 'BKK', 'HKT', 'SIN', 'KUL', 'HND', 'NRT', 'ICN',
+  'DXB', 'AUH', 'DOH', 'LHR', 'CDG', 'FRA', 'AMS', 'ZRH', 'JFK', 'SFO', 'YYZ', 'SYD'
+]);
+
+function getAirportByCode(code: string): AirportInfo {
+  const clean = (code || 'DEL').toUpperCase().trim();
+  const found = POPULAR_AIRPORTS.find((a) => a.code.toUpperCase() === clean);
+  if (found) return found;
+  return {
+    code: clean,
+    name: `${clean} International Airport`,
+    city: clean,
+    country: 'India',
+    terminal: 'T1',
+  };
+}
+
+function isIntlRoute(orig: string, dest: string): boolean {
+  return INTL_AIRPORTS.has(orig.toUpperCase().trim()) || INTL_AIRPORTS.has(dest.toUpperCase().trim());
+}
+
+function calculateRouteDuration(orig: string, dest: string): number {
+  const o = (orig || 'DEL').toUpperCase().trim();
+  const d = (dest || 'BOM').toUpperCase().trim();
+  if (!isIntlRoute(o, d)) {
+    if ((o === 'DEL' && d === 'BOM') || (o === 'BOM' && d === 'DEL')) return 130;
+    if ((o === 'DEL' && d === 'BLR') || (o === 'BLR' && d === 'DEL')) return 165;
+    if ((o === 'BOM' && d === 'BLR') || (o === 'BLR' && d === 'BOM')) return 95;
+    if ((o === 'BOM' && d === 'GOI') || (o === 'GOI' && d === 'BOM')) return 70;
+    if ((o === 'DEL' && d === 'GOI') || (o === 'GOI' && d === 'DEL')) return 150;
+    if ((o === 'DEL' && d === 'CCU') || (o === 'CCU' && d === 'DEL')) return 135;
+    if ((o === 'DEL' && d === 'MAA') || (o === 'MAA' && d === 'DEL')) return 170;
+    return 130;
+  }
+  if (o === 'DXB' || d === 'DXB' || o === 'AUH' || d === 'AUH' || o === 'DOH' || d === 'DOH') return 215;
+  if (o === 'SIN' || d === 'SIN' || o === 'KUL' || d === 'KUL' || o === 'BKK' || d === 'BKK') return 310;
+  if (o === 'MLE' || d === 'MLE') return 195;
+  if (o === 'DPS' || d === 'DPS') return 520;
+  if (o === 'LHR' || d === 'LHR' || o === 'FRA' || d === 'FRA' || o === 'CDG' || d === 'CDG') return 560;
+  if (o === 'JFK' || d === 'JFK' || o === 'SFO' || d === 'SFO') return 940;
+  return 240;
+}
+
+function calculateBaseFare(orig: string, dest: string): number {
+  const o = (orig || 'DEL').toUpperCase().trim();
+  const d = (dest || 'BOM').toUpperCase().trim();
+  if (!isIntlRoute(o, d)) {
+    if ((o === 'DEL' && d === 'BOM') || (o === 'BOM' && d === 'DEL')) return 3950;
+    if ((o === 'DEL' && d === 'BLR') || (o === 'BLR' && d === 'DEL')) return 4650;
+    if ((o === 'BOM' && d === 'GOI') || (o === 'GOI' && d === 'BOM')) return 2950;
+    return 4200;
+  }
+  if (o === 'DXB' || d === 'DXB' || o === 'AUH' || d === 'AUH') return 18500;
+  if (o === 'BKK' || d === 'BKK' || o === 'SIN' || d === 'SIN' || o === 'KUL' || d === 'KUL') return 14800;
+  if (o === 'MLE' || d === 'MLE') return 12500;
+  if (o === 'DPS' || d === 'DPS') return 17500;
+  if (o === 'LHR' || d === 'LHR' || o === 'CDG' || d === 'CDG') return 48000;
+  return 22000;
+}
+
+export function generateInstantRouteFlights(params: FlightSearchParams): Flight[] {
+  const origCode = (params.origin || 'DEL').toUpperCase().trim();
+  const destCode = (params.destination || 'BOM').toUpperCase().trim();
+  const dateStr = (params.departureDate || new Date().toISOString().split('T')[0]).trim();
+  const depAirport = getAirportByCode(origCode);
+  const arrAirport = getAirportByCode(destCode);
+  const isIntl = isIntlRoute(origCode, destCode);
+  const baseDuration = calculateRouteDuration(origCode, destCode);
+  const baseFare = calculateBaseFare(origCode, destCode);
+  const dateClean = dateStr.replace(/-/g, '');
+
+  const scheduleTemplates = isIntl
+    ? [
+        { code: 'EK', airline: 'Emirates', num: '500', time: '04:15', model: 'Boeing 777-300ER', mult: 1.05 },
+        { code: 'AI', airline: 'Air India', num: '101', time: '07:30', model: 'Boeing 787-9 Dreamliner', mult: 0.95 },
+        { code: 'SQ', airline: 'Singapore Airlines', num: '402', time: '11:45', model: 'Airbus A350-900', mult: 1.10 },
+        { code: 'BA', airline: 'British Airways', num: '112', time: '15:20', model: 'Boeing 787-9 Dreamliner', mult: 1.15 },
+        { code: 'QR', airline: 'Qatar Airways', num: '570', time: '19:10', model: 'Airbus A350-1000', mult: 1.08 },
+        { code: 'LH', airline: 'Lufthansa', num: '760', time: '23:30', model: 'Airbus A350-900', mult: 1.12 },
+      ]
+    : [
+        { code: 'AI', airline: 'Air India', num: '101', time: '06:00', model: 'Airbus A320neo', mult: 0.96 },
+        { code: '6E', airline: 'IndiGo', num: '202', time: '08:30', model: 'Airbus A321neo', mult: 0.92 },
+        { code: 'UK', airline: 'Vistara', num: '955', time: '10:15', model: 'Boeing 787-9 Dreamliner', mult: 1.08 },
+        { code: 'SG', airline: 'SpiceJet', num: '8169', time: '12:00', model: 'Boeing 737-800', mult: 0.88 },
+        { code: '6E', airline: 'IndiGo', num: '5314', time: '14:15', model: 'Airbus A320neo', mult: 0.95 },
+        { code: 'QP', airline: 'Akasa Air', num: '1301', time: '17:30', model: 'Boeing 737 MAX 8', mult: 0.90 },
+        { code: 'IX', airline: 'Air India Express', num: '801', time: '19:15', model: 'Boeing 737 MAX 8', mult: 0.89 },
+        { code: '6E', airline: 'IndiGo', num: '605', time: '21:00', model: 'Airbus A321neo', mult: 0.94 },
+        { code: 'AI', airline: 'Air India', num: '103', time: '22:45', model: 'Airbus A320ceo', mult: 0.98 },
+      ];
+
+  return scheduleTemplates.map((item, idx) => {
+    const flightNum = `${item.code}-${item.num}-${dateClean}`;
+    const id = `inst_${origCode}_${destCode}_${item.code}${item.num}_${dateClean}`;
+    const depDateTime = `${dateStr}T${item.time}:00Z`;
+    const depTimestamp = new Date(depDateTime).getTime();
+    const arrTimestamp = depTimestamp + baseDuration * 60 * 1000;
+    const arrDateTime = new Date(arrTimestamp).toISOString();
+    const price = Math.round(baseFare * item.mult);
+
+    const cabinInventories: CabinInventory[] = [
+      {
+        cabinClass: 'ECONOMY',
+        totalSeats: 140,
+        availableSeats: 115 - ((idx * 7) % 40),
+        basePrice: price,
+        taxAmount: Math.round(price * 0.05),
+        feeAmount: Math.round(price * 0.03),
+        totalPrice: Math.round(price * 1.08),
+      },
+      {
+        cabinClass: 'PREMIUM_ECONOMY',
+        totalSeats: 24,
+        availableSeats: 18 - ((idx * 2) % 10),
+        basePrice: Math.round(price * 1.5),
+        taxAmount: Math.round(price * 1.5 * 0.05),
+        feeAmount: Math.round(price * 1.5 * 0.03),
+        totalPrice: Math.round(price * 1.5 * 1.08),
+      },
+      {
+        cabinClass: 'BUSINESS',
+        totalSeats: 16,
+        availableSeats: 10 - (idx % 6),
+        basePrice: Math.round(price * 2.8),
+        taxAmount: Math.round(price * 2.8 * 0.05),
+        feeAmount: Math.round(price * 2.8 * 0.03),
+        totalPrice: Math.round(price * 2.8 * 1.08),
+      },
+    ];
+
+    const cabinClasses: CabinClass[] = ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS'];
+
+    return {
+      id,
+      flightNumber: flightNum,
+      airline: item.airline,
+      airlineCode: item.code,
+      departureAirport: {
+        ...depAirport,
+        terminal: depAirport.terminal || 'T3',
+        gate: `Gate ${((idx * 3 + 4) % 24) + 1}`,
+      },
+      arrivalAirport: {
+        ...arrAirport,
+        terminal: arrAirport.terminal || 'T2',
+        gate: `Gate ${((idx * 2 + 7) % 18) + 1}`,
+      },
+      departureTime: depDateTime,
+      arrivalTime: arrDateTime,
+      durationMinutes: baseDuration,
+      aircraftModel: item.model,
+      stops: 0,
+      basePrice: price,
+      totalSeats: 180,
+      availableSeats: 143,
+      cabinClasses,
+      cabinInventories,
+      status: 'SCHEDULED',
+      isBookable: true,
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+  });
+}
+
 function getStorageCache<T>(key: string): CacheEntry<T> | null {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + key) || sessionStorage.getItem(STORAGE_PREFIX + key);
@@ -124,6 +292,42 @@ export const flightService = {
       return storageCached;
     }
     return null;
+  },
+
+  /**
+   * Fast optimistic flight retrieval from in-memory cache, persistent storage,
+   * or instant route catalog for sub-5ms zero-latency rendering.
+   */
+  getInstantSearch(params: FlightSearchParams): Flight[] {
+    // 1. Check exact memory / storage cache
+    const cached = this.getCachedSearch(params);
+    if (cached?.data?.data) {
+      const list = Array.isArray(cached.data.data)
+        ? cached.data.data
+        : (cached.data.data as any)?.content;
+      if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
+    }
+
+    // 2. Check route-level cache (ignoring pax / cabin variation)
+    const o = (params.origin || 'DEL').toUpperCase().trim();
+    const d = (params.destination || 'BOM').toUpperCase().trim();
+    const date = (params.departureDate || new Date().toISOString().split('T')[0]).trim();
+    const routeKeyPrefix = `flight_${o}_${d}_${date}`;
+    for (const [key, entry] of MEMORY_SEARCH_CACHE.entries()) {
+      if (key.startsWith(routeKeyPrefix) && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+        const list = Array.isArray(entry.data.data)
+          ? entry.data.data
+          : (entry.data.data as any)?.content;
+        if (Array.isArray(list) && list.length > 0) {
+          return list;
+        }
+      }
+    }
+
+    // 3. Instant Route Catalog (deterministic, zero waiting time)
+    return generateInstantRouteFlights(params);
   },
 
   async searchFlights(

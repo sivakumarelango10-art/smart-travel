@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -38,17 +39,28 @@ public class NotificationServiceImpl implements NotificationService {
     private final SmsNotificationProvider smsProvider;
     private final WhatsAppNotificationProvider whatsAppProvider;
     private final PushNotificationProvider pushProvider;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public NotificationServiceImpl(NotificationRepository notificationRepository,
+                                   EmailNotificationProvider emailProvider,
+                                   SmsNotificationProvider smsProvider,
+                                   WhatsAppNotificationProvider whatsAppProvider,
+                                   PushNotificationProvider pushProvider,
+                                   @org.springframework.beans.factory.annotation.Autowired(required = false) SimpMessagingTemplate messagingTemplate) {
+        this.notificationRepository = notificationRepository;
+        this.emailProvider = emailProvider;
+        this.smsProvider = smsProvider;
+        this.whatsAppProvider = whatsAppProvider;
+        this.pushProvider = pushProvider;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     public NotificationServiceImpl(NotificationRepository notificationRepository,
                                    EmailNotificationProvider emailProvider,
                                    SmsNotificationProvider smsProvider,
                                    WhatsAppNotificationProvider whatsAppProvider,
                                    PushNotificationProvider pushProvider) {
-        this.notificationRepository = notificationRepository;
-        this.emailProvider = emailProvider;
-        this.smsProvider = smsProvider;
-        this.whatsAppProvider = whatsAppProvider;
-        this.pushProvider = pushProvider;
+        this(notificationRepository, emailProvider, smsProvider, whatsAppProvider, pushProvider, null);
     }
 
     @Override
@@ -210,6 +222,17 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setFailureReason(null);
             log.info("Dispatched notification ID: {} via {} successfully (Provider ID: {})",
                     notification.getId(), notification.getChannel(), messageId);
+
+            // Real-time WebSocket STOMP broadcast to active user browser session
+            if (messagingTemplate != null && notification.getUserId() != null) {
+                try {
+                    String userTopic = "/topic/notifications/" + notification.getUserId();
+                    messagingTemplate.convertAndSend(userTopic, toDto(notification));
+                    log.info("Dispatched real-time WebSocket notification to {}", userTopic);
+                } catch (Exception wsEx) {
+                    log.warn("Failed to dispatch WebSocket notification to user {}: {}", notification.getUserId(), wsEx.getMessage());
+                }
+            }
         } catch (Exception ex) {
             log.error("Failed to dispatch notification ID: {} via {}: {}",
                     notification.getId(), notification.getChannel(), ex.getMessage(), ex);

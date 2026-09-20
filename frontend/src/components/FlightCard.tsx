@@ -28,6 +28,7 @@ import { AnimatedPrice } from './AnimatedPrice';
 import { flightTrackingService } from '../services/flightTrackingService';
 import { useAuth } from '../context/AuthContext';
 import { useFlightPricingWebSocket } from '../hooks/useFlightPricingWebSocket';
+import { useFlightStatusWebSocket } from '../hooks/useFlightStatusWebSocket';
 import { notify } from '../utils/toast';
 import { cardEntranceVariants } from '../lib/motion';
 
@@ -56,8 +57,15 @@ export const FlightCard: React.FC<FlightCardProps> = ({
   // Real-time WebSocket dynamic pricing subscription
   const { latestEvent, updatedPrice } = useFlightPricingWebSocket(flight.id, selectedCabin);
 
-  const depDate = new Date(flight.departureTime);
-  const arrDate = new Date(flight.arrivalTime);
+  // Real-time WebSocket operational flight status subscription
+  const { latestEvent: statusEvent } = useFlightStatusWebSocket({ flightId: flight.id });
+
+  const currentStatus = statusEvent?.status || flight.status;
+  const currentDelayMinutes = statusEvent?.delayMinutes ?? flight.delayMinutes;
+  const currentRevisedDep = statusEvent?.revisedDeparture || flight.revisedDepartureTime;
+
+  const depDate = new Date(currentRevisedDep || flight.departureTime);
+  const arrDate = new Date(statusEvent?.estimatedArrival || flight.arrivalTime);
 
   const formatTimeParts = (date: Date) => {
     const hours = date.getHours();
@@ -91,12 +99,12 @@ export const FlightCard: React.FC<FlightCardProps> = ({
     ? latestEvent.availableSeats
     : (cabinInv ? cabinInv.availableSeats : flight.availableSeats);
 
-  const isDisrupted = flight.status === 'DELAYED' || flight.status === 'CANCELLED';
+  const isDisrupted = currentStatus === 'DELAYED' || currentStatus === 'CANCELLED';
   const isBookable =
     (flight.isBookable === undefined || flight.isBookable === true) &&
     availableSeats >= passengerCount &&
-    flight.status !== 'CANCELLED' &&
-    flight.status !== 'ARRIVED';
+    currentStatus !== 'CANCELLED' &&
+    currentStatus !== 'ARRIVED';
 
   const handleSelectFlight = () => {
     const targetUrl = `/book/${flight.id}?cabinClass=${selectedCabin}&passengers=${passengerCount}`;
@@ -149,22 +157,29 @@ export const FlightCard: React.FC<FlightCardProps> = ({
         {/* Disruption Alert Banner */}
         {isDisrupted && (
           <div
-            className={`px-5 py-2 text-xs font-semibold flex items-center gap-2 ${
-              flight.status === 'CANCELLED'
+            className={`px-5 py-2 text-xs font-semibold flex items-center justify-between gap-2 ${
+              currentStatus === 'CANCELLED'
                 ? 'bg-rose-500/15 text-rose-300 border-b border-rose-500/30'
                 : 'bg-amber-500/15 text-amber-300 border-b border-amber-500/30'
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            <span>
-              {flight.status === 'CANCELLED'
-                ? `Flight Cancelled: ${flight.cancellationReason || 'Operational constraint'}`
-                : `Flight Delayed by ${flight.delayMinutes || 0} mins (Revised Departure: ${
-                    flight.revisedDepartureTime
-                      ? `${formatTimeParts(new Date(flight.revisedDepartureTime)).time} ${formatTimeParts(new Date(flight.revisedDepartureTime)).period}`
-                      : 'TBD'
-                  })`}
-            </span>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                {currentStatus === 'CANCELLED'
+                  ? `Flight Cancelled: ${flight.cancellationReason || 'Operational constraint'}`
+                  : `Flight Delayed by ${currentDelayMinutes || 0} mins (Revised Departure: ${
+                      currentRevisedDep
+                        ? `${formatTimeParts(new Date(currentRevisedDep)).time} ${formatTimeParts(new Date(currentRevisedDep)).period}`
+                        : 'TBD'
+                    })`}
+              </span>
+            </div>
+            {statusEvent && (
+              <span className="text-[10px] font-mono font-bold bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded">
+                LIVE STOMP
+              </span>
+            )}
           </div>
         )}
 
@@ -183,7 +198,13 @@ export const FlightCard: React.FC<FlightCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {flight.dataSource === 'LIVE' && (
+            {statusEvent && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                Live: {currentStatus}
+              </span>
+            )}
+            {flight.dataSource === 'LIVE' && !statusEvent && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Live Radar Feed

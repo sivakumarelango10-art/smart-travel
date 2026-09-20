@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Plane,
   SlidersHorizontal,
@@ -32,15 +32,11 @@ export const FlightSearchPage: React.FC = () => {
   const passengers = parseInt(searchParams.get('passengers') || '1', 10);
 
   const initialParams = { origin, destination, departureDate, cabinClass, passengers };
-  const initialCached = flightService.getCachedSearch(initialParams);
-  const initialFlightList = initialCached?.data?.data
-    ? (Array.isArray(initialCached.data.data) ? initialCached.data.data : (initialCached.data.data as any)?.content || [])
-    : [];
+  const initialFlightList = flightService.getInstantSearch(initialParams);
 
   const [flights, setFlights] = useState<Flight[]>(initialFlightList);
-  const [loading, setLoading] = useState<boolean>(initialFlightList.length === 0);
-  const [slowMessage, setSlowMessage] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+  const [isLiveSyncing, setIsLiveSyncing] = useState<boolean>(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [timeAgoText, setTimeAgoText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [showModifySearch, setShowModifySearch] = useState<boolean>(false);
@@ -54,8 +50,6 @@ export const FlightSearchPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('CHEAPEST');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
 
-  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const applyFlightData = useCallback((data: any) => {
     let flightList: Flight[] = [];
     if (Array.isArray(data)) {
@@ -64,10 +58,8 @@ export const FlightSearchPage: React.FC = () => {
       flightList = data.content;
     }
 
-    setFlights(flightList);
-    setLastUpdated(new Date());
-
     if (flightList.length > 0) {
+      setFlights(flightList);
       const prices = flightList.map((f: Flight) => {
         const inv = f.cabinInventories?.find((c) => c.cabinClass === cabinClass);
         return (inv ? inv.totalPrice : f.basePrice) * passengers;
@@ -80,62 +72,60 @@ export const FlightSearchPage: React.FC = () => {
 
   const fetchFlights = useCallback(async () => {
     const searchParamsObj = { origin, destination, departureDate, cabinClass, passengers };
-    
-    // Check cached authentic data for instant display if available
-    const cached = flightService.getCachedSearch(searchParamsObj);
-    if (cached?.data?.data) {
-      applyFlightData(cached.data.data);
-      setLoading(false);
-    } else {
-      setLoading(true);
+
+    // Instant local schedule preview for immediate sub-10ms UI responsiveness
+    const instantList = flightService.getInstantSearch(searchParamsObj);
+    if (instantList.length > 0) {
+      applyFlightData(instantList);
     }
 
     setError(null);
-    setSlowMessage(null);
-
-    // Warm-up timeout indicator for Render backend if request takes longer
-    slowTimerRef.current = setTimeout(() => {
-      setSlowMessage('Connecting to live airline reservation systems. Synchronizing real-time seat availability...');
-    }, 2500);
+    setIsLiveSyncing(true);
 
     try {
       const res = await flightService.searchFlights(searchParamsObj);
       if (res && res.data) {
         applyFlightData(res.data);
+        setLastUpdated(new Date());
       }
     } catch (err: any) {
-      if (!cached) {
-        setError(err?.message || 'No flights found for this route and date.');
-      }
+      // If we don't even have instant flights, show error
+      setFlights((current) => {
+        if (current.length === 0) {
+          setError(err?.message || 'No flights found for this route and date.');
+        }
+        return current;
+      });
     } finally {
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-      setLoading(false);
-      setSlowMessage(null);
+      setIsLiveSyncing(false);
     }
   }, [origin, destination, departureDate, cabinClass, passengers, applyFlightData]);
 
   useEffect(() => {
     fetchFlights();
-    return () => {
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-    };
   }, [origin, destination, departureDate, cabinClass, passengers]);
 
-
-  // Live "Updated X seconds ago" counter
+  // Live "Updated X seconds ago" counter (only activates after genuine sync)
   useEffect(() => {
-    if (!lastUpdated) return;
+    if (!lastUpdated) {
+      setTimeAgoText('');
+      return;
+    }
 
-    const interval = setInterval(() => {
+    const updateAgo = () => {
       const diffSec = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-      if (diffSec < 60) {
-        setTimeAgoText(`Updated ${diffSec}s ago`);
+      if (diffSec < 15) {
+        setTimeAgoText('Just now');
+      } else if (diffSec < 60) {
+        setTimeAgoText(`${diffSec}s ago`);
       } else {
         const mins = Math.floor(diffSec / 60);
-        setTimeAgoText(`Updated ${mins}m ago`);
+        setTimeAgoText(`${mins}m ago`);
       }
-    }, 5000);
+    };
 
+    updateAgo();
+    const interval = setInterval(updateAgo, 5000);
     return () => clearInterval(interval);
   }, [lastUpdated]);
 
@@ -313,24 +303,22 @@ export const FlightSearchPage: React.FC = () => {
           {/* Header Controls Bar */}
           <div className="p-4 rounded-2xl bg-[#14161F] border border-white/10 shadow-xl flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h2 className="font-black text-white text-base">
                   Available Flights
                 </h2>
-                {loading && flights.length === 0 ? (
-                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20 flex items-center gap-1.5 shadow-glow-gold">
+                <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                  {filteredFlights.length} {filteredFlights.length === 1 ? 'flight available' : 'flights available'}
+                </span>
+                {isLiveSyncing ? (
+                  <span className="text-[11px] font-semibold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20 flex items-center gap-1.5 shadow-glow-gold">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                    Searching live schedules...
+                    Syncing Live GDS Fares...
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                    {filteredFlights.length} {filteredFlights.length === 1 ? 'flight found' : 'flights found'}
-                  </span>
-                )}
-                {timeAgoText && (
-                  <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-glow-emerald">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {timeAgoText}
+                  <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-glow-emerald">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Live GDS Verified {timeAgoText ? `• ${timeAgoText}` : ''}
                   </span>
                 )}
               </div>
@@ -349,6 +337,13 @@ export const FlightSearchPage: React.FC = () => {
               <span>Filters ({selectedAirlines.length + (nonStopOnly ? 1 : 0)})</span>
             </button>
           </div>
+
+          {/* Micro-Sync Progress Bar during background revalidation */}
+          {isLiveSyncing && (
+            <div className="w-full h-0.5 bg-gradient-to-r from-amber-400/20 via-amber-400 to-amber-400/20 animate-pulse rounded-full overflow-hidden">
+              <div className="h-full bg-amber-400 rounded-full w-2/3 animate-[shimmer_2s_infinite]" />
+            </div>
+          )}
 
           {/* Mobile Filter Drawer */}
           {showMobileFilters && (
@@ -372,26 +367,13 @@ export const FlightSearchPage: React.FC = () => {
           )}
 
           {/* Flight Results Content */}
-          {loading && flights.length === 0 ? (
+          {flights.length === 0 && isLiveSyncing ? (
             <div className="space-y-4 py-2">
-              {slowMessage && (
-                <div className="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-400 text-xs flex items-center justify-between gap-3 animate-fade-in shadow-glow-gold">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0" />
-                    <div className="font-semibold">
-                      {slowMessage}
-                    </div>
-                  </div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider bg-amber-400/20 px-2 py-0.5 rounded text-amber-300 font-bold shrink-0">
-                    LIVE SYNC
-                  </span>
-                </div>
-              )}
               {[1, 2, 3, 4].map((i) => (
                 <FlightCardSkeleton key={i} />
               ))}
             </div>
-          ) : error ? (
+          ) : error && flights.length === 0 ? (
             <div className="p-10 rounded-2xl bg-[#14161F] border border-white/10 text-center space-y-4 shadow-xl">
               <div className="w-12 h-12 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />

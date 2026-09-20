@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Notification } from '../types/api';
 import { notificationService } from '../services/notificationService';
+import { flightStatusWebSocketManager } from '../services/flightStatusWebSocketManager';
+import { notify } from '../utils/toast';
 import { useAuth } from './AuthContext';
 
 interface NotificationContextType {
@@ -15,7 +17,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -49,7 +51,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     fetchNotifications();
     if (!isAuthenticated) return;
 
-    // Visibility-aware polling: pause background polls when tab is inactive
+    // Visibility-aware polling: background safety fallback
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchNotifications();
@@ -68,6 +70,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchNotifications, isAuthenticated]);
+
+  // Ultra Real-Time WebSocket Push Subscription
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const handleRealtimeNotification = (incoming: any) => {
+      if (!incoming) return;
+      setNotifications((prev) => {
+        if (prev.some((n) => n.id === incoming.id)) return prev;
+        return [incoming, ...prev];
+      });
+      setUnreadCount((prev) => prev + 1);
+      notify(incoming.subject || 'New Notification', incoming.content || '', 'INFO');
+    };
+
+    const unsubscribe = flightStatusWebSocketManager.subscribeNotifications(
+      user.id,
+      handleRealtimeNotification
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isAuthenticated, user?.id]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {

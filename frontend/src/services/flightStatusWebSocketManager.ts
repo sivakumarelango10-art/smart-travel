@@ -7,13 +7,15 @@ type FlightStatusCallback = (event: FlightStatusEvent) => void;
 type DynamicPricingCallback = (event: DynamicPricingEvent) => void;
 type SeatMapCallback = (event: SeatMapUpdateEvent) => void;
 type RoomAvailabilityCallback = (event: RoomAvailabilityEvent) => void;
+type NotificationCallback = (notification: any) => void;
 type ConnectionStateListener = (connected: boolean, error: string | null) => void;
 
 /**
  * Singleton FlightStatusWebSocketManager
  * Manages ONE single shared STOMP/WebSocket connection for the entire application,
- * multiplexing flight status (/topic/flight-status/{flightId}) and dynamic pricing
- * (/topic/pricing/{flightId}) topic subscriptions without multiplying socket connections.
+ * multiplexing flight status (/topic/flight-status/{flightId}), dynamic pricing
+ * (/topic/pricing/{flightId}), seat map (/topic/seat-map/{flightId}), hotel rooms
+ * (/topic/hotels/{hotelId}/rooms), and user notifications (/topic/notifications/{userId}).
  */
 class FlightStatusWebSocketManager {
   private client: Client | null = null;
@@ -35,6 +37,10 @@ class FlightStatusWebSocketManager {
   // Active hotel room subscribers: Map<hotelId, Set<callback>>
   private hotelRoomCallbacks: Map<string, Set<RoomAvailabilityCallback>> = new Map();
   private hotelRoomStompSubscriptions: Map<string, StompSubscription> = new Map();
+
+  // Active notification subscribers: Map<userId, Set<callback>>
+  private notificationCallbacks: Map<string, Set<NotificationCallback>> = new Map();
+  private notificationStompSubscriptions: Map<string, StompSubscription> = new Map();
 
   // Connection state change listeners
   private connectionListeners: Set<ConnectionStateListener> = new Set();
@@ -124,8 +130,15 @@ class FlightStatusWebSocketManager {
       return;
     }
 
-    // Only reconnect if there are active flight subscriptions or listeners
-    if (this.flightCallbacks.size === 0 && this.pricingCallbacks.size === 0 && this.connectionListeners.size === 0) {
+    // Only reconnect if there are active subscriptions or listeners
+    if (
+      this.flightCallbacks.size === 0 &&
+      this.pricingCallbacks.size === 0 &&
+      this.seatMapCallbacks.size === 0 &&
+      this.hotelRoomCallbacks.size === 0 &&
+      this.notificationCallbacks.size === 0 &&
+      this.connectionListeners.size === 0
+    ) {
       return;
     }
 
@@ -233,6 +246,52 @@ class FlightStatusWebSocketManager {
     return () => {
       this.unsubscribeHotelRooms(hotelId, callback);
     };
+  }
+
+  /**
+   * Subscribes a consumer callback to real-time user notifications (/topic/notifications/{userId}).
+   */
+  public subscribeNotifications(userId: string, callback: NotificationCallback): () => void {
+    if (!userId) return () => {};
+
+    if (!this.notificationCallbacks.has(userId)) {
+      this.notificationCallbacks.set(userId, new Set());
+    }
+    this.notificationCallbacks.get(userId)!.add(callback);
+
+    if (this.connected && this.client && !this.notificationStompSubscriptions.has(userId)) {
+      this.subscribeNotificationsStompTopic(userId);
+    } else if (!this.connected) {
+      this.connect();
+    }
+
+    return () => {
+      this.unsubscribeNotifications(userId, callback);
+    };
+  }
+
+  /**
+   * Unsubscribes a consumer callback for user notifications.
+   */
+  public unsubscribeNotifications(userId: string, callback: NotificationCallback): void {
+    const callbacks = this.notificationCallbacks.get(userId);
+    if (!callbacks) return;
+
+    callbacks.delete(callback);
+
+    if (callbacks.size === 0) {
+      this.notificationCallbacks.delete(userId);
+
+      const stompSub = this.notificationStompSubscriptions.get(userId);
+      if (stompSub) {
+        try {
+          stompSub.unsubscribe();
+        } catch (e) {
+          // ignore
+        }
+        this.notificationStompSubscriptions.delete(userId);
+      }
+    }
   }
 
   /**
@@ -462,6 +521,25 @@ class FlightStatusWebSocketManager {
     }
   }
 
+  private subscribeNotificationsStompTopic(userId: string): void {
+    if (!this.client || !this.connected) return;
+
+    const topic = `/topic/notifications/${userId}`;
+    try {
+      const stompSub = this.client.subscribe(topic, (message: IMessage) => {
+        try {
+          const notification = JSON.parse(message.body);
+          this.handleNotificationEvent(userId, notification);
+        } catch (err) {
+          console.error('Failed to parse realtime notification message', err);
+        }
+      });
+      this.notificationStompSubscriptions.set(userId, stompSub);
+    } catch (err) {
+      console.warn(`Failed to subscribe to STOMP notifications topic ${topic}:`, err);
+    }
+  }
+
   private restoreSubscriptions(): void {
     for (const flightId of this.flightCallbacks.keys()) {
       if (!this.stompSubscriptions.has(flightId)) {
@@ -482,6 +560,24 @@ class FlightStatusWebSocketManager {
       if (!this.hotelRoomStompSubscriptions.has(hotelId)) {
         this.subscribeHotelRoomsStompTopic(hotelId);
       }
+    }
+    for (const userId of this.notificationCallbacks.keys()) {
+      if (!this.notificationStompSubscriptions.has(userId)) {
+        this.subscribeNotificationsStompTopic(userId);
+      }
+    }
+  }
+
+  private handleNotificationEvent(userId: string, notification: any): void {
+    const callbacks = this.notificationCallbacks.get(userId);
+    if (callbacks) {
+      callbacks.forEach((cb) => {
+        try {
+          cb(notification);
+        } catch (err) {
+          console.error('Error executing notification callback', err);
+        }
+      });
     }
   }
 
