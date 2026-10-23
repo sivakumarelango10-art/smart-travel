@@ -38,6 +38,16 @@ public class HealthController {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @GetMapping({"/ping", "/live"})
+    @Operation(summary = "Fast Liveness Ping", description = "Instant zero-dependency ping to verify web service availability without database overhead.")
+    public ResponseEntity<Map<String, Object>> ping() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "service", "SmartTravel Backend",
+                "timestamp", Instant.now().toString()
+        ));
+    }
+
     @GetMapping
     @Operation(summary = "System Health Check", description = "Returns the operational status of the backend service and database connectivity.")
     public ResponseEntity<ApiResponse<HealthResponse>> getHealth() {

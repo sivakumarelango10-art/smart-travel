@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Printer,
@@ -101,7 +102,7 @@ export const HotelInvoiceModal: React.FC<HotelInvoiceModalProps> = ({ booking, o
 
   const verificationUrl = `https://smart-travel-sage.vercel.app/verify/hotel/${booking.bookingReference}`;
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
       <div className="relative w-full max-w-3xl bg-[#14161F] border border-white/20 rounded-3xl shadow-2xl overflow-hidden my-6 text-slate-100 flex flex-col max-h-[92vh]">
         
@@ -331,4 +332,6 @@ export const HotelInvoiceModal: React.FC<HotelInvoiceModalProps> = ({ booking, o
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

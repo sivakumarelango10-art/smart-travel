@@ -37,7 +37,7 @@ export const warmupBackend = async (force: boolean = false): Promise<boolean> =>
   isWarming = true;
 
   try {
-    const res = await apiClient.get('/v1/health', {
+    const res = await apiClient.get('/v1/health/ping', {
       timeout: 90000, // 90s — Render cold start can take up to 60–90s
     });
     if (res.status === 200) {
@@ -84,7 +84,7 @@ export const startKeepAliveHeartbeat = () => {
   warmupInterval = setInterval(() => {
     // Only send keep-alive when document is visible
     if (document.visibilityState === 'visible') {
-      apiClient.get('/v1/health', { timeout: 15000 })
+      apiClient.get('/v1/health/ping', { timeout: 15000 })
         .then(() => {
           isWarm = true;
           lastWarmTimestamp = Date.now();

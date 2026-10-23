@@ -44,10 +44,10 @@ EXPOSE 8080 10000
 # Environment defaults (overridden by Render dashboard environment variables)
 ENV SPRING_PROFILES_ACTIVE=prod \
     SERVER_PORT=8080 \
-    JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0 -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
 
-# Container healthcheck using Spring Boot Actuator
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
-    CMD wget -qO- http://localhost:${PORT:-${SERVER_PORT:-8080}}/actuator/health | grep -q '"status":"UP"' || exit 1
+# Container healthcheck using fast Spring Boot liveness probe with ping fallback
+HEALTHCHECK --interval=20s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget -qO- http://localhost:${PORT:-${SERVER_PORT:-8080}}/v1/health/ping | grep -q '"status":"UP"' || wget -qO- http://localhost:${PORT:-${SERVER_PORT:-8080}}/actuator/health | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} -Dserver.port=${PORT:-${SERVER_PORT:-8080}} -jar app.jar"]

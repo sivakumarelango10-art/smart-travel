@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Clock, ShieldCheck, AlertCircle, X, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { CabinClass, PriceFreeze } from '../types/api';
@@ -54,7 +55,7 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <motion.div
@@ -220,4 +221,6 @@ export const PriceFreezeModal: React.FC<PriceFreezeModalProps> = ({
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

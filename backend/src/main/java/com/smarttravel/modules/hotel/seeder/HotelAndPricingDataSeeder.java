@@ -136,6 +136,12 @@ public class HotelAndPricingDataSeeder implements ApplicationRunner {
     }
 
     private void seedHotels() {
+        long existingHotelCount = hotelRepository.count();
+        if (existingHotelCount >= 50) {
+            log.info("Hotel database catalog verified with {} active properties. Skipping startup seeding.", existingHotelCount);
+            return;
+        }
+
         log.info("Checking and seeding comprehensive hotel catalog with 360° virtual tours and multi-cabin room types...");
 
         List<Hotel> catalog = HotelCatalogGenerator.generateAllHotels();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard,
@@ -212,7 +213,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     ? `${booking.passengers[0].firstName} ${booking.passengers[0].lastName}`
     : 'Lead Traveler';
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <motion.div
@@ -493,4 +494,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

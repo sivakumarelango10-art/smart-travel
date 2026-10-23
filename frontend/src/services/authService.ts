@@ -19,12 +19,16 @@ export const authService = {
   async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
     let res;
     try {
-      res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials);
+      res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials, {
+        timeout: 75000, // 75s allows cold-start to complete cleanly without premature timeout
+      });
     } catch (err: any) {
       // If server is waking up or network blipped during container startup, retry once cleanly
       if (err?.error === 'SERVICE_WAKING_UP' || err?.error === 'NETWORK_ERROR' || err?.status === 408) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/login', credentials, {
+          timeout: 60000,
+        });
       } else {
         throw err;
       }
@@ -55,13 +59,17 @@ export const authService = {
       res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
         credential,
         rememberMe,
+      }, {
+        timeout: 75000,
       });
     } catch (err: any) {
       if (err?.error === 'SERVICE_WAKING_UP' || err?.error === 'NETWORK_ERROR' || err?.status === 408) {
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         res = await apiClient.post<ApiResponse<AuthResponse>>('/v1/auth/google', {
           credential,
           rememberMe,
+        }, {
+          timeout: 60000,
         });
       } else {
         throw err;

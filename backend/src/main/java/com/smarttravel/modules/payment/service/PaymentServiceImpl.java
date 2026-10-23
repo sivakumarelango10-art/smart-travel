@@ -127,7 +127,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         long amountInPaise = totalAmount.multiply(BigDecimal.valueOf(100))
-                .setScale(0, RoundingMode.UNNECESSARY)
+                .setScale(0, RoundingMode.HALF_UP)
                 .longValueExact();
 
         // 5. Call Razorpay Gateway to create order

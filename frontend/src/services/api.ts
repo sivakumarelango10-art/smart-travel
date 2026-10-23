@@ -22,11 +22,12 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (config.url) {
-      // Defensive path normalization: strip duplicate /api/v1/v1 or /v1/v1 prefixes
+      // Defensive path normalization: strip duplicate /api/v1/v1, /v1/v1, /api/v1/api/v1 or /api/api prefixes
       config.url = config.url
         .replace(/^\/api\/v1\/v1\//, '/v1/')
         .replace(/^\/v1\/v1\//, '/v1/')
-        .replace(/^\/api\/v1\/api\/v1\//, '/v1/');
+        .replace(/^\/api\/v1\/api\/v1\//, '/v1/')
+        .replace(/^\/api\/api\//, '/api/');
     }
 
     const url = config.url || '';

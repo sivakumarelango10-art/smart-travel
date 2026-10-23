@@ -27,6 +27,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             origins[i] = origins[i].trim();
         }
 
+        // Register native WebSocket endpoint
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*");
+
+        // Register SockJS fallback endpoint
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
                 .withSockJS()

@@ -71,6 +71,13 @@ public class FlightDataSeeder implements ApplicationRunner {
     }
 
     public SeedingStats seedComprehensiveFleet(int daysAhead) {
+        long existingCount = flightRepository.count();
+        int distinctRoutes = getRouteTemplates().size();
+        if (existingCount >= 100) {
+            log.info("Flight database catalog already seeded with {} active flights. Skipping startup fleet generation.", existingCount);
+            return new SeedingStats(0, existingCount, distinctRoutes, daysAhead);
+        }
+
         List<Flight> seededFlights = generateComprehensiveFleet(daysAhead);
 
         // Fetch all existing flight numbers in 1 fast projection query
@@ -101,7 +108,6 @@ public class FlightDataSeeder implements ApplicationRunner {
         }
 
         long totalFlightsInDb = flightRepository.count();
-        int distinctRoutes = getRouteTemplates().size();
 
         return new SeedingStats(toInsert.size(), totalFlightsInDb, distinctRoutes, daysAhead);
     }

@@ -13,7 +13,7 @@ services:
     dockerContext: ./backend
     plan: starter
     region: oregon
-    healthCheckPath: /actuator/health
+    healthCheckPath: /v1/health/ping
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod

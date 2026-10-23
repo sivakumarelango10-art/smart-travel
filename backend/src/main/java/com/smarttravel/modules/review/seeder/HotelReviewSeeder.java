@@ -93,6 +93,12 @@ public class HotelReviewSeeder implements ApplicationRunner {
     }
 
     public void seedHotelReviews() {
+        long totalReviews = reviewRepository.count();
+        if (totalReviews >= 200) {
+            log.info("Hotel reviews verified with {} total published reviews. Skipping startup seeding.", totalReviews);
+            return;
+        }
+
         List<Hotel> hotels = hotelRepository.findAll();
         if (hotels.isEmpty()) {
             log.info("No hotels found in database to seed reviews.");

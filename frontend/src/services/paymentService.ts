@@ -41,7 +41,7 @@ export const paymentService = {
     key_id: string;
     receipt?: string;
   }> {
-    const res = await apiClient.post('/api/create-order', request);
+    const res = await apiClient.post('/v1/payments/create-order', request);
     return res.data;
   },
 
@@ -55,7 +55,7 @@ export const paymentService = {
     order_id?: string;
     payment_id?: string;
   }> {
-    const res = await apiClient.post('/api/verify-payment', request);
+    const res = await apiClient.post('/v1/payments/verify-payment', request);
     return res.data;
   },
 

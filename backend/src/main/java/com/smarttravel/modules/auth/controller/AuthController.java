@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.smarttravel.common.security.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+
 /**
  * REST Controller for User Authentication, Registration, Profile Management,
  * Password Change, and Account Deletion.
@@ -33,9 +36,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService,
+                          @Autowired(required = false) JwtTokenProvider jwtTokenProvider) {
         this.authService = authService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @PostMapping({"/register", "/register/"})
@@ -75,10 +81,23 @@ public class AuthController {
             description = "Validates existing refresh token and returns refreshed access credentials."
     )
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken() {
-        // Returns current user session or authenticated token refreshed
+        // Returns current user session with freshly issued access token
         UserResponse user = authService.getCurrentUser();
+        String accessToken = null;
+        long expiresIn = 86400000L;
+        if (jwtTokenProvider != null) {
+            accessToken = jwtTokenProvider.generateTokenFromUserIdAndEmail(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRoles(),
+                    false
+            );
+            expiresIn = jwtTokenProvider.getJwtExpirationMs(false);
+        }
         AuthResponse response = AuthResponse.builder()
+                .accessToken(accessToken)
                 .tokenType("Bearer")
+                .expiresIn(expiresIn)
                 .user(com.smarttravel.modules.auth.dto.UserSummaryDto.builder()
                         .id(user.getId())
                         .email(user.getEmail())

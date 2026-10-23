@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { TrendingUp, X, Calendar, Activity } from 'lucide-react';
 import { CabinClass, FlightPriceHistory } from '../types/api';
@@ -57,7 +58,7 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
     ? `M ${points.map((p) => `${p.x},${p.y}`).join(' L ')}`
     : '';
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <motion.div
@@ -211,4 +212,6 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
